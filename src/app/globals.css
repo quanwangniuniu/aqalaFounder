@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Force light theme always */
+html,
+body {
+  background: rgb(238, 242, 249);
+  min-height: 100vh;
+}
+
+body {
+  background: rgb(238, 242, 249);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Shimmer placeholder for text */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-text {
+  /* Keep the color visually equal to Tailwind zinc-400 while animating */
+  background: linear-gradient(90deg, #a1a1aa 0%, #d4d4d8 50%, #a1a1aa 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 0 #a1a1aa;
+  /* match zinc-400 for consistent perceived color */
+  font-weight: 400;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text {
+    animation: none;
+  }
+}
+
+/* Mic/Stop pulse ring */
+@keyframes pulseRing {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+
+  70% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  position: absolute;
+  inset: -6px;
+  border: 2px solid #0A84FF;
+  /* iOS System Blue */
+  border-radius: 9999px;
+  animation: pulseRing 1.2s ease-out infinite;
+  pointer-events: none;
+}
+
+/* Remove mobile tap highlight and focus ring for the mic/stop button only */
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* 16px white->transparent fade anchored to the element's bottom edge */
+.fade-after-16::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -23px;
+  height: 24px;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.95) 10%,
+      rgba(255, 255, 255, 0) 100%);
+
+}

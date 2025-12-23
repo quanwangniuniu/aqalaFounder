@@ -1,0 +1,120 @@
+"use client";
+
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  Room,
+  clearTranslator,
+  createRoom,
+  deleteRoom,
+  joinRoom,
+  leaveRoom,
+  setTranslator,
+  subscribeRooms,
+  claimLeadReciter,
+  validateAndCleanTranslator,
+} from "@/lib/firebase/rooms";
+import { useAuth } from "./AuthContext";
+
+type RoomsContextType = {
+  rooms: Room[];
+  loading: boolean;
+  error: string | null;
+  createRoom: (name: string) => Promise<void>;
+  deleteRoom: (roomId: string) => Promise<void>;
+  joinRoom: (roomId: string, asTranslator?: boolean) => Promise<void>;
+  leaveRoom: (roomId: string) => Promise<void>;
+  claimTranslator: (roomId: string) => Promise<void>;
+  claimLeadReciter: (roomId: string) => Promise<void>;
+  validateAndCleanTranslator: (roomId: string) => Promise<boolean>;
+  releaseTranslator: (roomId: string) => Promise<void>;
+};
+
+const RoomsContext = createContext<RoomsContextType | undefined>(undefined);
+
+export const useRooms = () => {
+  const ctx = useContext(RoomsContext);
+  if (!ctx) {
+    throw new Error("useRooms must be used within RoomsProvider");
+  }
+  return ctx;
+};
+
+export function RoomsProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = subscribeRooms(
+      (incoming) => {
+        setRooms(incoming);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err?.message || "Failed to load rooms");
+        setLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  const requireUser = () => {
+    if (!user) {
+      throw new Error("You must be signed in");
+    }
+    return user;
+  };
+
+  const api = useMemo<RoomsContextType>(
+    () => ({
+      rooms,
+      loading,
+      error,
+      async createRoom(name: string) {
+        const u = requireUser();
+        setError(null);
+        await createRoom(name, u.uid);
+      },
+      async deleteRoom(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await deleteRoom(roomId, u.uid);
+      },
+      async joinRoom(roomId: string, asTranslator = false) {
+        const u = requireUser();
+        setError(null);
+        await joinRoom(roomId, u.uid, asTranslator);
+      },
+      async leaveRoom(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await leaveRoom(roomId, u.uid);
+      },
+      async claimTranslator(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await setTranslator(roomId, u.uid);
+      },
+      async claimLeadReciter(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await claimLeadReciter(roomId, u.uid);
+      },
+      async validateAndCleanTranslator(roomId: string) {
+        setError(null);
+        return await validateAndCleanTranslator(roomId);
+      },
+      async releaseTranslator(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await clearTranslator(roomId, u.uid);
+      },
+    }),
+    [rooms, loading, error, user]
+  );
+
+  return <RoomsContext.Provider value={api}>{children}</RoomsContext.Provider>;
+}
+
