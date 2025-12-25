@@ -100,7 +100,7 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
         const u = requireUser();
         console.log(`[JOIN MOSQUE CONTEXT] Called - roomId: ${roomId}, userId: ${u.uid}, asTranslator: ${asTranslator}`);
         setError(null);
-        await joinRoom(roomId, u.uid, asTranslator);
+        await joinRoom(roomId, u.uid, asTranslator, u.email);
         console.log(`[JOIN MOSQUE CONTEXT] Completed - roomId: ${roomId}, userId: ${u.uid}`);
       },
       async claimTranslator(roomId: string) {

@@ -109,7 +109,7 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium truncate">
-                        {member.userId === user?.uid ? "You" : getUserDisplayName(null, member.userId)}
+                        {member.userId === user?.uid ? "You" : getUserDisplayName(null, member.userId, member.email)}
                       </p>
                       {isLeadReciter && (
                         <span className="px-2 py-0.5 text-xs font-medium bg-[#7D00D4] text-white rounded-full">

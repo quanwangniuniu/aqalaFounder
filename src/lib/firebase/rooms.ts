@@ -33,6 +33,7 @@ export type RoomMember = {
   userId: string;
   role: RoomMemberRole;
   joinedAt: Date | null;
+  email?: string | null;
 };
 
 function ensureDb() {
@@ -53,12 +54,14 @@ export async function createRoom(name: string, ownerId: string): Promise<Room> {
     isActive: true,
   });
 
-  // Add owner as listener member (not translator by default)
-  await setDoc(doc(firestore, COLLECTION, roomRef.id, "members", ownerId), {
-    userId: ownerId,
-    role: "listener",
-    joinedAt: serverTimestamp(),
-  });
+      // Add owner as listener member (not translator by default)
+      // Note: email not available at room creation, will be updated when user joins
+      await setDoc(doc(firestore, COLLECTION, roomRef.id, "members", ownerId), {
+        userId: ownerId,
+        role: "listener",
+        joinedAt: serverTimestamp(),
+        email: null,
+      });
 
   return {
     id: roomRef.id,
@@ -108,7 +111,7 @@ export function subscribeRooms(onRooms: (rooms: Room[]) => void, onError?: (err:
   );
 }
 
-export async function joinRoom(roomId: string, userId: string, asTranslator = false): Promise<void> {
+export async function joinRoom(roomId: string, userId: string, asTranslator = false, email?: string | null): Promise<void> {
   console.log(`[JOIN MOSQUE] Starting join process - roomId: ${roomId}, userId: ${userId}, asTranslator: ${asTranslator}`);
   const firestore = ensureDb();
   
@@ -161,12 +164,18 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
       // Handle member document creation/update
       // Note: In transactions, we need to check existence first to avoid conflicts
       if (alreadyMemberInTx) {
-        // Just update the role if changing to translator
+        // Just update the role if changing to translator, and update email if provided
         if (asTranslator) {
-          tx.update(memberRefInTx, {
-            role: "translator",
-          });
+          const updateData: any = { role: "translator" };
+          if (email !== undefined) {
+            updateData.email = email;
+          }
+          tx.update(memberRefInTx, updateData);
           console.log(`[JOIN MOSQUE] Member role updated to translator - roomId: ${roomId}, userId: ${userId}`);
+        } else if (email !== undefined) {
+          // Update email even if not changing role
+          tx.update(memberRefInTx, { email });
+          console.log(`[JOIN MOSQUE] Member email updated - roomId: ${roomId}, userId: ${userId}`);
         } else {
           console.log(`[JOIN MOSQUE] Member already exists, no update needed - roomId: ${roomId}, userId: ${userId}`);
         }
@@ -179,6 +188,7 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
           userId,
           role: asTranslator ? "translator" : "listener",
           joinedAt: serverTimestamp(),
+          email: email || null,
         });
         console.log(`[JOIN MOSQUE] Member document will be created - roomId: ${roomId}, userId: ${userId}, role: ${asTranslator ? "translator" : "listener"}`);
       }
@@ -292,6 +302,7 @@ export function subscribeRoomMembers(
           userId: data.userId || d.id,
           role: data.role || "listener",
           joinedAt: data.joinedAt?.toDate?.() ?? null,
+          email: data.email || null,
         };
       });
       onMembers(members);

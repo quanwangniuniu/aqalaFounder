@@ -170,7 +170,10 @@ export default function RoomsPage() {
                   >
                     <p className="font-medium truncate">{room.name}</p>
                     <p className="text-xs text-zinc-500">
-                      Members: {room.memberCount} • Lead reciter: {room.activeTranslatorId ? getUserDisplayName(null, room.activeTranslatorId) : "None"}
+                      Members: {room.memberCount} • Lead reciter: {room.activeTranslatorId ? (() => {
+                        const translatorMember = roomMembers[room.id]?.find((m) => m.userId === room.activeTranslatorId);
+                        return getUserDisplayName(null, room.activeTranslatorId, translatorMember?.email);
+                      })() : "None"}
                     </p>
                   </Link>
                   <div className="flex items-center gap-3">

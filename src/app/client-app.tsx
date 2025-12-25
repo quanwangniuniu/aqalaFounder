@@ -73,6 +73,7 @@ export default function ClientApp({
   const [enCurrent, setEnCurrent] = useState("");
   const enCurrentRef = useRef("");
   const endRef = useRef<HTMLDivElement | null>(null);
+  const translationScrollRef = useRef<HTMLDivElement | null>(null);
   const [userAtBottom, setUserAtBottom] = useState(true);
   const FOOTER_OFFSET_PX = 160;
   // Reference source text (original language) to show it's listening
@@ -715,28 +716,27 @@ export default function ClientApp({
     }
   }
 
-  // Auto-scroll as new content streams in, so reading stays continuous.
+  // Auto-scroll translation container as new content streams in, so reading stays continuous.
   useEffect(() => {
-    if (!isListening || !userAtBottom) return;
+    const container = translationScrollRef.current;
+    if (!container || !userAtBottom) return;
     const scrollToBottom = () => {
-      const full = document.documentElement.scrollHeight;
-      window.scrollTo({ top: full, behavior: "smooth" });
+      container.scrollTop = container.scrollHeight;
     };
     requestAnimationFrame(scrollToBottom);
-  }, [isListening, userAtBottom, refinedParagraphs]);
+  }, [userAtBottom, refinedParagraphs]);
 
-  // Track whether the reader is near the bottom; if scrolled up, disable auto-scroll.
+  // Track whether the reader is near the bottom of the translation container; if scrolled up, disable auto-scroll.
   useEffect(() => {
+    const container = translationScrollRef.current;
+    if (!container) return;
     const onScroll = () => {
-      const scrollY = window.scrollY || window.pageYOffset;
-      const viewport = window.innerHeight;
-      const full = document.documentElement.scrollHeight;
-      const nearBottom = scrollY + viewport + FOOTER_OFFSET_PX >= full - 20;
+      const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 20;
       setUserAtBottom(nearBottom);
     };
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -788,7 +788,7 @@ export default function ClientApp({
                 </svg>
               </div>
             </div>
-            <div className="min-h-[180px] max-h-[calc(100vh-400px)] overflow-y-auto text-lg leading-8 text-black space-y-4">
+            <div ref={translationScrollRef} className="min-h-[180px] max-h-[calc(100vh-400px)] overflow-y-auto text-lg leading-8 text-black space-y-4">
               {(() => {
                 const toRender = renderList;
                 if (toRender.length > 0) {

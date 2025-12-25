@@ -2,15 +2,16 @@ import { User } from "@/types/auth";
 
 /**
  * Get a user-friendly display name for a user
- * Priority: displayName > email (username part) > formatted userId > "Unknown User"
+ * Priority: displayName > email (full) > formatted userId > "Unknown User"
  */
-export function getUserDisplayName(user: User | null, userId?: string): string {
+export function getUserDisplayName(user: User | null, userId?: string, email?: string | null): string {
   if (user?.displayName) {
     return user.displayName;
   }
-  if (user?.email) {
-    // Return the part before @ for cleaner display
-    return user.email.split("@")[0];
+  // Show full email if available (from user object or parameter)
+  const userEmail = user?.email || email;
+  if (userEmail) {
+    return userEmail;
   }
   if (userId) {
     return `User ${userId.slice(0, 8)}...`;

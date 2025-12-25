@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRooms } from "@/contexts/RoomsContext";
 import { subscribeRoomMembers, RoomMember } from "@/lib/firebase/rooms";
 import ClientApp from "@/app/client-app";
-import TranslationHistory from "@/components/TranslationHistory";
 import LiveTranslationView from "@/components/LiveTranslationView";
 import { getUserDisplayName } from "@/utils/userDisplay";
 
@@ -156,7 +155,10 @@ export default function RoomDetailPage() {
             <div>
               <h1 className="text-2xl font-bold">{room.name}</h1>
               <p className="text-sm text-zinc-600">
-                Members: {room.memberCount} • Lead reciter: {validTranslatorId ? getUserDisplayName(null, validTranslatorId) : "None"}
+                Members: {room.memberCount} • Lead reciter: {validTranslatorId ? (() => {
+                  const translatorMember = members.find((m) => m.userId === validTranslatorId);
+                  return getUserDisplayName(null, validTranslatorId, translatorMember?.email);
+                })() : "None"}
               </p>
             </div>
             <Link href="/rooms" className="text-[#7D00D4] font-medium hover:underline">
@@ -203,7 +205,10 @@ export default function RoomDetailPage() {
                   <LiveTranslationView mosqueId={roomId} activeTranslatorId={validTranslatorId} />
                   <div className="border-t border-zinc-200 p-4 bg-zinc-50">
                     <p className="text-sm text-zinc-600 mb-2">
-                      Listening to {getUserDisplayName(null, validTranslatorId)}. Click record to become the lead reciter.
+                      Listening to {(() => {
+                        const translatorMember = members.find((m) => m.userId === validTranslatorId);
+                        return getUserDisplayName(null, validTranslatorId, translatorMember?.email);
+                      })()}. Click record to become the lead reciter.
                     </p>
                     {/* Only show record button, not full ClientApp UI for listeners */}
                     <div className="flex items-center justify-center">
@@ -281,11 +286,6 @@ export default function RoomDetailPage() {
               )}
             </div>
           )}
-
-          {/* Translation History - second row */}
-          <div>
-            <TranslationHistory mosqueId={roomId} />
-          </div>
         </div>
       </div>
     </div>
