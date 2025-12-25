@@ -2,15 +2,19 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function GoogleSignInButton() {
   const { signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleClick = async () => {
     try {
       setIsLoading(true);
       await signInWithGoogle();
+      // Redirect to home page on success
+      router.push("/");
     } catch (error) {
       // Error is handled by AuthContext
     } finally {
