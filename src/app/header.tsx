@@ -55,7 +55,7 @@ export default function Header() {
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#7D00D4] text-white flex items-center justify-center text-sm font-medium">
+                    <div className="w-8 h-8 rounded-full bg-[#10B981] text-white flex items-center justify-center text-sm font-medium">
                       {getInitials(user.email)}
                     </div>
                   )}
@@ -96,13 +96,13 @@ export default function Header() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/auth/login"
-                  className="px-4 py-1.5 text-sm font-medium text-[#7D00D4] hover:text-[#6A00B6] transition-colors"
+                  className="px-4 py-1.5 text-sm font-medium text-[#10B981] hover:text-[#059669] transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="px-4 py-1.5 text-sm font-medium text-white bg-[#7D00D4] hover:bg-[#6A00B6] rounded-full transition-colors"
+                  className="px-4 py-1.5 text-sm font-medium text-white bg-[#10B981] hover:bg-[#059669] rounded-full transition-colors"
                 >
                   Sign Up
                 </Link>

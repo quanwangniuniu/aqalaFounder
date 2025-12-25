@@ -27,7 +27,7 @@ export default function DonateSuccessPage() {
         </p>
         <button
           onClick={() => router.push("/")}
-          className="mt-6 w-full inline-flex items-center justify-center rounded-full bg-[#7D00D4] hover:bg-[#6A00B6] text-white font-medium text-base leading-7 px-6 py-3 shadow-sm transition-colors"
+          className="mt-6 w-full inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] text-white font-medium text-base leading-7 px-6 py-3 shadow-sm transition-colors"
         >
           Return Home
         </button>

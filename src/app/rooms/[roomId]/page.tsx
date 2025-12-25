@@ -137,7 +137,7 @@ export default function RoomDetailPage() {
       <div className="px-4 py-8 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">Room</h1>
-          <Link href="/rooms" className="text-[#7D00D4] font-medium hover:underline">
+          <Link href="/rooms" className="text-[#10B981] font-medium hover:underline">
             Back to mosques
           </Link>
         </div>
@@ -161,7 +161,7 @@ export default function RoomDetailPage() {
                 })() : "None"}
               </p>
             </div>
-            <Link href="/rooms" className="text-[#7D00D4] font-medium hover:underline">
+            <Link href="/rooms" className="text-[#10B981] font-medium hover:underline">
               Back to mosques
             </Link>
           </div>

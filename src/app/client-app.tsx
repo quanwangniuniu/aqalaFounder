@@ -716,16 +716,6 @@ export default function ClientApp({
     }
   }
 
-  // Auto-scroll translation container as new content streams in, so reading stays continuous.
-  useEffect(() => {
-    const container = translationScrollRef.current;
-    if (!container || !userAtBottom) return;
-    const scrollToBottom = () => {
-      container.scrollTop = container.scrollHeight;
-    };
-    requestAnimationFrame(scrollToBottom);
-  }, [userAtBottom, refinedParagraphs]);
-
   // Track whether the reader is near the bottom of the translation container; if scrolled up, disable auto-scroll.
   useEffect(() => {
     const container = translationScrollRef.current;
@@ -734,10 +724,40 @@ export default function ClientApp({
       const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 20;
       setUserAtBottom(nearBottom);
     };
-    onScroll();
     container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
-  }, []);
+    // Check initial state - if container is empty or at bottom, assume user is at bottom
+    const checkInitial = () => {
+      if (container.scrollHeight <= container.clientHeight) {
+        // Content fits in container, user is effectively at bottom
+        setUserAtBottom(true);
+      } else {
+        onScroll();
+      }
+    };
+    // Check after a brief delay to ensure content is rendered
+    const timeoutId = setTimeout(checkInitial, 50);
+    return () => {
+      clearTimeout(timeoutId);
+      container.removeEventListener("scroll", onScroll);
+    };
+  }, [refinedParagraphs.length]); // Re-check when content changes
+
+  // Auto-scroll translation container as new content streams in, so reading stays continuous.
+  useEffect(() => {
+    const container = translationScrollRef.current;
+    if (!container) return;
+    // Always scroll to bottom when new content arrives, unless user has explicitly scrolled up
+    if (userAtBottom) {
+      const scrollToBottom = () => {
+        container.scrollTop = container.scrollHeight;
+      };
+      // Use a small delay to ensure DOM has updated with new content
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(scrollToBottom);
+      }, 10);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [userAtBottom, refinedParagraphs]);
 
   return (
     <div className="flex flex-1 min-h-0 flex-col font-sans h-full w-full">
@@ -831,7 +851,7 @@ export default function ClientApp({
             {hasStopped && !isListening && (
               <button
                 onClick={() => setIsSheetOpen(true)}
-                className="inline-flex items-center justify-center rounded-full border border-[#7D00D4] text-[#7D00D4] font-medium text-base leading-7 px-6 py-2 transition-colors hover:bg-[#F7ECFF]"
+                className="inline-flex items-center justify-center rounded-full border border-[#10B981] text-[#10B981] font-medium text-base leading-7 px-6 py-2 transition-colors hover:bg-[#ECFDF5]"
                 aria-label="Go to donation"
               >
                 <svg

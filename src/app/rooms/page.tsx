@@ -97,7 +97,7 @@ export default function RoomsPage() {
       <p className="text-lg font-medium">Please sign in to manage or join mosques.</p>
       <Link
         href="/auth/login"
-        className="inline-flex items-center justify-center rounded-full bg-[#7D00D4] hover:bg-[#6A00B6] text-white px-6 py-2 font-medium"
+        className="inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] text-white px-6 py-2 font-medium"
       >
         Sign In
       </Link>
@@ -111,7 +111,7 @@ export default function RoomsPage() {
           <h1 className="text-2xl font-bold">Mosques</h1>
           <p className="text-sm text-zinc-600">Create a mosque or join an existing one.</p>
         </div>
-        <Link href="/" className="text-[#7D00D4] font-medium hover:underline">
+        <Link href="/" className="text-[#10B981] font-medium hover:underline">
           Back home
         </Link>
       </div>
@@ -131,13 +131,13 @@ export default function RoomsPage() {
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder="My Mosque"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D00D4] focus:border-transparent outline-none"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#10B981] focus:border-transparent outline-none"
               disabled={creating}
             />
             <button
               type="submit"
               disabled={creating}
-              className="inline-flex items-center justify-center rounded-full bg-[#7D00D4] hover:bg-[#6A00B6] text-white px-5 py-2 font-medium disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] text-white px-5 py-2 font-medium disabled:opacity-60"
             >
               {creating ? "Creating..." : "Create"}
             </button>
@@ -187,7 +187,7 @@ export default function RoomsPage() {
                         {displayMembers.map((member, idx) => (
                           <div
                             key={member.userId}
-                            className="w-8 h-8 rounded-full bg-[#7D00D4] text-white flex items-center justify-center text-xs font-medium border-2 border-white flex-shrink-0"
+                            className="w-8 h-8 rounded-full bg-[#10B981] text-white flex items-center justify-center text-xs font-medium border-2 border-white flex-shrink-0"
                             style={{ zIndex: 10 - idx }}
                           >
                             {getUserInitials(null, member.userId)}

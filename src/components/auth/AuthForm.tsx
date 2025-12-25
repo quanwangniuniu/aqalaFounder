@@ -4,7 +4,6 @@ import { useState, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import GoogleSignInButton from "./GoogleSignInButton";
-import AppleSignInButton from "./AppleSignInButton";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -78,7 +77,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D00D4] focus:border-transparent outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#10B981] focus:border-transparent outline-none"
             placeholder="your@email.com"
             disabled={isLoading}
           />
@@ -95,7 +94,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7D00D4] focus:border-transparent outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#10B981] focus:border-transparent outline-none"
             placeholder="••••••"
             disabled={isLoading}
           />
@@ -110,7 +109,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full inline-flex items-center justify-center rounded-full bg-[#7D00D4] hover:bg-[#6A00B6] active:bg-[#5B00A0] text-white font-medium text-base leading-7 px-6 py-2 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] active:bg-[#047857] text-white font-medium text-base leading-7 px-6 py-2 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? "Please wait..." : mode === "register" ? "Create Account" : "Sign In"}
         </button>
@@ -128,7 +127,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         <div className="mt-4 space-y-3">
           <GoogleSignInButton />
-          <AppleSignInButton />
         </div>
       </div>
     </div>
