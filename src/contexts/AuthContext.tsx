@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
-import { signUpWithEmail, signInWithEmail, signInWithGoogle, signOut } from "@/lib/firebase/auth";
+import { signUpWithEmail, signInWithEmail, signInWithGoogle, signInWithApple, signOut } from "@/lib/firebase/auth";
 import { AuthContextType, User, mapFirebaseUser } from "@/types/auth";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,6 +72,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const handleSignInWithApple = async (): Promise<void> => {
+    try {
+      setError(null);
+      await signInWithApple();
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to sign in with Apple";
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   const handleSignOut = async (): Promise<void> => {
     try {
       setError(null);
@@ -90,6 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUp,
     signIn,
     signInWithGoogle: handleSignInWithGoogle,
+    signInWithApple: handleSignInWithApple,
     signOut: handleSignOut,
   };
 

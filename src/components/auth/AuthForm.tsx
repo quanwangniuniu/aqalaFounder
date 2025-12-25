@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import GoogleSignInButton from "./GoogleSignInButton";
+import AppleSignInButton from "./AppleSignInButton";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -125,8 +126,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
           <GoogleSignInButton />
+          <AppleSignInButton />
         </div>
       </div>
     </div>
