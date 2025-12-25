@@ -33,7 +33,7 @@ export default function Page() {
           ) : null}
           <Link
             href="/donate"
-            className="w-full max-w-[256px] mt-4 inline-flex items-center justify-center rounded-full border-2 border-white bg-white/90 hover:bg-white text-gray-900 font-medium text-base leading-7 px-6 py-2 transition-colors"
+            className="w-full max-w-[256px] mt-12 inline-flex items-center justify-center rounded-full border-2 border-white bg-white/90 hover:bg-white text-gray-900 font-medium text-base leading-7 px-6 py-2 transition-colors"
           >
             Donate
           </Link>
