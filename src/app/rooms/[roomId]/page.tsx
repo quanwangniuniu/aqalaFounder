@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,13 +8,14 @@ import { useRooms } from "@/contexts/RoomsContext";
 import { subscribeRoomMembers, RoomMember } from "@/lib/firebase/rooms";
 import ClientApp from "@/app/client-app";
 import TranslationHistory from "@/components/TranslationHistory";
+import LiveTranslationView from "@/components/LiveTranslationView";
 import { getUserDisplayName } from "@/utils/userDisplay";
 
 export default function RoomDetailPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const { user } = useAuth();
   const router = useRouter();
-  const { rooms, joinRoom, leaveRoom, claimLeadReciter, validateAndCleanTranslator } = useRooms();
+  const { rooms, joinRoom, claimLeadReciter, validateAndCleanTranslator, releaseTranslator } = useRooms();
 
   const room = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
   const [busy, setBusy] = useState(false);
@@ -40,9 +41,12 @@ export default function RoomDetailPage() {
     setMembers([]);
   }, [roomId]);
 
-  // Subscribe to members and validate translator
+  // Subscribe to members and validate translator (only when user is signed in)
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) {
+      setMembers([]);
+      return;
+    }
     const unsubscribe = subscribeRoomMembers(
       roomId,
       (incoming) => {
@@ -53,11 +57,16 @@ export default function RoomDetailPage() {
         });
       },
       (err) => {
+        // Ignore permission errors when user signs out (expected behavior)
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+          setMembers([]);
+          return;
+        }
         console.error("Error loading members:", err);
       }
     );
     return () => unsubscribe();
-  }, [roomId, validateAndCleanTranslator]);
+  }, [roomId, user, validateAndCleanTranslator]);
 
   // Validate translator when room data changes
   useEffect(() => {
@@ -69,27 +78,41 @@ export default function RoomDetailPage() {
   }, [roomId, room?.activeTranslatorId, validateAndCleanTranslator]);
 
   // Auto-join on load: always join as listener (no automatic translator assignment)
+  const joinInProgressRef = useRef(false);
   useEffect(() => {
     let isMounted = true;
-    let joinInProgress = false;
     
     const join = async () => {
-      if (!user || !room || joined || joinInProgress) return;
-      joinInProgress = true;
+      if (!user || !room || joined || joinInProgressRef.current) {
+        console.log(`[JOIN MOSQUE UI] Skipping join - user: ${user?.uid}, room: ${room?.id}, joined: ${joined}, joinInProgress: ${joinInProgressRef.current}`);
+        return;
+      }
+      console.log(`[JOIN MOSQUE UI] Initiating join - roomId: ${roomId}, userId: ${user.uid}`);
+      joinInProgressRef.current = true;
       setBusy(true);
       try {
         await joinRoom(roomId, false); // Always join as listener
+        console.log(`[JOIN MOSQUE UI] Join successful - roomId: ${roomId}, userId: ${user.uid}`);
         if (isMounted) {
           setRole("listener");
           setMessage("You joined as listener. Click record to become lead reciter.");
           setJoined(true);
         }
       } catch (err: any) {
+        console.error(`[JOIN MOSQUE UI] Join error - roomId: ${roomId}, userId: ${user.uid}, errorCode: ${err?.code}, error:`, err);
         // Ignore "already-exists" errors - user is already a member
         if (err?.code === 'already-exists' || err?.code === 409 || err?.message?.includes('already-exists')) {
+          console.log(`[JOIN MOSQUE UI] Already exists (treated as success) - roomId: ${roomId}, userId: ${user.uid}`);
           if (isMounted) {
             setRole("listener");
             setJoined(true);
+          }
+        } else if (err?.code === 'failed-precondition' || err?.code === 9 || err?.code === 'ABORTED' || err?.message?.includes('concurrent modification')) {
+          // Transaction conflict - check if user is actually a member now
+          console.log(`[JOIN MOSQUE UI] Transaction conflict - roomId: ${roomId}, userId: ${user.uid}, checking membership status`);
+          // The backend already checked, so if we get here, the join likely failed
+          if (isMounted) {
+            setMessage("Failed to join due to concurrent changes. Please refresh and try again.");
           }
         } else if (isMounted) {
           setMessage(err?.message || "Failed to join this mosque.");
@@ -98,7 +121,7 @@ export default function RoomDetailPage() {
         if (isMounted) {
           setBusy(false);
         }
-        joinInProgress = false;
+        joinInProgressRef.current = false;
       }
     };
     
@@ -106,29 +129,9 @@ export default function RoomDetailPage() {
     
     return () => {
       isMounted = false;
+      joinInProgressRef.current = false;
     };
   }, [user, room, roomId, joinRoom, joined]);
-
-  const handleLeave = async () => {
-    if (!user) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      await leaveRoom(roomId);
-      setRole(null);
-      setJoined(false);
-      setMessage("You left this mosque.");
-      router.push("/rooms");
-    } catch (err: any) {
-      setRole(null);
-      setJoined(false);
-      setMessage(err?.message || "Left mosque (it may take a moment to refresh).");
-      router.push("/rooms");
-    } finally {
-      setBusy(false);
-    }
-  };
-
 
   if (!room) {
     return (
@@ -167,17 +170,6 @@ export default function RoomDetailPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-3 mt-4">
-            {user && (
-              <button
-                onClick={handleLeave}
-                disabled={busy}
-                className="px-4 py-2 rounded-full border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
-              >
-                Leave mosque
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Main content area - stacked rows */}
@@ -187,7 +179,7 @@ export default function RoomDetailPage() {
             <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50">
                 <p className="font-medium">Lead reciter view</p>
-                <p className="text-sm text-zinc-600">You are the only one who can start/stop translation.</p>
+                <p className="text-sm text-zinc-600">You are the lead reciter. Click record to start translating.</p>
               </div>
               <div className="min-h-[500px]">
                 <ClientApp 
@@ -197,35 +189,94 @@ export default function RoomDetailPage() {
                     await claimLeadReciter(roomId);
                     setRole("translator");
                   }}
+                  onReleaseReciter={async () => {
+                    await releaseTranslator(roomId);
+                    setRole("listener");
+                  }}
                 />
               </div>
             </div>
           ) : (
-            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden min-h-[500px]">
+            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden min-h-[500px] flex flex-col">
               {validTranslatorId ? (
-                <div className="p-6 h-full flex flex-col items-center justify-center text-center">
-                  <p className="font-medium mb-2">Listener view</p>
-                  <p className="text-sm text-zinc-600 mb-4">
-                    You are listening to the lead reciter. The translation will appear here once they begin.
-                  </p>
-                  <div className="w-full border border-dashed border-zinc-300 rounded-lg p-8 text-sm text-zinc-500">
-                    Waiting for lead reciter...
+                <>
+                  <LiveTranslationView mosqueId={roomId} activeTranslatorId={validTranslatorId} />
+                  <div className="border-t border-zinc-200 p-4 bg-zinc-50">
+                    <p className="text-sm text-zinc-600 mb-2">
+                      Listening to {getUserDisplayName(null, validTranslatorId)}. Click record to become the lead reciter.
+                    </p>
+                    {/* Only show record button, not full ClientApp UI for listeners */}
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await claimLeadReciter(roomId);
+                            setRole("translator");
+                          } catch (err: any) {
+                            setMessage(err?.message || "Failed to become lead reciter. Please try again.");
+                          }
+                        }}
+                        aria-label="Start recording to become lead reciter"
+                        className="relative h-16 w-16 rounded-full flex items-center justify-center transition-colors outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight bg-[#0A84FF] hover:bg-[#0066CC]"
+                      >
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
+                            fill="white"
+                          />
+                          <path
+                            d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
+                            fill="white"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               ) : (
                 <>
                   <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50">
                     <p className="font-medium">Listener view</p>
                     <p className="text-sm text-zinc-600">No lead reciter yet. Click the record button to become the lead reciter.</p>
                   </div>
-                  <ClientApp 
-                    mosqueId={roomId} 
-                    translatorId={user?.uid} 
-                    onClaimReciter={async () => {
-                      await claimLeadReciter(roomId);
-                      setRole("translator");
-                    }}
-                  />
+                  {/* Only show record button, not full ClientApp UI when no translator */}
+                  <div className="flex-1 flex items-center justify-center p-8">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await claimLeadReciter(roomId);
+                          setRole("translator");
+                        } catch (err: any) {
+                          setMessage(err?.message || "Failed to become lead reciter. Please try again.");
+                        }
+                      }}
+                      aria-label="Start recording to become lead reciter"
+                      className="relative h-16 w-16 rounded-full flex items-center justify-center transition-colors outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight bg-[#0A84FF] hover:bg-[#0066CC]"
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
+                          fill="white"
+                        />
+                        <path
+                          d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
+                          fill="white"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </>
               )}
             </div>

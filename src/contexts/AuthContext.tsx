@@ -31,12 +31,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       (firebaseUser: FirebaseUser | null) => {
         setUser(mapFirebaseUser(firebaseUser));
         setLoading(false);
+        // Clear error when auth state changes (including sign out)
         setError(null);
-      },
-      (err) => {
-        setError(err.message);
-        setLoading(false);
-        setUser(null);
       }
     );
 

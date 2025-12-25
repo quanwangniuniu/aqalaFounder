@@ -23,8 +23,13 @@ export default function RoomsPage() {
     [rooms]
   );
 
-  // Subscribe to members for each room
+  // Subscribe to members for each room (only when user is signed in)
   useEffect(() => {
+    if (!user || rooms.length === 0) {
+      setRoomMembers({});
+      return;
+    }
+
     const unsubscribes: (() => void)[] = [];
     rooms.forEach((room) => {
       const unsubscribe = subscribeRoomMembers(
@@ -33,6 +38,10 @@ export default function RoomsPage() {
           setRoomMembers((prev) => ({ ...prev, [room.id]: members }));
         },
         (err) => {
+          // Ignore permission errors when user signs out (expected behavior)
+          if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+            return;
+          }
           console.error(`Error loading members for room ${room.id}:`, err);
         }
       );
@@ -41,7 +50,7 @@ export default function RoomsPage() {
     return () => {
       unsubscribes.forEach((unsub) => unsub());
     };
-  }, [rooms]);
+  }, [rooms, user]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();

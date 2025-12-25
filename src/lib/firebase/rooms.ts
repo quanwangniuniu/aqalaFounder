@@ -109,113 +109,128 @@ export function subscribeRooms(onRooms: (rooms: Room[]) => void, onError?: (err:
 }
 
 export async function joinRoom(roomId: string, userId: string, asTranslator = false): Promise<void> {
+  console.log(`[JOIN MOSQUE] Starting join process - roomId: ${roomId}, userId: ${userId}, asTranslator: ${asTranslator}`);
   const firestore = ensureDb();
   
   // First, check if user is already a member (outside transaction to avoid conflicts)
   const memberRef = doc(firestore, COLLECTION, roomId, "members", userId);
   const memberSnap = await getDoc(memberRef);
   const alreadyMember = memberSnap.exists();
+  console.log(`[JOIN MOSQUE] Member check - roomId: ${roomId}, userId: ${userId}, alreadyMember: ${alreadyMember}`);
   
   // If already a member and not trying to change role, just return success
   if (alreadyMember && !asTranslator) {
+    console.log(`[JOIN MOSQUE] User already a member - roomId: ${roomId}, userId: ${userId}, skipping join`);
     return; // Already a member, no need to do anything
   }
   
-  await runTransaction(firestore, async (tx) => {
-    const roomRef = doc(firestore, COLLECTION, roomId);
-    const roomSnap = await tx.get(roomRef);
-    if (!roomSnap.exists()) {
-      throw new Error("Room not found");
-    }
-    const roomData = roomSnap.data() as any;
-    if (!roomData.isActive) {
-      throw new Error("Room is inactive");
-    }
-
-    const memberRefInTx = doc(firestore, COLLECTION, roomId, "members", userId);
-    const memberSnapInTx = await tx.get(memberRefInTx);
-    const alreadyMemberInTx = memberSnapInTx.exists();
-
-    // Only increment member count if not already a member
-    const nextMemberCount = alreadyMemberInTx ? roomData.memberCount ?? 1 : (roomData.memberCount ?? 0) + 1;
-
-    let nextActiveTranslator = roomData.activeTranslatorId || null;
-    if (asTranslator) {
-      if (roomData.activeTranslatorId && roomData.activeTranslatorId !== userId) {
-        throw new Error("Translator already active in this room");
-      }
-      nextActiveTranslator = userId;
-    }
-
-    // Use merge: true to handle both create and update cases
-    tx.set(
-      memberRefInTx,
-      {
-        userId,
-        role: asTranslator ? "translator" : "listener",
-        joinedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    // Only update room if member count changed or translator status changed
-    const memberCountChanged = !alreadyMemberInTx;
-    const translatorChanged = nextActiveTranslator !== roomData.activeTranslatorId;
-    
-    if (memberCountChanged || translatorChanged) {
-      tx.update(roomRef, {
-        memberCount: nextMemberCount,
-        activeTranslatorId: nextActiveTranslator,
-      });
-    }
-  }).catch((error: any) => {
-    // If error is "already-exists" or conflict, treat as success (user is already member)
-    if (error?.code === 'already-exists' || error?.code === 409 || error?.message?.includes('already-exists')) {
-      return; // Already a member, treat as success
-    }
-    // Re-throw other errors
-    throw error;
-  });
-}
-
-export async function leaveRoom(roomId: string, userId: string): Promise<void> {
-  const firestore = ensureDb();
-  
-  // First, check if user is the active translator BEFORE deleting member doc
-  const roomRef = doc(firestore, COLLECTION, roomId);
-  const roomSnap = await getDoc(roomRef);
-  if (!roomSnap.exists()) {
-    throw new Error("Room not found");
-  }
-  const roomData = roomSnap.data() as any;
-  const wasActiveTranslator = roomData.activeTranslatorId === userId;
-
-  // Always allow the user to remove their member document; update room doc best-effort.
-  const memberRef = doc(firestore, COLLECTION, roomId, "members", userId);
-  await deleteDoc(memberRef).catch(() => {
-    // If delete fails due to permissions, bubble up to show the message to the user.
-    throw new Error("Unable to leave room (permission denied)");
-  });
-
-  // Best-effort room updates; if permissions block, silently ignore to avoid blocking leave.
   try {
     await runTransaction(firestore, async (tx) => {
+      console.log(`[JOIN MOSQUE] Starting transaction - roomId: ${roomId}, userId: ${userId}`);
       const roomRef = doc(firestore, COLLECTION, roomId);
       const roomSnap = await tx.get(roomRef);
-      if (!roomSnap.exists()) return;
+      if (!roomSnap.exists()) {
+        console.error(`[JOIN MOSQUE] Room not found - roomId: ${roomId}, userId: ${userId}`);
+        throw new Error("Room not found");
+      }
       const roomData = roomSnap.data() as any;
+      if (!roomData.isActive) {
+        console.error(`[JOIN MOSQUE] Room is inactive - roomId: ${roomId}, userId: ${userId}`);
+        throw new Error("Room is inactive");
+      }
 
-      const nextMemberCount = Math.max(0, (roomData.memberCount ?? 1) - 1);
-      // Always clear activeTranslatorId if leaving user was the translator
-      const nextActiveTranslator = wasActiveTranslator ? null : roomData.activeTranslatorId || null;
+      const memberRefInTx = doc(firestore, COLLECTION, roomId, "members", userId);
+      const memberSnapInTx = await tx.get(memberRefInTx);
+      const alreadyMemberInTx = memberSnapInTx.exists();
+      console.log(`[JOIN MOSQUE] Transaction member check - roomId: ${roomId}, userId: ${userId}, alreadyMemberInTx: ${alreadyMemberInTx}`);
 
-      tx.update(roomRef, {
-        memberCount: nextMemberCount,
-        activeTranslatorId: nextActiveTranslator,
-      });
+      // Only increment member count if not already a member
+      const nextMemberCount = alreadyMemberInTx ? roomData.memberCount ?? 1 : (roomData.memberCount ?? 0) + 1;
+      console.log(`[JOIN MOSQUE] Member count update - roomId: ${roomId}, currentCount: ${roomData.memberCount ?? 0}, nextCount: ${nextMemberCount}`);
+
+      let nextActiveTranslator = roomData.activeTranslatorId || null;
+      if (asTranslator) {
+        if (roomData.activeTranslatorId && roomData.activeTranslatorId !== userId) {
+          console.error(`[JOIN MOSQUE] Translator already active - roomId: ${roomId}, userId: ${userId}, activeTranslatorId: ${roomData.activeTranslatorId}`);
+          throw new Error("Translator already active in this room");
+        }
+        nextActiveTranslator = userId;
+        console.log(`[JOIN MOSQUE] Setting as translator - roomId: ${roomId}, userId: ${userId}`);
+      }
+
+      // Handle member document creation/update
+      // Note: In transactions, we need to check existence first to avoid conflicts
+      if (alreadyMemberInTx) {
+        // Just update the role if changing to translator
+        if (asTranslator) {
+          tx.update(memberRefInTx, {
+            role: "translator",
+          });
+          console.log(`[JOIN MOSQUE] Member role updated to translator - roomId: ${roomId}, userId: ${userId}`);
+        } else {
+          console.log(`[JOIN MOSQUE] Member already exists, no update needed - roomId: ${roomId}, userId: ${userId}`);
+        }
+      } else {
+        // Create new member document
+        // Use set() which will create the document
+        // If another concurrent transaction already created it, this transaction will fail
+        // and we'll handle it in the catch block
+        tx.set(memberRefInTx, {
+          userId,
+          role: asTranslator ? "translator" : "listener",
+          joinedAt: serverTimestamp(),
+        });
+        console.log(`[JOIN MOSQUE] Member document will be created - roomId: ${roomId}, userId: ${userId}, role: ${asTranslator ? "translator" : "listener"}`);
+      }
+
+      // Only update room if member count changed or translator status changed
+      // Note: If alreadyMemberInTx is true, memberCountChanged will be false, so we won't update
+      const memberCountChanged = !alreadyMemberInTx;
+      const translatorChanged = nextActiveTranslator !== roomData.activeTranslatorId;
+      
+      if (memberCountChanged || translatorChanged) {
+        tx.update(roomRef, {
+          memberCount: nextMemberCount,
+          activeTranslatorId: nextActiveTranslator,
+        });
+        console.log(`[JOIN MOSQUE] Room updated - roomId: ${roomId}, memberCountChanged: ${memberCountChanged}, translatorChanged: ${translatorChanged}, newMemberCount: ${nextMemberCount}, newTranslatorId: ${nextActiveTranslator}`);
+      }
+    }).catch((error: any) => {
+      // Catch errors during transaction execution/commit
+      console.error(`[JOIN MOSQUE] Transaction promise rejected - roomId: ${roomId}, userId: ${userId}, errorCode: ${error?.code}, errorName: ${error?.name}, error:`, error);
+      throw error; // Re-throw to be caught by outer catch
     });
-  } catch {
-    // ignore permissions errors; the user has already been removed from members
+    console.log(`[JOIN MOSQUE] Successfully joined - roomId: ${roomId}, userId: ${userId}, asTranslator: ${asTranslator}`);
+  } catch (error: any) {
+    console.error(`[JOIN MOSQUE] Transaction error - roomId: ${roomId}, userId: ${userId}, errorCode: ${error?.code}, errorName: ${error?.name}, error:`, error);
+    
+    // Check if user is actually a member now (another transaction may have succeeded)
+    const memberRef = doc(firestore, COLLECTION, roomId, "members", userId);
+    const memberSnap = await getDoc(memberRef);
+    const isNowMember = memberSnap.exists();
+    console.log(`[JOIN MOSQUE] Post-error member check - roomId: ${roomId}, userId: ${userId}, isNowMember: ${isNowMember}`);
+    
+    if (isNowMember) {
+      // User is a member (another transaction succeeded), treat as success
+      console.log(`[JOIN MOSQUE] User is a member after error (treated as success) - roomId: ${roomId}, userId: ${userId}, originalErrorCode: ${error?.code}`);
+      return;
+    }
+    
+    // If error is "already-exists" or conflict, but user is not a member, something went wrong
+    if (error?.code === 'already-exists' || error?.code === 409 || error?.message?.includes('already-exists')) {
+      console.error(`[JOIN MOSQUE] Already-exists error but user not a member - roomId: ${roomId}, userId: ${userId}`);
+      throw new Error("Failed to join mosque due to concurrent modification. Please try again.");
+    }
+    
+    // Handle failed-precondition (transaction conflict)
+    if (error?.code === 'failed-precondition' || error?.code === 9 || error?.code === 'ABORTED') {
+      console.error(`[JOIN MOSQUE] Transaction conflict and user not a member - roomId: ${roomId}, userId: ${userId}`);
+      throw new Error("Failed to join mosque due to concurrent modification. Please try again.");
+    }
+    
+    console.error(`[JOIN MOSQUE] Error joining - roomId: ${roomId}, userId: ${userId}, errorCode: ${error?.code}, error:`, error);
+    // Re-throw other errors
+    throw error;
   }
 }
 

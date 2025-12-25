@@ -25,12 +25,14 @@ export default function ClientApp({
   mosqueId,
   translatorId,
   onClaimReciter,
+  onReleaseReciter,
 }: {
   autoStart?: boolean;
   openDonate?: boolean;
   mosqueId?: string;
   translatorId?: string;
   onClaimReciter?: () => Promise<void>;
+  onReleaseReciter?: () => Promise<void>;
 }) {
   const { rooms } = useRooms();
   const { user } = useAuth();
@@ -472,33 +474,21 @@ export default function ClientApp({
   async function handleStart() {
     setError(null);
     
-    // If in mosque context, check/claim reciter role before starting
+    // If in mosque context, always attempt to claim reciter role when record is clicked
     if (mosqueId && translatorId && user) {
       const room = rooms.find((r) => r.id === mosqueId);
       if (room) {
         const isActiveReciter = room.activeTranslatorId === user.uid;
         
-        if (!isActiveReciter) {
-          // No active reciter or current user is not the reciter
-          if (!room.activeTranslatorId) {
-            // No reciter exists, try to claim
-            if (onClaimReciter) {
-              try {
-                await onClaimReciter();
-                // After claiming, verify we're now the reciter
-                // The room state will update via real-time subscription
-                // For now, we'll proceed and let the backend validation handle it
-              } catch (err: any) {
-                setError(err?.message || "Failed to become lead reciter. Please try again.");
-                return;
-              }
-            } else {
-              setError("You must be the lead reciter to start translation. Please claim the role first.");
-              return;
-            }
-          } else {
-            // Another user is the reciter
-            setError("Another user is currently the lead reciter. Please wait for them to finish.");
+        // Only try to claim if we're not already the active reciter
+        if (!isActiveReciter && onClaimReciter) {
+          try {
+            await onClaimReciter();
+            // After claiming, proceed with starting translation
+            // The room state will update via real-time subscription
+          } catch (err: any) {
+            // Claim failed (likely another user is the reciter)
+            setError(err?.message || "Failed to become lead reciter. Another user may already be the lead reciter.");
             return;
           }
         }
@@ -715,6 +705,12 @@ export default function ClientApp({
       if (silenceTimerRef.current) {
         window.clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = null;
+      }
+      // Release the translator lock when stopping
+      if (onReleaseReciter && mosqueId && user) {
+        onReleaseReciter().catch((err) => {
+          console.error("Error releasing translator lock:", err);
+        });
       }
     }
   }

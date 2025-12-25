@@ -2,19 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TranslationEntry, subscribeTranslations } from "@/lib/firebase/translationHistory";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TranslationHistoryProps {
   mosqueId: string;
 }
 
 export default function TranslationHistory({ mosqueId }: TranslationHistoryProps) {
+  const { user } = useAuth();
   const [translations, setTranslations] = useState<TranslationEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
-    if (!mosqueId) return;
+    if (!mosqueId || !user) {
+      setTranslations([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const unsubscribe = subscribeTranslations(
       mosqueId,
@@ -23,12 +29,18 @@ export default function TranslationHistory({ mosqueId }: TranslationHistoryProps
         setLoading(false);
       },
       (err) => {
+        // Ignore permission errors when user signs out (expected behavior)
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+          setTranslations([]);
+          setLoading(false);
+          return;
+        }
         console.error("Error loading translation history:", err);
         setLoading(false);
       }
     );
     return () => unsubscribe();
-  }, [mosqueId]);
+  }, [mosqueId, user]);
 
   // Auto-scroll to bottom when new translations arrive
   useEffect(() => {

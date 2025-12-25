@@ -7,7 +7,6 @@ import {
   createRoom,
   deleteRoom,
   joinRoom,
-  leaveRoom,
   setTranslator,
   subscribeRooms,
   claimLeadReciter,
@@ -22,7 +21,6 @@ type RoomsContextType = {
   createRoom: (name: string) => Promise<void>;
   deleteRoom: (roomId: string) => Promise<void>;
   joinRoom: (roomId: string, asTranslator?: boolean) => Promise<void>;
-  leaveRoom: (roomId: string) => Promise<void>;
   claimTranslator: (roomId: string) => Promise<void>;
   claimLeadReciter: (roomId: string) => Promise<void>;
   validateAndCleanTranslator: (roomId: string) => Promise<boolean>;
@@ -46,19 +44,35 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Only subscribe to rooms when user is signed in
+    if (!user) {
+      setRooms([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     const unsubscribe = subscribeRooms(
       (incoming) => {
         setRooms(incoming);
         setLoading(false);
+        setError(null);
       },
       (err) => {
+        // Ignore permission errors when user signs out (expected behavior)
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+          setRooms([]);
+          setLoading(false);
+          setError(null);
+          return;
+        }
         setError(err?.message || "Failed to load rooms");
         setLoading(false);
       }
     );
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const requireUser = () => {
     if (!user) {
@@ -84,13 +98,10 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
       },
       async joinRoom(roomId: string, asTranslator = false) {
         const u = requireUser();
+        console.log(`[JOIN MOSQUE CONTEXT] Called - roomId: ${roomId}, userId: ${u.uid}, asTranslator: ${asTranslator}`);
         setError(null);
         await joinRoom(roomId, u.uid, asTranslator);
-      },
-      async leaveRoom(roomId: string) {
-        const u = requireUser();
-        setError(null);
-        await leaveRoom(roomId, u.uid);
+        console.log(`[JOIN MOSQUE CONTEXT] Completed - roomId: ${roomId}, userId: ${u.uid}`);
       },
       async claimTranslator(roomId: string) {
         const u = requireUser();

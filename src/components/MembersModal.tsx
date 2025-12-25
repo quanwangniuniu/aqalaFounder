@@ -18,7 +18,11 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!open || !roomId) return;
+    if (!open || !roomId || !user) {
+      setMembers([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const unsubscribe = subscribeRoomMembers(
       roomId,
@@ -27,12 +31,18 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
         setLoading(false);
       },
       (err) => {
+        // Ignore permission errors when user signs out (expected behavior)
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+          setMembers([]);
+          setLoading(false);
+          return;
+        }
         console.error("Error loading members:", err);
         setLoading(false);
       }
     );
     return () => unsubscribe();
-  }, [open, roomId]);
+  }, [open, roomId, user]);
 
 
   if (!open) return null;
