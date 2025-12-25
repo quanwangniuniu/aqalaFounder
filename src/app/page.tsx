@@ -19,13 +19,6 @@ export default function Page() {
       }}
     >
       <div className="w-full max-w-md flex flex-col items-center relative z-10">
-        {/* Logo */}
-        <img
-          src="/aqala-logo.png"
-          alt="Aqala"
-          className="h-20 w-20 rounded-2xl mb-8 object-contain"
-        />
-        
         <div className="w-full flex flex-col items-center gap-4">
           <Link
             href="/rooms"
