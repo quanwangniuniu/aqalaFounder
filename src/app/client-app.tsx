@@ -755,11 +755,11 @@ export default function ClientApp({
               <div className="mb-2 text-sm font-medium text-zinc-500">
                 <span className="mr-2">Reference</span>
               </div>
-              <div className="text-sm text-zinc-500 leading-7 whitespace-nowrap overflow-hidden text-ellipsis pr-2" dir="auto" ref={refScrollRef}>
-                {oneLineReference || <span className="block text-lg text-zinc-400">Waiting for audio…</span>}
+              <div className="text-sm text-zinc-500 leading-7 whitespace-pre-wrap overflow-y-auto max-h-[200px] pr-2" dir="auto" ref={refScrollRef}>
+                {concatReadable(srcStable, srcPartial) || <span className="block text-lg text-zinc-400">Waiting for audio…</span>}
               </div>
             </div>
-            <div className="mb-2 pt-4 text-sm font-medium text-zinc-500">
+            <div className="sticky top-[68px] z-40 bg-white pt-4 pb-2 mb-2 text-sm font-medium text-zinc-500">
               <span className="mr-2">
                 {detectedLang ? `${labelFor(detectedLang)} translated to` : "Translate to"}
               </span>
@@ -788,7 +788,7 @@ export default function ClientApp({
                 </svg>
               </div>
             </div>
-            <div className="min-h-[180px] text-lg leading-8 text-black space-y-4">
+            <div className="min-h-[180px] max-h-[calc(100vh-400px)] overflow-y-auto text-lg leading-8 text-black space-y-4">
               {(() => {
                 const toRender = renderList;
                 if (toRender.length > 0) {

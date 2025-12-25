@@ -181,7 +181,7 @@ export default function RoomDetailPage() {
                 <p className="font-medium">Lead reciter view</p>
                 <p className="text-sm text-zinc-600">You are the lead reciter. Click record to start translating.</p>
               </div>
-              <div className="min-h-[500px] max-h-[calc(100vh-250px)] overflow-y-auto">
+              <div className="min-h-[500px] max-h-[calc(100vh-250px)]">
                 <ClientApp 
                   mosqueId={roomId} 
                   translatorId={user?.uid} 
