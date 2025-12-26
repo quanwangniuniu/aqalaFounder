@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import CharityModal from "./charity-modal";
-import { saveTranslation } from "@/lib/firebase/translationHistory";
+import { saveTranslation, subscribeTranslations, TranslationEntry } from "@/lib/firebase/translationHistory";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -95,6 +95,10 @@ export default function ClientApp({
   const silenceTimerRef = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string>("");
+  // Track loaded translation IDs to avoid duplicates
+  const loadedTranslationIdsRef = useRef<Set<string>>(new Set());
+  // Track translations by targetLang to handle language switching
+  const translationMapRef = useRef<Map<string, string[]>>(new Map());
 
   function resetSilenceTimer() {
     if (silenceTimerRef.current) {
@@ -169,6 +173,82 @@ export default function ClientApp({
       }, 0);
     }
   }, [autoStart, isListening]);
+
+  // Track current targetLang to detect changes
+  const prevTargetLangRef = useRef<string>(targetLang);
+
+  // Subscribe to Firestore translations to load historical data
+  useEffect(() => {
+    if (!mosqueId || !user) {
+      return;
+    }
+
+    // If targetLang changed, reset and reload translations for new language
+    if (prevTargetLangRef.current !== targetLang) {
+      prevTargetLangRef.current = targetLang;
+      // Clear paragraphs for new language - we'll reload them
+      const langKey = targetLang;
+      if (!translationMapRef.current.has(langKey)) {
+        translationMapRef.current.set(langKey, []);
+        setRefinedParagraphs([]);
+      } else {
+        // Restore paragraphs for this language
+        setRefinedParagraphs(translationMapRef.current.get(langKey) || []);
+      }
+    }
+
+    const unsubscribe = subscribeTranslations(
+      mosqueId,
+      (incoming) => {
+        // Filter to only show translations matching current target language
+        const matchingLang = incoming.filter((entry) => entry.targetLang === targetLang);
+        
+        const langKey = targetLang;
+        const existingForLang = translationMapRef.current.get(langKey) || [];
+        const existingTexts = new Set(existingForLang);
+
+        // Find new translations we haven't loaded yet for this language
+        const newTranslations = matchingLang.filter((entry) => {
+          const entryKey = `${entry.id}_${targetLang}`;
+          // Skip if already loaded for this language
+          if (loadedTranslationIdsRef.current.has(entryKey)) {
+            return false;
+          }
+          // Skip if content already exists (avoid duplicates)
+          return !existingTexts.has(entry.translatedText);
+        });
+
+        if (newTranslations.length > 0) {
+          const newParagraphs = newTranslations.map((entry) => entry.translatedText);
+          
+          // Update stored translations for this language
+          const updatedForLang = [...existingForLang, ...newParagraphs];
+          translationMapRef.current.set(langKey, updatedForLang);
+          
+          // Update refinedParagraphs, avoiding duplicates with current state
+          setRefinedParagraphs((prev) => {
+            const prevSet = new Set(prev);
+            const uniqueNew = newParagraphs.filter((text) => !prevSet.has(text));
+            return uniqueNew.length > 0 ? [...prev, ...uniqueNew] : prev;
+          });
+
+          // Mark these translations as loaded for this language
+          newTranslations.forEach((entry) => {
+            const entryKey = `${entry.id}_${targetLang}`;
+            loadedTranslationIdsRef.current.add(entryKey);
+          });
+        }
+      },
+      (err) => {
+        // Silently ignore permission errors
+        if (err?.code !== "permission-denied" && !err?.message?.includes("permission")) {
+          console.error("Error loading translation history:", err);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [mosqueId, user, targetLang]);
 
   // Single-line reference preview: always show the latest ~120 chars
   const oneLineReference = useMemo(() => {
@@ -312,10 +392,21 @@ export default function ClientApp({
     if (refined && refined.trim().length > 0) {
       const pieces = splitRefinedIntoParas(refined, 420, 2);
       if (pieces.length <= 1) {
-        setRefinedParagraphs((prev) => [...prev, pieces[0]]);
+        const newPara = pieces[0];
+        setRefinedParagraphs((prev) => [...prev, newPara]);
+        // Also store in translationMapRef for current targetLang
+        const langKey = targetLang;
+        const existing = translationMapRef.current.get(langKey) || [];
+        translationMapRef.current.set(langKey, [...existing, newPara]);
       } else {
         // Append first piece immediately; drip the rest one-by-one to avoid "all at once"
-        setRefinedParagraphs((prev) => [...prev, pieces[0]]);
+        const firstPiece = pieces[0];
+        setRefinedParagraphs((prev) => [...prev, firstPiece]);
+        // Store first piece in translationMapRef
+        const langKey = targetLang;
+        const existing = translationMapRef.current.get(langKey) || [];
+        translationMapRef.current.set(langKey, [...existing, firstPiece]);
+        // Note: Remaining pieces will be added via dripNextPiece, which should also update translationMapRef
         enqueueDisplayPieces(pieces.slice(1));
       }
       // Save translation to history if mosqueId and translatorId are provided
@@ -353,6 +444,10 @@ export default function ClientApp({
     const next = displayQueueRef.current.shift();
     if (next && next.trim().length > 0) {
       setRefinedParagraphs((prev) => [...prev, next]);
+      // Also store in translationMapRef for current targetLang
+      const langKey = targetLang;
+      const existing = translationMapRef.current.get(langKey) || [];
+      translationMapRef.current.set(langKey, [...existing, next]);
     }
     // Small delay so UI feels sequential without being slow
     setTimeout(dripNextPiece, 1500);
@@ -502,7 +597,8 @@ export default function ClientApp({
     enFinalSeen.current = new Set();
     setDetectedLang(null);
     setEnParagraphs([]);
-    setRefinedParagraphs([]);
+    // Don't clear refinedParagraphs - preserve historical translations
+    // The Firestore subscription will maintain history
     setEnCurrent("");
     enCurrentRef.current = "";
     setEnPartial("");
@@ -761,7 +857,7 @@ export default function ClientApp({
 
   return (
     <div className="flex flex-1 min-h-0 flex-col font-sans h-full w-full">
-      <main className="flex-1 w-full mx-auto flex flex-col gap-0 px-4 pb-44 pt-2">
+      <main className="flex-1 w-full mx-auto flex flex-col gap-0 px-4 pb-32 pt-2">
 
         {error && (
         <div className="w-full max-w-5xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
@@ -808,7 +904,7 @@ export default function ClientApp({
                 </svg>
               </div>
             </div>
-            <div ref={translationScrollRef} className="min-h-[180px] max-h-[calc(100vh-400px)] overflow-y-auto text-lg leading-8 text-black space-y-4">
+            <div ref={translationScrollRef} className="min-h-[180px] max-h-[calc(100vh-500px)] overflow-y-auto text-lg leading-8 text-black space-y-4 pb-24">
               {(() => {
                 const toRender = renderList;
                 if (toRender.length > 0) {
@@ -845,7 +941,7 @@ export default function ClientApp({
         baseAmount={0}
         presetAmounts={[7, 20, 50]}
       />
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-zinc-200 bg-transparent">
+      <footer className="sticky bottom-0 z-50 border-t border-zinc-200 bg-transparent">
         <div className="mx-auto max-w-[554px] px-4 py-5 bg-white">
           <div className="flex items-center justify-center gap-4">
             {hasStopped && !isListening && (

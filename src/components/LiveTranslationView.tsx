@@ -16,7 +16,7 @@ export default function LiveTranslationView({ mosqueId, activeTranslatorId }: Li
   const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
-    if (!mosqueId || !user || !activeTranslatorId) {
+    if (!mosqueId || !user) {
       setTranslations([]);
       return;
     }
@@ -24,9 +24,8 @@ export default function LiveTranslationView({ mosqueId, activeTranslatorId }: Li
     const unsubscribe = subscribeTranslations(
       mosqueId,
       (incoming) => {
-        // Filter to only show translations from the current active translator
-        const activeTranslations = incoming.filter(t => t.translatorId === activeTranslatorId);
-        setTranslations(activeTranslations);
+        // Show all translations from the mosque (all translators, all sessions)
+        setTranslations(incoming);
       },
       (err) => {
         // Ignore permission errors when user signs out (expected behavior)
@@ -38,7 +37,7 @@ export default function LiveTranslationView({ mosqueId, activeTranslatorId }: Li
       }
     );
     return () => unsubscribe();
-  }, [mosqueId, user, activeTranslatorId]);
+  }, [mosqueId, user]);
 
   // Auto-scroll to bottom when new translations arrive
   useEffect(() => {
