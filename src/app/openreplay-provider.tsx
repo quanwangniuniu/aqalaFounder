@@ -64,21 +64,16 @@ export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
         // Identify user with their ID and metadata
         tracker.setUserID(user.uid);
 
-        // Set additional user metadata
-        const metadata: Record<string, string> = {};
+        // Set additional user metadata (setMetadata requires key and value)
         if (user.email) {
-          metadata.email = user.email;
+          tracker.setMetadata("email", user.email);
         }
         if (user.displayName) {
-          metadata.displayName = user.displayName;
-        }
-        if (Object.keys(metadata).length > 0) {
-          tracker.setMetadata(metadata);
+          tracker.setMetadata("displayName", user.displayName);
         }
       } else {
         // Clear user identification when logged out
         tracker.setUserID("");
-        tracker.setMetadata({});
       }
     } catch (error) {
       console.error("OpenReplay user identification error:", error);
