@@ -87,6 +87,24 @@ export async function deleteRoom(roomId: string, requesterId: string): Promise<v
   await deleteDoc(doc(firestore, COLLECTION, roomId));
 }
 
+export async function getRoom(roomId: string): Promise<Room | null> {
+  const firestore = ensureDb();
+  const roomDoc = await getDoc(doc(firestore, COLLECTION, roomId));
+  if (!roomDoc.exists()) {
+    return null;
+  }
+  const data = roomDoc.data() as any;
+  return {
+    id: roomDoc.id,
+    name: data.name,
+    ownerId: data.ownerId,
+    activeTranslatorId: data.activeTranslatorId || null,
+    createdAt: data.createdAt?.toDate?.() ?? null,
+    memberCount: data.memberCount ?? 0,
+    isActive: data.isActive ?? true,
+  };
+}
+
 export function subscribeRooms(onRooms: (rooms: Room[]) => void, onError?: (err: any) => void) {
   const firestore = ensureDb();
   const roomsQuery = query(collection(firestore, COLLECTION), orderBy("createdAt", "desc"));

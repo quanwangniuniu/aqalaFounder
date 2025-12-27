@@ -44,14 +44,7 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only subscribe to rooms when user is signed in
-    if (!user) {
-      setRooms([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
+    // Subscribe to rooms for both authenticated and unauthenticated users
     setLoading(true);
     const unsubscribe = subscribeRooms(
       (incoming) => {
@@ -60,7 +53,7 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
         setError(null);
       },
       (err) => {
-        // Ignore permission errors when user signs out (expected behavior)
+        // Ignore permission errors (may occur if Firebase rules don't allow unauthenticated reads)
         if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
           setRooms([]);
           setLoading(false);
@@ -72,7 +65,7 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
       }
     );
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   const requireUser = () => {
     if (!user) {

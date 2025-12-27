@@ -92,24 +92,14 @@ export default function RoomsPage() {
     setSelectedRoomId(roomId);
   };
 
-  const renderAuthGate = () => (
-    <div className="text-center py-10 space-y-4">
-      <p className="text-lg font-medium">Please sign in to manage or join mosques.</p>
-      <Link
-        href="/auth/login"
-        className="inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] text-white px-6 py-2 font-medium"
-      >
-        Sign In
-      </Link>
-    </div>
-  );
-
   return (
     <div className="px-4 py-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Mosques</h1>
-          <p className="text-sm text-zinc-600">Create a mosque or join an existing one.</p>
+          <p className="text-sm text-zinc-600">
+            {user ? "Create a mosque or join an existing one." : "Browse available mosques. Sign in to create or join mosques."}
+          </p>
         </div>
         <Link href="/" className="text-[#10B981] font-medium hover:underline">
           Back home
@@ -123,7 +113,7 @@ export default function RoomsPage() {
         <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">{error}</div>
       )}
 
-      {user ? (
+      {user && (
         <form onSubmit={handleCreate} className="space-y-3">
           <label className="block text-sm font-medium text-gray-700">Mosque name</label>
           <div className="flex gap-3">
@@ -143,8 +133,18 @@ export default function RoomsPage() {
             </button>
           </div>
         </form>
-      ) : (
-        renderAuthGate()
+      )}
+
+      {!user && (
+        <div className="text-center py-6 space-y-3 bg-zinc-50 rounded-lg border border-zinc-200">
+          <p className="text-sm text-zinc-600">Sign in to create mosques and become a lead reciter.</p>
+          <Link
+            href="/auth/login"
+            className="inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] text-white px-6 py-2 font-medium text-sm"
+          >
+            Sign In
+          </Link>
+        </div>
       )}
 
       <div className="space-y-4">
@@ -170,15 +170,23 @@ export default function RoomsPage() {
                   >
                     <p className="font-medium truncate">{room.name}</p>
                     <p className="text-xs text-zinc-500">
-                      Members: {room.memberCount} • Lead reciter: {room.activeTranslatorId ? (() => {
-                        const translatorMember = roomMembers[room.id]?.find((m) => m.userId === room.activeTranslatorId);
-                        return getUserDisplayName(null, room.activeTranslatorId, translatorMember?.email);
-                      })() : "None"}
+                      {user ? (
+                        <>
+                          Members: {room.memberCount} • Lead reciter: {room.activeTranslatorId ? (() => {
+                            const translatorMember = roomMembers[room.id]?.find((m) => m.userId === room.activeTranslatorId);
+                            return getUserDisplayName(null, room.activeTranslatorId, translatorMember?.email);
+                          })() : "None"}
+                        </>
+                      ) : (
+                        <>
+                          {room.activeTranslatorId ? "Live translation available" : "No active translation"}
+                        </>
+                      )}
                     </p>
                   </Link>
                   <div className="flex items-center gap-3">
-                    {/* Overlapping avatars */}
-                    {members.length > 0 && (
+                    {/* Overlapping avatars - only show for authenticated users */}
+                    {user && members.length > 0 && (
                       <button
                         onClick={(e) => handleShowMembers(e, room.id)}
                         className="flex items-center -space-x-2 hover:space-x-1 transition-all cursor-pointer"
@@ -203,7 +211,7 @@ export default function RoomsPage() {
                         )}
                       </button>
                     )}
-                    {isOwner && (
+                    {user && isOwner && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -224,8 +232,8 @@ export default function RoomsPage() {
         )}
       </div>
 
-      {/* Members Modal */}
-      {selectedRoomId && (
+      {/* Members Modal - only show for authenticated users */}
+      {user && selectedRoomId && (
         <MembersModal
           open={!!selectedRoomId}
           onClose={() => setSelectedRoomId(null)}

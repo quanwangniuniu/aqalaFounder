@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TranslationEntry, subscribeTranslations } from "@/lib/firebase/translationHistory";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface LiveTranslationViewProps {
   mosqueId: string;
@@ -10,13 +9,12 @@ interface LiveTranslationViewProps {
 }
 
 export default function LiveTranslationView({ mosqueId, activeTranslatorId }: LiveTranslationViewProps) {
-  const { user } = useAuth();
   const [translations, setTranslations] = useState<TranslationEntry[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
   useEffect(() => {
-    if (!mosqueId || !user) {
+    if (!mosqueId) {
       setTranslations([]);
       return;
     }
@@ -28,7 +26,7 @@ export default function LiveTranslationView({ mosqueId, activeTranslatorId }: Li
         setTranslations(incoming);
       },
       (err) => {
-        // Ignore permission errors when user signs out (expected behavior)
+        // Ignore permission errors (may occur if Firebase rules don't allow unauthenticated reads)
         if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
           setTranslations([]);
           return;
@@ -37,7 +35,7 @@ export default function LiveTranslationView({ mosqueId, activeTranslatorId }: Li
       }
     );
     return () => unsubscribe();
-  }, [mosqueId, user]);
+  }, [mosqueId]);
 
   // Auto-scroll to bottom when new translations arrive
   useEffect(() => {
