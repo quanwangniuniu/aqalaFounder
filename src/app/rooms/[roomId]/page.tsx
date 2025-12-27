@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRooms } from "@/contexts/RoomsContext";
-import { subscribeRoomMembers, RoomMember } from "@/lib/firebase/rooms";
+import { subscribeRoomMembers, RoomMember, getRoom, Room } from "@/lib/firebase/rooms";
 import ClientApp from "@/app/client-app";
 import LiveTranslationView from "@/components/LiveTranslationView";
 import { getUserDisplayName } from "@/utils/userDisplay";
@@ -16,29 +16,64 @@ export default function RoomDetailPage() {
   const router = useRouter();
   const { rooms, joinRoom, claimLeadReciter, validateAndCleanTranslator, releaseTranslator } = useRooms();
 
-  const room = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
+  // For authenticated users, get room from rooms context; for unauthenticated, fetch directly
+  const roomFromContext = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
+  const [directRoom, setDirectRoom] = useState<Room | null>(null);
+  const [roomLoading, setRoomLoading] = useState(false);
+  
+  const room = roomFromContext || directRoom;
+  
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [role, setRole] = useState<"translator" | "listener" | null>(null);
   const [joined, setJoined] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
 
-  // Check if activeTranslatorId is valid (exists in members)
-  const validTranslatorId = useMemo(() => {
-    if (!room?.activeTranslatorId) return null;
-    const translatorMember = members.find((m) => m.userId === room.activeTranslatorId);
-    return translatorMember ? room.activeTranslatorId : null;
-  }, [room?.activeTranslatorId, members]);
-
-  const isTranslator = validTranslatorId === user?.uid || role === "translator";
-  const canTranslate = !!user && isTranslator;
-
+  // Reset state when roomId changes
   useEffect(() => {
     setMessage(null);
     setJoined(false);
     setRole(null);
     setMembers([]);
+    setDirectRoom(null);
   }, [roomId]);
+
+  // Fetch room directly if user is not authenticated and room is not in context
+  useEffect(() => {
+    if (!user && !roomFromContext && roomId && !roomLoading) {
+      setRoomLoading(true);
+      getRoom(roomId)
+        .then((fetchedRoom) => {
+          setDirectRoom(fetchedRoom);
+          setRoomLoading(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching room:", err);
+          setRoomLoading(false);
+        });
+    } else if (user || roomFromContext) {
+      // Clear direct room if user becomes authenticated or room appears in context
+      setDirectRoom(null);
+      setRoomLoading(false);
+    }
+  }, [user, roomFromContext, roomId]);
+
+  // Check if activeTranslatorId is valid
+  // For authenticated users, validate against members list
+  // For unauthenticated users, just use the room's activeTranslatorId directly
+  const validTranslatorId = useMemo(() => {
+    if (!room?.activeTranslatorId) return null;
+    if (!user) {
+      // Unauthenticated: just use the activeTranslatorId from room
+      return room.activeTranslatorId;
+    }
+    // Authenticated: validate it exists in members
+    const translatorMember = members.find((m) => m.userId === room.activeTranslatorId);
+    return translatorMember ? room.activeTranslatorId : null;
+  }, [room?.activeTranslatorId, members, user]);
+
+  const isTranslator = user && (validTranslatorId === user.uid || role === "translator");
+  const canTranslate = !!user && !!isTranslator;
 
   // Subscribe to members and validate translator (only when user is signed in)
   useEffect(() => {
@@ -67,14 +102,14 @@ export default function RoomDetailPage() {
     return () => unsubscribe();
   }, [roomId, user, validateAndCleanTranslator]);
 
-  // Validate translator when room data changes
+  // Validate translator when room data changes (only for authenticated users)
   useEffect(() => {
-    if (roomId && room?.activeTranslatorId) {
+    if (user && roomId && room?.activeTranslatorId) {
       validateAndCleanTranslator(roomId).catch((err) => {
         console.error("Error validating translator:", err);
       });
     }
-  }, [roomId, room?.activeTranslatorId, validateAndCleanTranslator]);
+  }, [user, roomId, room?.activeTranslatorId, validateAndCleanTranslator]);
 
   // Auto-join on load: always join as listener (no automatic translator assignment)
   const joinInProgressRef = useRef(false);
@@ -132,6 +167,20 @@ export default function RoomDetailPage() {
     };
   }, [user, room, roomId, joinRoom, joined]);
 
+  if (roomLoading) {
+    return (
+      <div className="px-4 py-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Room</h1>
+          <Link href="/rooms" className="text-[#10B981] font-medium hover:underline">
+            Back to mosques
+          </Link>
+        </div>
+        <p className="text-sm text-zinc-600">Loading room...</p>
+      </div>
+    );
+  }
+
   if (!room) {
     return (
       <div className="px-4 py-8 space-y-4">
@@ -155,10 +204,18 @@ export default function RoomDetailPage() {
             <div>
               <h1 className="text-2xl font-bold">{room.name}</h1>
               <p className="text-sm text-zinc-600">
-                Members: {room.memberCount} • Lead reciter: {validTranslatorId ? (() => {
-                  const translatorMember = members.find((m) => m.userId === validTranslatorId);
-                  return getUserDisplayName(null, validTranslatorId, translatorMember?.email);
-                })() : "None"}
+                {user ? (
+                  <>
+                    Members: {room.memberCount} • Lead reciter: {validTranslatorId ? (() => {
+                      const translatorMember = members.find((m) => m.userId === validTranslatorId);
+                      return getUserDisplayName(null, validTranslatorId, translatorMember?.email);
+                    })() : "None"}
+                  </>
+                ) : (
+                  <>
+                    {validTranslatorId ? "Live translation in progress" : "No active translation"}
+                  </>
+                )}
               </p>
             </div>
             <Link href="/rooms" className="text-[#10B981] font-medium hover:underline">
@@ -166,7 +223,7 @@ export default function RoomDetailPage() {
             </Link>
           </div>
 
-          {message && (
+          {message && user && (
             <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
               {message}
             </div>
@@ -177,7 +234,24 @@ export default function RoomDetailPage() {
         {/* Main content area - stacked rows */}
         <div className="space-y-6">
           {/* Translation card - first row */}
-          {canTranslate ? (
+          {!user ? (
+            /* Unauthenticated view: translations only, no buttons */
+            <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+              {validTranslatorId ? (
+                <LiveTranslationView mosqueId={roomId} activeTranslatorId={validTranslatorId} />
+              ) : (
+                <>
+                  <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50">
+                    <p className="font-medium">Listener view</p>
+                    <p className="text-sm text-zinc-600">No lead reciter yet. Sign in to become the lead reciter.</p>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center p-8">
+                    <p className="text-zinc-500 text-center">Waiting for lead reciter to start...</p>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : canTranslate ? (
             <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50">
                 <p className="font-medium">Lead reciter view</p>
@@ -203,46 +277,48 @@ export default function RoomDetailPage() {
               {validTranslatorId ? (
                 <>
                   <LiveTranslationView mosqueId={roomId} activeTranslatorId={validTranslatorId} />
-                  <div className="border-t border-zinc-200 p-4 bg-zinc-50">
-                    <p className="text-sm text-zinc-600 mb-2">
-                      Listening to {(() => {
-                        const translatorMember = members.find((m) => m.userId === validTranslatorId);
-                        return getUserDisplayName(null, validTranslatorId, translatorMember?.email);
-                      })()}. Click record to become the lead reciter.
-                    </p>
-                    {/* Only show record button, not full ClientApp UI for listeners */}
-                    <div className="flex items-center justify-center">
-                      <button
-                        onClick={async () => {
-                          try {
-                            await claimLeadReciter(roomId);
-                            setRole("translator");
-                          } catch (err: any) {
-                            setMessage(err?.message || "Failed to become lead reciter. Please try again.");
-                          }
-                        }}
-                        aria-label="Start recording to become lead reciter"
-                        className="relative h-16 w-16 rounded-full flex items-center justify-center transition-colors outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight bg-[#0A84FF] hover:bg-[#0066CC]"
-                      >
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
+                  {user && (
+                    <div className="border-t border-zinc-200 p-4 bg-zinc-50">
+                      <p className="text-sm text-zinc-600 mb-2">
+                        Listening to {(() => {
+                          const translatorMember = members.find((m) => m.userId === validTranslatorId);
+                          return getUserDisplayName(null, validTranslatorId, translatorMember?.email);
+                        })()}. Click record to become the lead reciter.
+                      </p>
+                      {/* Only show record button, not full ClientApp UI for listeners */}
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await claimLeadReciter(roomId);
+                              setRole("translator");
+                            } catch (err: any) {
+                              setMessage(err?.message || "Failed to become lead reciter. Please try again.");
+                            }
+                          }}
+                          aria-label="Start recording to become lead reciter"
+                          className="relative h-16 w-16 rounded-full flex items-center justify-center transition-colors outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight bg-[#0A84FF] hover:bg-[#0066CC]"
                         >
-                          <path
-                            d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
-                            fill="white"
-                          />
-                          <path
-                            d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
-                            fill="white"
-                          />
-                        </svg>
-                      </button>
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
+                              fill="white"
+                            />
+                            <path
+                              d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
+                              fill="white"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               ) : (
                 <>
