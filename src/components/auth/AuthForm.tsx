@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface AuthFormProps {
@@ -84,9 +85,19 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            {mode === "login" && (
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-[#10B981] hover:underline font-medium"
+              >
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <input
             id="password"
             type="password"
