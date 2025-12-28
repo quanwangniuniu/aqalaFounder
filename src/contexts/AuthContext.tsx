@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
-import { signUpWithEmail, signInWithEmail, signInWithGoogle, signInWithApple, signOut } from "@/lib/firebase/auth";
+import { signUpWithEmail, signInWithEmail, signInWithGoogle, signInWithApple, signOut, sendPasswordResetEmailToUser, resetPasswordWithCode } from "@/lib/firebase/auth";
 import { AuthContextType, User, mapFirebaseUser } from "@/types/auth";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,6 +94,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const handleSendPasswordReset = async (email: string): Promise<void> => {
+    try {
+      setError(null);
+      await sendPasswordResetEmailToUser(email);
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to send password reset email";
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
+  const handleConfirmPasswordReset = async (oobCode: string, newPassword: string): Promise<void> => {
+    try {
+      setError(null);
+      await resetPasswordWithCode(oobCode, newPassword);
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to reset password";
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -103,6 +125,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signInWithGoogle: handleSignInWithGoogle,
     signInWithApple: handleSignInWithApple,
     signOut: handleSignOut,
+    sendPasswordReset: handleSendPasswordReset,
+    confirmPasswordReset: handleConfirmPasswordReset,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -5,6 +5,8 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   signOut as firebaseSignOut,
+  sendPasswordResetEmail,
+  confirmPasswordReset,
   User as FirebaseUser,
   AuthError,
 } from "firebase/auth";
@@ -70,5 +72,21 @@ export const signOut = async (): Promise<void> => {
 
 export const getCurrentUser = (): FirebaseUser | null => {
   return auth.currentUser;
+};
+
+export const sendPasswordResetEmailToUser = async (email: string): Promise<void> => {
+  const actionCodeSettings = {
+    url: typeof window !== "undefined" 
+      ? `${window.location.origin}/auth/reset-password`
+      : process.env.NEXT_PUBLIC_APP_URL 
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`
+        : "/auth/reset-password",
+    handleCodeInApp: true,
+  };
+  await sendPasswordResetEmail(auth, email, actionCodeSettings);
+};
+
+export const resetPasswordWithCode = async (oobCode: string, newPassword: string): Promise<void> => {
+  await confirmPasswordReset(auth, oobCode, newPassword);
 };
 
