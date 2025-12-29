@@ -1,6 +1,7 @@
 # Firebase Security Rules Update for Unauthenticated Access
 
 ## Overview
+
 To allow unauthenticated users to view rooms and translations, the Firebase Firestore security rules need to be updated to permit read access to the `mosques` collection and its `translations` subcollection.
 
 ## Required Rule Changes
@@ -11,17 +12,17 @@ Update your Firebase Firestore security rules to include the following:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Mosques (Rooms) collection
     match /mosques/{roomId} {
       // Allow read access to room documents for all users (authenticated and unauthenticated)
       allow read: if true;
-      
+
       // Write operations still require authentication
       allow create: if request.auth != null;
       allow update: if request.auth != null;
       allow delete: if request.auth != null;
-      
+
       // Translations subcollection - allow read for all users
       match /translations/{translationId} {
         allow read: if true;
@@ -29,7 +30,17 @@ service cloud.firestore {
         allow update: if request.auth != null;
         allow delete: if request.auth != null;
       }
-      
+
+      // Live Stream subcollection - real-time translation broadcast (<1 second latency)
+      match /liveStream/{streamId} {
+        // Allow read for all users (listeners need to see live translations)
+        allow read: if true;
+        // Allow write for authenticated translators
+        allow create: if request.auth != null;
+        allow update: if request.auth != null;
+        allow delete: if request.auth != null;
+      }
+
       // Members subcollection - keep private (only authenticated users can read)
       match /members/{memberId} {
         allow read: if request.auth != null;
@@ -59,9 +70,10 @@ service cloud.firestore {
 ## Testing
 
 After updating the rules, verify:
+
 1. Unauthenticated users can browse the rooms list
 2. Unauthenticated users can view individual room pages
-3. Unauthenticated users can see live translations
-4. Unauthenticated users cannot create/update/delete rooms or translations
-5. Member information is not accessible to unauthenticated users
-
+3. Unauthenticated users can see live translations (via liveStream subcollection)
+4. Live stream updates appear within 1 second for listeners
+5. Unauthenticated users cannot create/update/delete rooms or translations
+6. Member information is not accessible to unauthenticated users

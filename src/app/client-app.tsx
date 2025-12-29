@@ -2,13 +2,20 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import CharityModal from "./charity-modal";
-import { saveTranslation, subscribeTranslations, TranslationEntry } from "@/lib/firebase/translationHistory";
+import {
+  saveTranslation,
+  subscribeTranslations,
+  TranslationEntry,
+  updateLiveStream,
+  clearLiveStream,
+} from "@/lib/firebase/translationHistory";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 // NOTE: For MVP simplicity per user request, the API key is inlined.
 // In production, move this to a server-side temporary key generator.
-const SONIOX_API_KEY = "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120";
+const SONIOX_API_KEY =
+  "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120";
 
 function concatReadable(...parts: string[]) {
   return parts
@@ -72,6 +79,8 @@ export default function ClientApp({
   const [enPartial, setEnPartial] = useState("");
   const [enCurrent, setEnCurrent] = useState("");
   const enCurrentRef = useRef("");
+  // Track last displayed live text to avoid flashing "Listening..." between words
+  const lastLiveTextRef = useRef<string>("");
   const endRef = useRef<HTMLDivElement | null>(null);
   const translationScrollRef = useRef<HTMLDivElement | null>(null);
   const [userAtBottom, setUserAtBottom] = useState(true);
@@ -82,7 +91,9 @@ export default function ClientApp({
   const refScrollRef = useRef<HTMLDivElement | null>(null);
   const refAtBottomRef = useRef<boolean>(true);
   // Sequential refinement queue: refine one batch (EN+AR) at a time for steady flow
-  const pendingQueueRef = useRef<Array<{ en: string; ar: string; fast?: boolean }>>([]);
+  const pendingQueueRef = useRef<
+    Array<{ en: string; ar: string; fast?: boolean }>
+  >([]);
   const refiningRef = useRef<boolean>(false);
   // UI: bottom sheet modal visibility
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -99,6 +110,10 @@ export default function ClientApp({
   const loadedTranslationIdsRef = useRef<Set<string>>(new Set());
   // Track translations by targetLang to handle language switching
   const translationMapRef = useRef<Map<string, string[]>>(new Map());
+  // Live stream broadcast interval for <1 second translation latency
+  const liveStreamIntervalRef = useRef<number | null>(null);
+  // Track accumulated finalized translations for live broadcast
+  const liveAccumulatedRef = useRef<string>("");
 
   function resetSilenceTimer() {
     if (silenceTimerRef.current) {
@@ -111,6 +126,57 @@ export default function ClientApp({
         flushPendingNow();
       }
     }, 3000);
+  }
+
+  // Start live stream broadcasting for real-time translation (<1 second latency)
+  function startLiveStreamBroadcast() {
+    if (!mosqueId || !translatorId) return;
+
+    // Clear any existing interval
+    if (liveStreamIntervalRef.current) {
+      window.clearInterval(liveStreamIntervalRef.current);
+    }
+
+    // Reset accumulated text
+    liveAccumulatedRef.current = "";
+
+    // Broadcast every 300ms for near real-time updates
+    liveStreamIntervalRef.current = window.setInterval(() => {
+      // Combine all finalized refined paragraphs + current accumulator + partial
+      const refinedText = refinedParagraphs.join("\n\n");
+      const currentRaw = concatReadable(enCurrentRef.current, enPartial);
+      const fullText = concatReadable(refinedText, currentRaw);
+
+      updateLiveStream(mosqueId!, {
+        currentText: fullText,
+        partialText: enPartial,
+        sourceText: srcStable,
+        sourcePartial: srcPartial,
+        sourceLang: detectedLang || "unknown",
+        targetLang: targetLang,
+        translatorId: translatorId!,
+        sessionId: sessionIdRef.current,
+        isActive: true,
+      }).catch((err) => {
+        // Silently fail - don't interrupt translation flow
+        console.error("Failed to update live stream:", err);
+      });
+    }, 300);
+  }
+
+  // Stop live stream broadcasting
+  function stopLiveStreamBroadcast() {
+    if (liveStreamIntervalRef.current) {
+      window.clearInterval(liveStreamIntervalRef.current);
+      liveStreamIntervalRef.current = null;
+    }
+
+    // Clear the live stream
+    if (mosqueId) {
+      clearLiveStream(mosqueId).catch((err) => {
+        console.error("Failed to clear live stream:", err);
+      });
+    }
   }
 
   function flushPendingNow() {
@@ -151,8 +217,15 @@ export default function ClientApp({
       try {
         clientRef.current?.cancel();
       } catch {}
+      // Clean up live stream on unmount
+      if (liveStreamIntervalRef.current) {
+        window.clearInterval(liveStreamIntervalRef.current);
+      }
+      if (mosqueId) {
+        clearLiveStream(mosqueId).catch(() => {});
+      }
     };
-  }, []);
+  }, [mosqueId]);
 
   // Optionally open the donation modal on mount (from landing page secondary button)
   useEffect(() => {
@@ -201,8 +274,10 @@ export default function ClientApp({
       mosqueId,
       (incoming) => {
         // Filter to only show translations matching current target language
-        const matchingLang = incoming.filter((entry) => entry.targetLang === targetLang);
-        
+        const matchingLang = incoming.filter(
+          (entry) => entry.targetLang === targetLang
+        );
+
         const langKey = targetLang;
         const existingForLang = translationMapRef.current.get(langKey) || [];
         const existingTexts = new Set(existingForLang);
@@ -219,16 +294,20 @@ export default function ClientApp({
         });
 
         if (newTranslations.length > 0) {
-          const newParagraphs = newTranslations.map((entry) => entry.translatedText);
-          
+          const newParagraphs = newTranslations.map(
+            (entry) => entry.translatedText
+          );
+
           // Update stored translations for this language
           const updatedForLang = [...existingForLang, ...newParagraphs];
           translationMapRef.current.set(langKey, updatedForLang);
-          
+
           // Update refinedParagraphs, avoiding duplicates with current state
           setRefinedParagraphs((prev) => {
             const prevSet = new Set(prev);
-            const uniqueNew = newParagraphs.filter((text) => !prevSet.has(text));
+            const uniqueNew = newParagraphs.filter(
+              (text) => !prevSet.has(text)
+            );
             return uniqueNew.length > 0 ? [...prev, ...uniqueNew] : prev;
           });
 
@@ -241,7 +320,10 @@ export default function ClientApp({
       },
       (err) => {
         // Silently ignore permission errors
-        if (err?.code !== "permission-denied" && !err?.message?.includes("permission")) {
+        if (
+          err?.code !== "permission-denied" &&
+          !err?.message?.includes("permission")
+        ) {
           console.error("Error loading translation history:", err);
         }
       }
@@ -278,7 +360,11 @@ export default function ClientApp({
       : recent;
   }
 
-  async function refineSegment(text: string, arabic?: string, fast?: boolean): Promise<string | null> {
+  async function refineSegment(
+    text: string,
+    arabic?: string,
+    fast?: boolean
+  ): Promise<string | null> {
     try {
       const res = await fetch("/api/refine", {
         method: "POST",
@@ -294,7 +380,8 @@ export default function ClientApp({
         let detailText = "";
         try {
           const d = await res.json();
-          detailText = typeof d?.detail === "string" ? d.detail : JSON.stringify(d);
+          detailText =
+            typeof d?.detail === "string" ? d.detail : JSON.stringify(d);
         } catch {
           detailText = await res.text();
         }
@@ -309,11 +396,18 @@ export default function ClientApp({
     }
   }
 
-  function splitRefinedIntoParas(text: string, maxLen = 420, maxSentencesPerChunk = 2): string[] {
+  function splitRefinedIntoParas(
+    text: string,
+    maxLen = 420,
+    maxSentencesPerChunk = 2
+  ): string[] {
     const cleaned = (text || "").trim();
     if (cleaned.length === 0) return [];
     // If server returned explicit paragraphs separated by blank lines, prefer those
-    const paraParts = cleaned.split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
+    const paraParts = cleaned
+      .split(/\n\s*\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
     if (paraParts.length > 1) {
       // If any paragraph is extremely long, softly split by sentences to keep <= maxLen
       const out: string[] = [];
@@ -323,7 +417,10 @@ export default function ClientApp({
         let sentCount = 0;
         for (const s of bySent) {
           const next = cur ? `${cur} ${s}` : s;
-          if ((next.length > maxLen && cur) || sentCount + 1 > maxSentencesPerChunk) {
+          if (
+            (next.length > maxLen && cur) ||
+            sentCount + 1 > maxSentencesPerChunk
+          ) {
             out.push(cur);
             cur = s;
             sentCount = 1;
@@ -344,7 +441,10 @@ export default function ClientApp({
     let sentCount = 0;
     for (const s of sentences) {
       const next = current ? `${current} ${s}` : s;
-      if ((next.length > maxLen && current) || sentCount + 1 > maxSentencesPerChunk) {
+      if (
+        (next.length > maxLen && current) ||
+        sentCount + 1 > maxSentencesPerChunk
+      ) {
         chunks.push(current);
         current = s;
         sentCount = 1;
@@ -363,10 +463,15 @@ export default function ClientApp({
     const matchArr = cleaned.match(/[^.!?؟؛۔]+[.!?؟؛۔]["'”’)\]]*/g);
     let parts: string[];
     if (matchArr && matchArr.length > 0) {
-      parts = Array.from(matchArr).map((s) => s.trim()).filter(Boolean);
+      parts = Array.from(matchArr)
+        .map((s) => s.trim())
+        .filter(Boolean);
     } else {
       // Fallback: split on commas/Arabic comma/semicolon/em dash
-      parts = cleaned.split(/[،,;؛—–]+/g).map((s) => s.trim()).filter(Boolean);
+      parts = cleaned
+        .split(/[،,;؛—–]+/g)
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
     // Final fallback: enforce soft breaks every ~28 words to avoid super long runs
     const out: string[] = [];
@@ -391,6 +496,8 @@ export default function ClientApp({
     const refined = await refineSegment(next.en, next.ar, !!next.fast);
     if (refined && refined.trim().length > 0) {
       const pieces = splitRefinedIntoParas(refined, 420, 2);
+      // Reset live text ref since we're finalizing a paragraph
+      lastLiveTextRef.current = "";
       if (pieces.length <= 1) {
         const newPara = pieces[0];
         setRefinedParagraphs((prev) => [...prev, newPara]);
@@ -492,9 +599,13 @@ export default function ClientApp({
     }
     // If current chunk ends a sentence/paragraph and we have a decent body, flush early
     // Allow trailing quotes/brackets after terminal punctuation.
-    const endsSentence = /([.!?؟؛۔])(?:["'”’)\]]+)?$/.test(add) || /\n\n/.test(add);
+    const endsSentence =
+      /([.!?؟؛۔])(?:["'”’)\]]+)?$/.test(add) || /\n\n/.test(add);
     if (endsSentence && accumulatorRef.current.length >= 100) {
-      const isFirst = refinedParagraphs.length === 0 && pendingQueueRef.current.length === 0 && !refiningRef.current;
+      const isFirst =
+        refinedParagraphs.length === 0 &&
+        pendingQueueRef.current.length === 0 &&
+        !refiningRef.current;
       pendingQueueRef.current.push({
         en: accumulatorRef.current,
         ar: arabicAccumulatorRef.current,
@@ -549,8 +660,7 @@ export default function ClientApp({
     const el = refScrollRef.current;
     if (!el) return;
     const onScroll = () => {
-      const nearBottom =
-        el.scrollTop + el.clientHeight >= el.scrollHeight - 8; // 8px threshold
+      const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8; // 8px threshold
       refAtBottomRef.current = nearBottom;
     };
     el.addEventListener("scroll", onScroll, { passive: true });
@@ -569,13 +679,13 @@ export default function ClientApp({
 
   async function handleStart() {
     setError(null);
-    
+
     // If in mosque context, always attempt to claim reciter role when record is clicked
     if (mosqueId && translatorId && user) {
       const room = rooms.find((r) => r.id === mosqueId);
       if (room) {
         const isActiveReciter = room.activeTranslatorId === user.uid;
-        
+
         // Only try to claim if we're not already the active reciter
         if (!isActiveReciter && onClaimReciter) {
           try {
@@ -584,16 +694,21 @@ export default function ClientApp({
             // The room state will update via real-time subscription
           } catch (err: any) {
             // Claim failed (likely another user is the reciter)
-            setError(err?.message || "Failed to become lead reciter. Another user may already be the lead reciter.");
+            setError(
+              err?.message ||
+                "Failed to become lead reciter. Another user may already be the lead reciter."
+            );
             return;
           }
         }
       }
     }
-    
+
     setHasStopped(false);
     // Generate new session ID for this translation session
-    sessionIdRef.current = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionIdRef.current = `session_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
     enFinalSeen.current = new Set();
     setDetectedLang(null);
     setEnParagraphs([]);
@@ -602,10 +717,15 @@ export default function ClientApp({
     setEnCurrent("");
     enCurrentRef.current = "";
     setEnPartial("");
+    lastLiveTextRef.current = ""; // Reset live text for fresh start
     arFinalSeen.current = new Set();
     setSrcStable("");
     setSrcPartial("");
     setIsListening(true);
+
+    // Start live stream broadcasting for <1 second latency
+    startLiveStreamBroadcast();
+
     try {
       const { SonioxClient } = await import("@soniox/speech-to-text-web");
       clientRef.current = new SonioxClient({
@@ -634,10 +754,12 @@ export default function ClientApp({
           // Be tolerant to token shapes from Soniox:
           // treat anything not explicitly marked as "translation" as source/original.
           const arTokens = (result.tokens || []).filter(
-            (t: any) => (t.translation_status || "").toLowerCase() !== "translation"
+            (t: any) =>
+              (t.translation_status || "").toLowerCase() !== "translation"
           );
           const enTokens = (result.tokens || []).filter(
-            (t: any) => (t.translation_status || "").toLowerCase() === "translation"
+            (t: any) =>
+              (t.translation_status || "").toLowerCase() === "translation"
           );
 
           const pickLanguage = (tokens: any[]) => {
@@ -691,7 +813,10 @@ export default function ClientApp({
             const parts = buffer.split(/([\.!\?؟؛۔])/);
             let leftover = "";
             const maxRunOnWords = 28; // safety for long, punctuation-less runs
-            const sliceFirstWords = (t: string, n: number): { head: string; tail: string } => {
+            const sliceFirstWords = (
+              t: string,
+              n: number
+            ): { head: string; tail: string } => {
               const words = t.trim().split(/\s+/);
               if (words.length <= n) return { head: t.trim(), tail: "" };
               const head = words.slice(0, n).join(" ");
@@ -803,6 +928,8 @@ export default function ClientApp({
         window.clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = null;
       }
+      // Stop live stream broadcasting
+      stopLiveStreamBroadcast();
       // Release the translator lock when stopping
       if (onReleaseReciter && mosqueId && user) {
         onReleaseReciter().catch((err) => {
@@ -817,123 +944,218 @@ export default function ClientApp({
     const container = translationScrollRef.current;
     if (!container) return;
     const onScroll = () => {
-      const nearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 20;
+      const nearBottom =
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - 100; // 100px threshold for "near bottom"
       setUserAtBottom(nearBottom);
     };
     container.addEventListener("scroll", onScroll, { passive: true });
-    // Check initial state - if container is empty or at bottom, assume user is at bottom
-    const checkInitial = () => {
-      if (container.scrollHeight <= container.clientHeight) {
-        // Content fits in container, user is effectively at bottom
-        setUserAtBottom(true);
-      } else {
-        onScroll();
-      }
-    };
-    // Check after a brief delay to ensure content is rendered
-    const timeoutId = setTimeout(checkInitial, 50);
+    // Initialize as at bottom
+    setUserAtBottom(true);
     return () => {
-      clearTimeout(timeoutId);
       container.removeEventListener("scroll", onScroll);
     };
-  }, [refinedParagraphs.length]); // Re-check when content changes
+  }, []);
 
   // Auto-scroll translation container as new content streams in, so reading stays continuous.
   useEffect(() => {
     const container = translationScrollRef.current;
     if (!container) return;
-    // Always scroll to bottom when new content arrives, unless user has explicitly scrolled up
-    if (userAtBottom) {
+
+    // Always scroll to bottom when content changes (unless user scrolled up)
+    const shouldScroll = userAtBottom || refinedParagraphs.length <= 3;
+
+    if (shouldScroll) {
+      // Use multiple frames to ensure DOM has fully updated
       const scrollToBottom = () => {
-        container.scrollTop = container.scrollHeight;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
       };
-      // Use a small delay to ensure DOM has updated with new content
+
+      // Immediate scroll
+      scrollToBottom();
+
+      // And again after a short delay to catch any late renders
       const timeoutId = setTimeout(() => {
         requestAnimationFrame(scrollToBottom);
-      }, 10);
+      }, 50);
+
       return () => clearTimeout(timeoutId);
     }
-  }, [userAtBottom, refinedParagraphs]);
+  }, [refinedParagraphs.length, enCurrent, enPartial, userAtBottom]);
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col font-sans h-full w-full">
-      <main className="flex-1 w-full mx-auto flex flex-col gap-0 px-4 pb-32 pt-2">
+    <div className="flex flex-1 min-h-0 flex-col h-full w-full bg-[#1a1f2e]">
+      {/* Google Fonts for Arabic (Amiri) and Translation (Crimson Pro) */}
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Crimson+Pro:wght@400;500&display=swap");
+      `}</style>
 
+      <main className="flex-1 w-full flex flex-col overflow-hidden">
         {error && (
-        <div className="w-full max-w-5xl rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+          <div className="mx-4 mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
             {error}
           </div>
         )}
 
-        <div className="w-full flex flex-col gap-6">
-          <div className="rounded-xl px-4 pb-4 pt-0">
-            <div className="sticky top-[68px] z-50 bg-white pt-0 pb-0 relative fade-after-16">
-              <div className="mb-2 text-sm font-medium text-zinc-500">
-                <span className="mr-2">Reference</span>
-              </div>
-              <div className="text-sm text-zinc-500 leading-7 whitespace-pre-wrap overflow-y-auto max-h-[200px] pr-2" dir="auto" ref={refScrollRef}>
-                {concatReadable(srcStable, srcPartial) || <span className="block text-lg text-zinc-400">Waiting for audio…</span>}
-              </div>
-            </div>
-            <div className="sticky top-[68px] z-40 bg-white pt-4 pb-2 mb-2 text-sm font-medium text-zinc-500">
-              <span className="mr-2">
-                {detectedLang ? `${labelFor(detectedLang)} translated to` : "Translate to"}
+        {/* Reference/Source text section (Arabic) */}
+        <div className="flex-shrink-0 px-6 py-4 border-b border-[#2a3142] bg-[#1e2433]">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              {detectedLang ? labelFor(detectedLang) : "Reference"}
+            </span>
+            {isListening && (
+              <span className="flex items-center gap-2 text-xs text-emerald-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Live
               </span>
-              <label className="sr-only" htmlFor="translation-language">Translation language</label>
-              <div className="relative inline-flex items-center">
-                <select
-                  id="translation-language"
-                  className="appearance-none bg-transparent pr-6 font-medium text-zinc-700 cursor-pointer z-10 relative"
-                  value={targetLang}
-                  onChange={(e) => setTargetLang(e.target.value)}
-                  disabled={isListening}
-                  style={{ pointerEvents: isListening ? 'none' : 'auto' }}
-                >
-                  {LANG_OPTIONS.map((opt) => (
-                    <option key={opt.code} value={opt.code}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 20 20"
-                  className="pointer-events-none absolute right-0 h-4 w-4 text-zinc-500 z-0"
-                >
-                  <path d="M6 8l4 4 4-4" fill="currentColor" />
-                </svg>
-              </div>
-            </div>
-            <div ref={translationScrollRef} className="min-h-[180px] max-h-[calc(100vh-500px)] overflow-y-auto text-lg leading-8 text-black space-y-4 pb-24">
-              {(() => {
-                const toRender = renderList;
-                if (toRender.length > 0) {
-                  return (
-                    <>
-                      {toRender.map((p, i) => (
-                        <p key={`en-p-${i}`} className="whitespace-pre-wrap">
-                          {p}
-                        </p>
-                      ))}
-                    </>
-                  );
-                }
-                return isListening ? (
-                  <span className="shimmer-text text-lg">
-                    Translating to {labelFor(targetLang)}…
-                  </span>
-                ) : (
-                  <span className="text-zinc-400">
-                    {labelFor(targetLang)} translation will appear here…
-                  </span>
-                );
-              })()}
+            )}
+          </div>
+          <div
+            ref={refScrollRef}
+            className="max-h-[120px] overflow-y-auto pr-2"
+            dir="auto"
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "#3a4556 transparent",
+            }}
+          >
+            {concatReadable(srcStable, srcPartial) ? (
+              <p
+                className="text-right text-xl leading-[2] text-[#d4af37]"
+                style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}
+              >
+                {srcStable}
+                {srcPartial && (
+                  <span className="text-[#b8963a]/60"> {srcPartial}</span>
+                )}
+              </p>
+            ) : (
+              <p className="text-zinc-500 text-center py-2">
+                {isListening ? "Listening..." : "Waiting for audio…"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Language selector */}
+        <div className="flex-shrink-0 px-6 py-3 border-b border-[#2a3142]/50 bg-[#1a1f2e]">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-500">Translate to</span>
+            <div className="relative inline-flex items-center">
+              <select
+                id="translation-language"
+                className="appearance-none bg-[#2a3142] text-zinc-300 text-sm px-3 py-1.5 pr-8 rounded-lg cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                value={targetLang}
+                onChange={(e) => setTargetLang(e.target.value)}
+                disabled={isListening}
+                style={{ pointerEvents: isListening ? "none" : "auto" }}
+              >
+                {LANG_OPTIONS.map((opt) => (
+                  <option key={opt.code} value={opt.code}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className="pointer-events-none absolute right-2 h-4 w-4 text-zinc-500"
+              >
+                <path d="M6 8l4 4 4-4" fill="currentColor" />
+              </svg>
             </div>
           </div>
-          <script suppressHydrationWarning dangerouslySetInnerHTML={{__html: ""}} />
+        </div>
+
+        {/* Translation output (scrollable) */}
+        <div
+          ref={translationScrollRef}
+          className="flex-1 min-h-0 overflow-y-auto px-6 py-4"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#3a4556 transparent",
+            maxHeight: "calc(100vh - 300px)",
+          }}
+        >
+          <div className="space-y-0">
+            {/* Finalized paragraphs */}
+            {renderList.map((p, i) => (
+              <div
+                key={`en-p-${i}`}
+                className="py-4 border-b border-[#2a3142]/50"
+              >
+                <div className="flex items-start gap-4">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#2a3142] flex items-center justify-center text-xs text-zinc-500 font-mono mt-1">
+                    {i + 1}
+                  </span>
+                  <p
+                    className="flex-1 text-xl leading-[2] text-[#e8e6e3]"
+                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                  >
+                    {p}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {/* Live streaming translation (shows as you speak) */}
+            {isListening &&
+              (() => {
+                // Build current live text, keeping last known text if briefly empty
+                const currentLiveText = concatReadable(enCurrent, enPartial);
+                if (currentLiveText) {
+                  lastLiveTextRef.current = currentLiveText;
+                }
+                const displayText = currentLiveText || lastLiveTextRef.current;
+                const hasEverHadContent = displayText.length > 0;
+
+                return (
+                  <div className="py-4">
+                    <div className="flex items-start gap-4">
+                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mt-1">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                      </span>
+                      <p
+                        className="flex-1 text-xl leading-[2] text-[#e8e6e3]"
+                        style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                      >
+                        {hasEverHadContent ? (
+                          <>
+                            {displayText}
+                            <span className="inline-block w-0.5 h-5 bg-emerald-400 ml-1 animate-pulse align-middle" />
+                          </>
+                        ) : (
+                          <span className="text-zinc-500 italic">
+                            Listening...
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+            {/* Empty state when not listening and no content */}
+            {!isListening && renderList.length === 0 && (
+              <div className="flex items-center justify-center py-16">
+                <span className="text-zinc-500 text-lg">
+                  {labelFor(targetLang)} translation will appear here…
+                </span>
+              </div>
+            )}
+          </div>
           <div ref={endRef} aria-hidden="true" />
         </div>
       </main>
+
       <CharityModal
         open={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
@@ -941,18 +1163,20 @@ export default function ClientApp({
         baseAmount={0}
         presetAmounts={[7, 20, 50]}
       />
-      <footer className="sticky bottom-0 z-50 border-t border-zinc-200 bg-transparent">
-        <div className="mx-auto max-w-[554px] px-4 py-5 bg-white">
+
+      {/* Footer with controls */}
+      <footer className="flex-shrink-0 border-t border-[#2a3142] bg-[#1e2433]">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-center gap-4">
             {hasStopped && !isListening && (
               <button
                 onClick={() => setIsSheetOpen(true)}
-                className="inline-flex items-center justify-center rounded-full border border-[#10B981] text-[#10B981] font-medium text-base leading-7 px-6 py-2 transition-colors hover:bg-[#ECFDF5]"
+                className="inline-flex items-center justify-center rounded-full border border-emerald-500/50 text-emerald-400 font-medium text-sm px-5 py-2 transition-colors hover:bg-emerald-500/10"
                 aria-label="Go to donation"
               >
                 <svg
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -969,24 +1193,19 @@ export default function ClientApp({
             <button
               onClick={isListening ? handleStop : handleStart}
               aria-label={isListening ? "Stop" : "Start listening"}
-              className={`relative h-16 w-16 rounded-full flex items-center justify-center transition-colors outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight ${
-                isListening ? "bg-[#0A84FF]" : "bg-[#0A84FF]"
+              className={`relative h-14 w-14 rounded-full flex items-center justify-center transition-all outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight ${
+                isListening
+                  ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/25"
+                  : "bg-[#0A84FF] hover:bg-[#0066CC] hover:scale-105 shadow-lg shadow-blue-500/25"
               }`}
             >
               {isListening ? (
                 <>
-                  <div className="h-6 w-6 rounded-sm bg-white" />
+                  <div className="h-5 w-5 rounded-sm bg-white" />
                   <span className="pulse-ring" />
                 </>
               ) : (
-                /* Simple mic glyph */
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
                     fill="white"
@@ -1004,5 +1223,3 @@ export default function ClientApp({
     </div>
   );
 }
-
-
