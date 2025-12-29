@@ -75,8 +75,8 @@ body {
 .pulse-ring {
   position: absolute;
   inset: -6px;
-  border: 2px solid #0A84FF;
-  /* iOS System Blue */
+  border: 2px solid #ef4444;
+  /* Red for stop state */
   border-radius: 9999px;
   animation: pulseRing 1.2s ease-out infinite;
   pointer-events: none;

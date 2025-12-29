@@ -986,7 +986,7 @@ export default function ClientApp({
   }, [refinedParagraphs.length, enCurrent, enPartial, userAtBottom]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#1a1f2e] overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-white overflow-hidden">
       {/* Google Fonts for Arabic (Amiri) and Translation (Crimson Pro) */}
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Crimson+Pro:wght@400;500&display=swap");
@@ -994,22 +994,22 @@ export default function ClientApp({
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {error && (
-          <div className="mx-4 mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+          <div className="mx-4 mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         {/* Reference/Source text section (Arabic) */}
-        <div className="flex-shrink-0 px-6 py-4 border-b border-[#2a3142] bg-[#1e2433]">
+        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
               {detectedLang ? labelFor(detectedLang) : "Reference"}
             </span>
             {isListening && (
-              <span className="flex items-center gap-2 text-xs text-emerald-400">
+              <span className="flex items-center gap-2 text-xs text-[#2E7D32] font-medium">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E7D32] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2E7D32]"></span>
                 </span>
                 Live
               </span>
@@ -1021,21 +1021,24 @@ export default function ClientApp({
             dir="auto"
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor: "#3a4556 transparent",
+              scrollbarColor: "#d1d5db transparent",
             }}
           >
             {concatReadable(srcStable, srcPartial) ? (
               <p
-                className="text-right text-xl leading-[2] text-[#d4af37]"
+                className="text-right text-xl leading-[2] text-[#1B5E20]"
                 style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}
               >
-                {srcStable}
+                {srcStable.replace(/<end>/gi, "")}
                 {srcPartial && (
-                  <span className="text-[#b8963a]/60"> {srcPartial}</span>
+                  <span className="text-[#2E7D32]/50">
+                    {" "}
+                    {srcPartial.replace(/<end>/gi, "")}
+                  </span>
                 )}
               </p>
             ) : (
-              <p className="text-zinc-500 text-center py-2">
+              <p className="text-gray-400 text-center py-2">
                 {isListening ? "Listening..." : "Waiting for audio…"}
               </p>
             )}
@@ -1043,13 +1046,13 @@ export default function ClientApp({
         </div>
 
         {/* Language selector */}
-        <div className="flex-shrink-0 px-6 py-3 border-b border-[#2a3142]/50 bg-[#1a1f2e]">
+        <div className="flex-shrink-0 px-6 py-3 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">Translate to</span>
+            <span className="text-xs text-gray-500">Translate to</span>
             <div className="relative inline-flex items-center">
               <select
                 id="translation-language"
-                className="appearance-none bg-[#2a3142] text-zinc-300 text-sm px-3 py-1.5 pr-8 rounded-lg cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                className="appearance-none bg-gray-50 text-gray-700 text-sm px-3 py-1.5 pr-8 rounded-lg border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2E7D32]/20 focus:border-[#2E7D32]"
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
                 disabled={isListening}
@@ -1064,7 +1067,7 @@ export default function ClientApp({
               <svg
                 aria-hidden="true"
                 viewBox="0 0 20 20"
-                className="pointer-events-none absolute right-2 h-4 w-4 text-zinc-500"
+                className="pointer-events-none absolute right-2 h-4 w-4 text-gray-400"
               >
                 <path d="M6 8l4 4 4-4" fill="currentColor" />
               </svg>
@@ -1075,30 +1078,22 @@ export default function ClientApp({
         {/* Translation output (scrollable) */}
         <div
           ref={translationScrollRef}
-          className="flex-1 min-h-0 overflow-y-auto px-6 py-4"
+          className="flex-1 min-h-0 overflow-y-auto px-6 py-4 bg-white"
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "#3a4556 transparent",
+            scrollbarColor: "#d1d5db transparent",
           }}
         >
           <div className="space-y-0">
             {/* Finalized paragraphs */}
             {renderList.map((p, i) => (
-              <div
-                key={`en-p-${i}`}
-                className="py-4 border-b border-[#2a3142]/50"
-              >
-                <div className="flex items-start gap-4">
-                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#2a3142] flex items-center justify-center text-xs text-zinc-500 font-mono mt-1">
-                    {i + 1}
-                  </span>
-                  <p
-                    className="flex-1 text-xl leading-[2] text-[#e8e6e3]"
-                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
-                  >
-                    {p}
-                  </p>
-                </div>
+              <div key={`en-p-${i}`} className="py-4 border-b border-gray-100">
+                <p
+                  className="text-xl leading-[2] text-gray-800"
+                  style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                >
+                  {p}
+                </p>
               </div>
             ))}
 
@@ -1115,29 +1110,21 @@ export default function ClientApp({
 
                 return (
                   <div className="py-4">
-                    <div className="flex items-start gap-4">
-                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mt-1">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <p
+                      className="text-xl leading-[2] text-gray-800"
+                      style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                    >
+                      {hasEverHadContent ? (
+                        <>
+                          {displayText}
+                          <span className="inline-block w-0.5 h-5 bg-[#2E7D32] ml-1 animate-pulse align-middle" />
+                        </>
+                      ) : (
+                        <span className="text-gray-400 italic">
+                          Listening...
                         </span>
-                      </span>
-                      <p
-                        className="flex-1 text-xl leading-[2] text-[#e8e6e3]"
-                        style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
-                      >
-                        {hasEverHadContent ? (
-                          <>
-                            {displayText}
-                            <span className="inline-block w-0.5 h-5 bg-emerald-400 ml-1 animate-pulse align-middle" />
-                          </>
-                        ) : (
-                          <span className="text-zinc-500 italic">
-                            Listening...
-                          </span>
-                        )}
-                      </p>
-                    </div>
+                      )}
+                    </p>
                   </div>
                 );
               })()}
@@ -1145,7 +1132,7 @@ export default function ClientApp({
             {/* Empty state when not listening and no content */}
             {!isListening && renderList.length === 0 && (
               <div className="flex items-center justify-center py-16">
-                <span className="text-zinc-500 text-lg">
+                <span className="text-gray-400 text-lg">
                   {labelFor(targetLang)} translation will appear here…
                 </span>
               </div>
@@ -1164,13 +1151,13 @@ export default function ClientApp({
       />
 
       {/* Footer with controls */}
-      <footer className="flex-shrink-0 border-t border-[#2a3142] bg-[#1e2433]">
+      <footer className="flex-shrink-0 border-t border-gray-100 bg-white">
         <div className="px-6 py-4">
           <div className="flex items-center justify-center gap-4">
             {hasStopped && !isListening && (
               <button
                 onClick={() => setIsSheetOpen(true)}
-                className="inline-flex items-center justify-center rounded-full border border-emerald-500/50 text-emerald-400 font-medium text-sm px-5 py-2 transition-colors hover:bg-emerald-500/10"
+                className="inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5"
                 aria-label="Go to donation"
               >
                 <svg
@@ -1195,13 +1182,16 @@ export default function ClientApp({
               className={`relative h-14 w-14 rounded-full flex items-center justify-center transition-all outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight ${
                 isListening
                   ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/25"
-                  : "bg-[#0A84FF] hover:bg-[#0066CC] hover:scale-105 shadow-lg shadow-blue-500/25"
+                  : "bg-[#2E7D32] hover:bg-[#1B5E20] hover:scale-105 shadow-lg shadow-[#2E7D32]/30"
               }`}
             >
               {isListening ? (
                 <>
                   <div className="h-5 w-5 rounded-sm bg-white" />
-                  <span className="pulse-ring" />
+                  <span
+                    className="pulse-ring"
+                    style={{ borderColor: "#ef4444" }}
+                  />
                 </>
               ) : (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
