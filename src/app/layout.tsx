@@ -37,12 +37,21 @@ export const metadata: Metadata = {
       "Connecting through comprehension. Aqala enables real-time translation and seamless multilingual communication across languages.",
     siteName: "Aqala",
     type: "website",
+    images: [
+      {
+        url: "/aqala-logo.png",
+        width: 512,
+        height: 512,
+        alt: "Aqala Logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Aqala - Real-Time Translation & Communication",
     description:
       "Connecting through comprehension. Aqala enables real-time translation and seamless multilingual communication across languages.",
+    images: ["/aqala-logo.png"],
   },
 };
 
