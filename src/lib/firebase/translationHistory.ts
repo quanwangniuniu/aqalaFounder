@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   where,
 } from "firebase/firestore";
 import { db } from "./config";
@@ -25,6 +26,27 @@ export interface TranslationEntry {
   timestamp: Date;
   translatorId: string;
   sessionId: string;
+}
+
+// Live stream entry for real-time translation broadcasting (<1 second latency)
+export interface LiveStreamEntry {
+  // Current raw translation text (streamed in real-time)
+  currentText: string;
+  // Partial text still being transcribed
+  partialText: string;
+  // Source/reference text (original language)
+  sourceText: string;
+  sourcePartial: string;
+  // Language info
+  sourceLang: string;
+  targetLang: string;
+  // Translator info
+  translatorId: string;
+  sessionId: string;
+  // Last update timestamp
+  updatedAt: Date;
+  // Is actively streaming
+  isActive: boolean;
 }
 
 function ensureDb() {
@@ -126,5 +148,87 @@ export async function clearHistory(mosqueId: string, requesterId: string, roomOw
     deleteDoc(doc(firestore, COLLECTION, mosqueId, "translations", docSnapshot.id))
   );
   await Promise.all(deletePromises);
+}
+
+// ============================================
+// Live Stream Functions (Real-time translation broadcast)
+// ============================================
+
+/**
+ * Update the live stream with current translation state.
+ * Called frequently (every ~300ms) to broadcast raw translations in real-time.
+ */
+export async function updateLiveStream(
+  mosqueId: string,
+  data: {
+    currentText: string;
+    partialText: string;
+    sourceText: string;
+    sourcePartial: string;
+    sourceLang: string;
+    targetLang: string;
+    translatorId: string;
+    sessionId: string;
+    isActive: boolean;
+  }
+): Promise<void> {
+  const firestore = ensureDb();
+  const liveStreamRef = doc(firestore, COLLECTION, mosqueId, "liveStream", "current");
+  await setDoc(liveStreamRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+/**
+ * Subscribe to live stream updates for real-time translation viewing.
+ * Updates come every ~300ms when a translator is actively streaming.
+ */
+export function subscribeLiveStream(
+  mosqueId: string,
+  onUpdate: (stream: LiveStreamEntry | null) => void,
+  onError?: (err: any) => void
+) {
+  const firestore = ensureDb();
+  const liveStreamRef = doc(firestore, COLLECTION, mosqueId, "liveStream", "current");
+  return onSnapshot(
+    liveStreamRef,
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        onUpdate(null);
+        return;
+      }
+      const data = snapshot.data() as any;
+      onUpdate({
+        currentText: data.currentText || "",
+        partialText: data.partialText || "",
+        sourceText: data.sourceText || "",
+        sourcePartial: data.sourcePartial || "",
+        sourceLang: data.sourceLang || "unknown",
+        targetLang: data.targetLang || "unknown",
+        translatorId: data.translatorId || "",
+        sessionId: data.sessionId || "",
+        updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
+        isActive: data.isActive ?? false,
+      });
+    },
+    (err) => onError?.(err)
+  );
+}
+
+/**
+ * Clear/deactivate the live stream when translator stops.
+ */
+export async function clearLiveStream(mosqueId: string): Promise<void> {
+  const firestore = ensureDb();
+  const liveStreamRef = doc(firestore, COLLECTION, mosqueId, "liveStream", "current");
+  await setDoc(liveStreamRef, {
+    isActive: false,
+    currentText: "",
+    partialText: "",
+    sourceText: "",
+    sourcePartial: "",
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 }
 
