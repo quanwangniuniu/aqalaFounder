@@ -21,7 +21,7 @@ export default function DonatePage() {
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-8 md:p-12 space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
-            <div className="text-5xl mb-2">🙌</div>
+            <div className="text-5xl mb-2">🤲</div>
           </div>
 
           {/* Main content */}
@@ -117,7 +117,7 @@ export default function DonatePage() {
               onClick={() => setDonateOpen(true)}
               className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white font-semibold text-lg leading-7 px-8 py-4 shadow-lg transition-all transform hover:scale-105"
             >
-              Donate to Charity
+              Donate to Aqala
             </button>
             <Link
               href="/"
