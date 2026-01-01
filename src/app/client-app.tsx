@@ -51,6 +51,11 @@ export default function ClientApp({
   const arFinalSeen = useRef<Set<string>>(new Set());
   const [isListening, setIsListening] = useState(false);
   const [hasStopped, setHasStopped] = useState(false);
+  // Ref to track stopped state synchronously (avoids stale closures)
+  const stoppedRef = useRef<boolean>(false);
+  // Flag to prevent Firestore from loading ANY translations until session starts
+  // This prevents stale/old translations from appearing on page refresh
+  const sessionStartedRef = useRef<boolean>(false);
   const LANG_OPTIONS = [
     { code: "en", label: "English" },
     { code: "ar", label: "Arabic" },
@@ -124,7 +129,8 @@ export default function ClientApp({
     }
     // If there is no activity for 3s, force-flush whatever we have
     silenceTimerRef.current = window.setTimeout(() => {
-      if (isListening) {
+      // Use ref to avoid stale closure
+      if (!stoppedRef.current) {
         flushPendingNow();
       }
     }, 3000);
@@ -275,9 +281,19 @@ export default function ClientApp({
     const unsubscribe = subscribeTranslations(
       mosqueId,
       (incoming) => {
-        // Filter to only show translations matching current target language
+        // CRITICAL: Don't load ANY translations until a session has been explicitly started
+        // This prevents stale translations from appearing on page refresh
+        if (!sessionStartedRef.current) return;
+
+        // Only load translations from current session (prevents old translations from appearing)
+        const currentSession = sessionIdRef.current;
+        if (!currentSession) return; // No active session
+
+        // Filter to only show translations matching current target language AND current session
         const matchingLang = incoming.filter(
-          (entry) => entry.targetLang === targetLang
+          (entry) =>
+            entry.targetLang === targetLang &&
+            entry.sessionId === currentSession
         );
 
         const langKey = targetLang;
@@ -496,28 +512,24 @@ export default function ClientApp({
     if (!next) return;
     refiningRef.current = true;
     const refined = await refineSegment(next.en, next.ar, !!next.fast);
+    // Don't update state if we've stopped (prevents post-stop UI changes)
+    if (stoppedRef.current) {
+      refiningRef.current = false;
+      return;
+    }
     if (refined && refined.trim().length > 0) {
       const pieces = splitRefinedIntoParas(refined, 420, 2);
       // Reset live text ref since we're finalizing a paragraph
       lastLiveTextRef.current = "";
-      if (pieces.length <= 1) {
-        const newPara = pieces[0];
-        setRefinedParagraphs((prev) => [...prev, newPara]);
-        // Also store in translationMapRef for current targetLang
-        const langKey = targetLang;
-        const existing = translationMapRef.current.get(langKey) || [];
-        translationMapRef.current.set(langKey, [...existing, newPara]);
-      } else {
-        // Append first piece immediately; drip the rest one-by-one to avoid "all at once"
-        const firstPiece = pieces[0];
-        setRefinedParagraphs((prev) => [...prev, firstPiece]);
-        // Store first piece in translationMapRef
-        const langKey = targetLang;
-        const existing = translationMapRef.current.get(langKey) || [];
-        translationMapRef.current.set(langKey, [...existing, firstPiece]);
-        // Note: Remaining pieces will be added via dripNextPiece, which should also update translationMapRef
-        enqueueDisplayPieces(pieces.slice(1));
-      }
+
+      // Add all pieces at once to preserve order (CSS animation handles visual smoothness)
+      // Previous drip approach caused interleaving when multiple refinements completed
+      setRefinedParagraphs((prev) => [...prev, ...pieces]);
+
+      // Also store in translationMapRef for current targetLang
+      const langKey = targetLang;
+      const existing = translationMapRef.current.get(langKey) || [];
+      translationMapRef.current.set(langKey, [...existing, ...pieces]);
       // Save translation to history if mosqueId and translatorId are provided
       if (mosqueId && translatorId && next.ar.trim() && refined.trim()) {
         try {
@@ -536,7 +548,8 @@ export default function ClientApp({
       }
     }
     refiningRef.current = false;
-    if (pendingQueueRef.current.length > 0) {
+    // Only continue processing if not stopped
+    if (!stoppedRef.current && pendingQueueRef.current.length > 0) {
       // process the next sentence quickly to keep flow
       setTimeout(triggerRefine, 200);
     }
@@ -546,6 +559,12 @@ export default function ClientApp({
   const displayQueueRef = useRef<string[]>([]);
   const displayDripActiveRef = useRef<boolean>(false);
   function dripNextPiece() {
+    // Stop dripping if we've stopped listening
+    if (stoppedRef.current) {
+      displayDripActiveRef.current = false;
+      displayQueueRef.current = [];
+      return;
+    }
     if (displayQueueRef.current.length === 0) {
       displayDripActiveRef.current = false;
       return;
@@ -570,6 +589,8 @@ export default function ClientApp({
     }
   }
   function scheduleRefinement(chunk: string) {
+    // Don't schedule if stopped
+    if (stoppedRef.current) return;
     // Accumulate up to ~550 chars or flush on punctuation with min length, or 800ms idle
     const add = chunk.trim();
     if (add.length === 0) return;
@@ -707,6 +728,8 @@ export default function ClientApp({
     }
 
     setHasStopped(false);
+    stoppedRef.current = false; // Reset stopped flag for new session
+    sessionStartedRef.current = true; // Allow Firestore to load translations for this session
     // Generate new session ID for this translation session
     sessionIdRef.current = `session_${Date.now()}_${Math.random()
       .toString(36)
@@ -714,8 +737,20 @@ export default function ClientApp({
     enFinalSeen.current = new Set();
     setDetectedLang(null);
     setEnParagraphs([]);
-    // Don't clear refinedParagraphs - preserve historical translations
-    // The Firestore subscription will maintain history
+
+    // Clear ALL previous translations for fresh start
+    setRefinedParagraphs([]);
+    translationMapRef.current.clear();
+    loadedTranslationIdsRef.current.clear();
+
+    // Clear accumulators
+    accumulatorRef.current = "";
+    arabicAccumulatorRef.current = "";
+    arabicSentenceBufferRef.current = "";
+    arabicThreeRef.current = [];
+    pendingQueueRef.current = [];
+    displayQueueRef.current = [];
+
     setEnCurrent("");
     enCurrentRef.current = "";
     setEnPartial("");
@@ -918,20 +953,34 @@ export default function ClientApp({
   }
 
   function handleStop() {
+    // Set stopped flag FIRST to prevent any further state updates
+    stoppedRef.current = true;
+
     try {
       clientRef.current?.stop();
     } catch {
     } finally {
       setIsListening(false);
       setHasStopped(true);
-      // Force-flush any remaining buffered text as we are explicitly stopping
-      flushPendingNow();
+
+      // Clear all pending queues to prevent post-stop processing
+      pendingQueueRef.current = [];
+      displayQueueRef.current = [];
+      displayDripActiveRef.current = false;
+
+      // Clear timers
       if (silenceTimerRef.current) {
         window.clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = null;
       }
+      if (accFlushTimerRef.current) {
+        window.clearTimeout(accFlushTimerRef.current);
+        accFlushTimerRef.current = null;
+      }
+
       // Stop live stream broadcasting
       stopLiveStreamBroadcast();
+
       // Release the translator lock when stopping
       if (onReleaseReciter && mosqueId && user) {
         onReleaseReciter().catch((err) => {
@@ -1077,7 +1126,7 @@ export default function ClientApp({
           </div>
         </div>
 
-        {/* Translation output (scrollable) */}
+        {/* Translation output (scrollable) - STABLE ZONE: only finalized paragraphs */}
         <div
           ref={translationScrollRef}
           className="flex-1 min-h-0 overflow-y-auto px-6 py-4 bg-white"
@@ -1087,9 +1136,12 @@ export default function ClientApp({
           }}
         >
           <div className="space-y-0">
-            {/* Finalized paragraphs */}
+            {/* Finalized paragraphs - these never change once displayed */}
             {renderList.map((p, i) => (
-              <div key={`en-p-${i}`} className="py-4 border-b border-gray-100">
+              <div
+                key={`en-p-${i}`}
+                className="py-4 border-b border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
                 <p
                   className="text-xl leading-[2] text-gray-800"
                   style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
@@ -1098,38 +1150,6 @@ export default function ClientApp({
                 </p>
               </div>
             ))}
-
-            {/* Live streaming translation (shows as you speak) */}
-            {isListening &&
-              (() => {
-                // Build current live text, keeping last known text if briefly empty
-                const currentLiveText = concatReadable(enCurrent, enPartial);
-                if (currentLiveText) {
-                  lastLiveTextRef.current = currentLiveText;
-                }
-                const displayText = currentLiveText || lastLiveTextRef.current;
-                const hasEverHadContent = displayText.length > 0;
-
-                return (
-                  <div className="py-4">
-                    <p
-                      className="text-xl leading-[2] text-gray-800"
-                      style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
-                    >
-                      {hasEverHadContent ? (
-                        <>
-                          {displayText}
-                          <span className="inline-block w-0.5 h-5 bg-[#2E7D32] ml-1 animate-pulse align-middle" />
-                        </>
-                      ) : (
-                        <span className="text-gray-400 italic">
-                          Listening...
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                );
-              })()}
 
             {/* Empty state when not listening and no content */}
             {!isListening && renderList.length === 0 && (
@@ -1142,6 +1162,57 @@ export default function ClientApp({
           </div>
           <div ref={endRef} aria-hidden="true" />
         </div>
+
+        {/* LIVE PREVIEW: Shows incoming words with blur effect */}
+        {isListening && (
+          <div className="flex-shrink-0 border-t border-gray-100 bg-white/80 backdrop-blur-sm">
+            <div className="px-6 py-4">
+              {(() => {
+                const currentLiveText = concatReadable(enCurrent, enPartial);
+                if (currentLiveText) {
+                  lastLiveTextRef.current = currentLiveText;
+                }
+                const displayText = currentLiveText || lastLiveTextRef.current;
+
+                if (!displayText) {
+                  // Show subtle typing indicator when no text yet
+                  return (
+                    <div className="flex items-center justify-center py-2">
+                      <span className="typing-dots">
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Split text into words for staggered animation
+                const words = displayText.split(/\s+/);
+
+                return (
+                  <p
+                    className="text-xl leading-[2] text-gray-800"
+                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                  >
+                    {words.map((word, i) => (
+                      <span
+                        key={`${i}-${word}`}
+                        className="live-word"
+                        style={{
+                          animationDelay: `${Math.min(i * 0.05, 0.5)}s`,
+                        }}
+                      >
+                        {word}{" "}
+                      </span>
+                    ))}
+                    <span className="inline-block w-0.5 h-5 bg-[#2E7D32] animate-pulse align-middle" />
+                  </p>
+                );
+              })()}
+            </div>
+          </div>
+        )}
       </main>
 
       <CharityModal
