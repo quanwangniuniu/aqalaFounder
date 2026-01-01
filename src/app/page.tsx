@@ -51,7 +51,8 @@ export default function Page() {
 
             {/* Subheadline */}
             <p className="hero-fade-in hero-fade-in-delay-2 text-base sm:text-xl text-white/80 leading-relaxed max-w-xl mx-auto mb-6 sm:mb-8">
-            Aqala translates spoken Islamic Arabic - Qur’an, khutbahs, and lectures - into clear, real-time meaning in any language.  
+            Aqala translates spoken Islamic word - Qur'an, khutbahs, and lectures - into clear, real-time meaning,<br />
+            From any language - to any language.
             </p>
 
             {/* Quranic reasoning */}

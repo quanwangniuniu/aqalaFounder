@@ -28,31 +28,31 @@ export default function DonatePage() {
           <div className="space-y-6 text-center">
             {/* Quranic verse */}
             <div className="space-y-2">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed font-medium">
-                <span className="text-emerald-800 font-semibold">Allah</span> calls us to reflect upon the Qur'an, not merely recite it.
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
+                Then do they not reflect upon the Qur'an, or are there locks upon their hearts?
               </p>
-              <p className="text-sm text-emerald-800 font-medium">
+              <p className="text-base md:text-lg text-emerald-800 font-medium">
                 (Qur'an 47:24)
               </p>
             </div>
 
             {/* Aqala mission */}
             <div className="space-y-4 pt-2">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed">
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed">
                 <span className="font-semibold text-emerald-800">Aqala</span> helps transform spoken Islamic knowledge into understanding — no matter the language — allowing knowledge to reach the heart.
               </p>
             </div>
 
             {/* Hadith */}
             <div className="space-y-2 pt-4">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed font-medium">
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
                 The Prophet <span className="text-emerald-800">ﷺ</span> taught that beneficial knowledge continues to reward a person even after death (Sahih Muslim).
               </p>
             </div>
 
             {/* Support message */}
             <div className="space-y-2 pt-4">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed font-medium">
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
                 By supporting Aqala, you help create ongoing access to understanding for the global <span className="text-emerald-800 font-semibold">Ummah</span> — a form of <span className="text-emerald-800 font-semibold">Sadaqah Jariyah</span>, inshaAllah.
               </p>
             </div>
@@ -82,7 +82,7 @@ export default function DonatePage() {
           {/* Closing statements */}
           <div className="space-y-4 pt-6 text-center">
             <div className="space-y-2">
-              <p className="text-2xl md:text-3xl text-gray-900 leading-relaxed font-bold">
+              <p className="text-xl md:text-2xl text-gray-900 leading-relaxed font-bold">
                 One donation. Endless understanding.
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function DonatePage() {
               </p>
             </div>
             <div className="space-y-2 pt-2">
-              <p className="text-lg md:text-xl text-emerald-800 leading-relaxed font-medium">
+              <p className="text-base md:text-lg text-emerald-800 leading-relaxed font-medium">
                 Together, we can remove language as a barrier to faith.
               </p>
             </div>
@@ -100,13 +100,13 @@ export default function DonatePage() {
 
           {/* Du'a */}
           <div className="space-y-2 pt-4 text-center">
-            <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium" dir="rtl" style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}>
+            <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium" dir="rtl">
               اللهم انفعنا بما علمتنا وزِدنا علماً نافعاً
             </p>
-            <p className="text-sm md:text-base text-gray-700 leading-relaxed italic">
+            <p className="text-base md:text-lg text-gray-700 leading-relaxed italic">
               Allahumma anfaʿnā bimā ʿallamtanā wa zidnā ʿilman nāfiʿā.
             </p>
-            <p className="text-sm md:text-base text-gray-700 leading-relaxed">
+            <p className="text-base md:text-lg text-gray-700 leading-relaxed">
               O Allah, benefit us through what You have taught us and increase us in beneficial knowledge.
             </p>
           </div>
