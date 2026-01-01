@@ -119,12 +119,20 @@ export default function DonatePage() {
             >
               Donate to Aqala
             </button>
-            <Link
-              href="/"
-              className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline"
-            >
-              Return to Home
-            </Link>
+            <div className="flex flex-col items-center gap-3">
+              <Link
+                href="/"
+                className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline"
+              >
+                Return to Home
+              </Link>
+              <Link
+                href="/reviews"
+                className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline"
+              >
+                Share Your Thoughts
+              </Link>
+            </div>
           </div>
         </div>
       </div>
