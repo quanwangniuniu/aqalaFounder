@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Hide footer on landing page
+  if (pathname === "/") return null;
+
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
       <div className="mx-auto max-w-[554px] px-6 py-6">

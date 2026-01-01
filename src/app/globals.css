@@ -3,6 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Aqala Brand Colors */
+  --aqala-deep: #0c1f2d;
+  --aqala-teal: #0d4f5c;
+  --aqala-emerald: #156b6b;
+  --aqala-gold: #c9a962;
+  --aqala-gold-light: #e4d4a5;
+  --aqala-cream: #f8f6f1;
+  --aqala-warm-white: #fefdfb;
 }
 
 @theme inline {
@@ -22,7 +31,125 @@ body {
 body {
   background: rgb(238, 242, 249);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Hero animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes subtleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero-fade-in {
+  animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+.hero-fade-in-delay-1 { animation-delay: 0.1s; }
+.hero-fade-in-delay-2 { animation-delay: 0.25s; }
+.hero-fade-in-delay-3 { animation-delay: 0.4s; }
+.hero-fade-in-delay-4 { animation-delay: 0.55s; }
+.hero-fade-in-delay-5 { animation-delay: 0.7s; }
+
+.hero-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    var(--aqala-deep) 0%,
+    var(--aqala-teal) 35%,
+    var(--aqala-emerald) 65%,
+    var(--aqala-teal) 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 12s ease infinite;
+}
+
+.hero-geometric-overlay {
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(201, 169, 98, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(201, 169, 98, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+}
+
+.hero-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.btn-primary-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-primary-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, var(--aqala-gold), var(--aqala-gold-light), var(--aqala-gold));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-primary-glow:hover::before {
+  opacity: 1;
+}
+
+.btn-primary-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -8px rgba(201, 169, 98, 0.4);
+}
+
+.btn-secondary-subtle {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-secondary-subtle:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--aqala-gold-light) 0%, var(--aqala-gold) 50%, var(--aqala-gold-light) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.quran-verse {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade-in {
+    animation: none;
+    opacity: 1;
+  }
+  .hero-gradient-bg {
+    animation: none;
+  }
 }
 
 /* Shimmer placeholder for text */
