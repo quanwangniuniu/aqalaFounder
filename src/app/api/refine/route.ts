@@ -23,40 +23,28 @@ export async function POST(req: Request) {
     }
 
     const systemPrompt = [
-      "You are an expert editor of English translations of Islamic sermons and Friday khutbahs.",
+      "You are a precise editor fixing grammar and flow in English translations of Islamic content.",
       "",
-      "Do NOT add generic moral guidance, advice, or commentary that is not explicitly present in the source.",
-      "Your task is NOT to summarise, condense, or shorten the text.",
+      "CRITICAL RULES - NEVER VIOLATE:",
       "",
-      "Your goal is to:",
+      "1. Output ONLY what is in the input. NEVER add new sentences, ideas, stories, or content.",
+      "2. If input has 2 sentences, output has 2 sentences. If input has 10 words, output has roughly 10 words.",
+      "3. Do NOT expand, elaborate, or infer beyond what is explicitly stated.",
+      "4. Do NOT add greetings, blessings, advice, or commentary not in the original.",
+      "5. Do NOT generate typical khutbah content unless it is LITERALLY in the input.",
       "",
-      "Preserve every idea, detail, and emotional meaning in the input.",
-      "Expand and clarify where the English is broken, unclear, or machine-translated.",
-      "Fix grammar, flow, and structure.",
-      "Maintain respectful Islamic language and honorifics (e.g. “peace and blessings be upon him”).",
-      "Correct obvious transcription or translation glitches without removing meaning.",
+      "Your ONLY job is to:",
+      "- Fix grammar and sentence structure",
+      "- Correct obvious typos or transcription errors",
+      "- Make the existing text flow naturally",
+      "- Add appropriate Islamic honorifics (e.g. 'peace be upon him') ONLY where contextually required",
       "",
-      "Tense and person consistency requirements:",
-      "- Default to past tense for narrated events unless the context explicitly requires otherwise.",
-      "- Keep person (first/second/third) consistent and grammatically correct; do not drift.",
-      "- Use third-person narration outside of quotes; keep first-person INSIDE the quotes of the speaker.",
-      "- Maintain gender/number agreement (she/her vs. he/him) according to the Arabic meaning.",
-      "- If the rough English mixes tenses/persons, resolve this cleanly and consistently in the refined segment.",
+      "If the input is just 'All praise is due to God Lord of the worlds', output something like:",
+      "'All praise is due to Allah, the Lord of all the worlds.'",
       "",
-      "Do NOT:",
+      "Do NOT turn that into a full paragraph about praise and worship.",
       "",
-      "Remove stories, examples, repetitions, or emphasis.",
-      "Summarise, condense, or “clean up” by cutting content.",
-      "Add new religious rulings, facts, or interpretations.",
-      "",
-      "If a sentence is unclear due to bad translation or speech-to-text errors:",
-      "",
-      "Infer the most likely intended meaning from context",
-      "Rewrite it clearly while preserving intent",
-      "",
-      "Output a full, expanded, fluent English khutbah-style text that sounds natural when read aloud.",
-      "",
-      "Treat the input as sacred content: accuracy and preservation of meaning are more important than brevity.",
+      "Be MINIMAL. Preserve the LENGTH of the input. Fix grammar ONLY.",
     ].join("\n");
 
     const prefix = arabicText
@@ -64,26 +52,19 @@ export async function POST(req: Request) {
       : "";
 
     const parts: string[] = [];
-    parts.push("Here is an English translation of a Friday sermon that contains errors from speech-to-text and machine translation.");
+    parts.push("Fix the grammar in this text. Output ONLY the corrected version.");
+    parts.push("Do NOT add any new content, sentences, or ideas.");
+    parts.push("Keep the same length - if input is short, output is short.");
     parts.push("");
-    parts.push("Rewrite it in clear, natural English without losing any meaning, without shortening it, and without summarising.");
-    parts.push("");
-    parts.push("Keep all ideas, lessons, and emotional weight intact.");
-    parts.push("");
-    if (typeof context === "string" && context.trim().length > 0) {
-      parts.push("Context so far (for continuity, do not rewrite this):");
-      parts.push(context.trim());
-      parts.push("");
-    }
     if (typeof arabicText === "string" && arabicText.trim().length > 0) {
-      parts.push("Original Arabic snippet (for grounding, do not translate this directly, use it to resolve ambiguity):");
+      parts.push("Arabic reference (for word choice only, do not translate or expand):");
       parts.push(arabicText.trim());
       parts.push("");
     }
-    parts.push("New segment to refine (rough English):");
+    parts.push("Text to fix:");
     parts.push(prefix + text);
     parts.push("");
-    parts.push('Output ONLY the refined English for the "New segment", ensuring it fits seamlessly with the context and khutbah tone. Do NOT add new stories or rulings.');
+    parts.push("Output the corrected text ONLY. No explanations. No additions.");
     const userPrompt = parts.join("\n");
 
     const model =
@@ -97,7 +78,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model,
-        temperature: fast ? 0.2 : 0.2,
+        temperature: 0,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
