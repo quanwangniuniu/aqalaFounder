@@ -75,13 +75,16 @@ export default function VerseModal({
       return;
     }
 
+    // Capture verseKey in a const to satisfy TypeScript
+    const key = verseKey;
+
     async function fetchVerse() {
       setLoading(true);
       setError(null);
 
       try {
         const res = await fetch(
-          `/api/verse?key=${encodeURIComponent(verseKey)}&lang=${targetLang}`
+          `/api/verse?key=${encodeURIComponent(key)}&lang=${targetLang}`
         );
         if (!res.ok) throw new Error("Failed to fetch verse");
         const json = await res.json();
