@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import CharityModal from "./charity-modal";
+import VerseModal from "@/components/VerseModal";
 import {
   saveTranslation,
   subscribeTranslations,
@@ -87,6 +88,10 @@ export default function ClientApp({
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [enParagraphs, setEnParagraphs] = useState<string[]>([]);
   const [refinedParagraphs, setRefinedParagraphs] = useState<string[]>([]);
+  // Verse references corresponding to each refined paragraph (e.g., "Al-Fatiha 1:2")
+  const [verseReferences, setVerseReferences] = useState<(string | null)[]>([]);
+  // Currently selected verse key for the modal (e.g., "18:38" or "18:38-42")
+  const [selectedVerseKey, setSelectedVerseKey] = useState<string | null>(null);
   const [enPartial, setEnPartial] = useState("");
   const [enCurrent, setEnCurrent] = useState("");
   const enCurrentRef = useRef("");
@@ -386,7 +391,7 @@ export default function ClientApp({
     text: string,
     arabic?: string,
     fast?: boolean
-  ): Promise<string | null> {
+  ): Promise<{ result: string | null; verseReference: string | null }> {
     try {
       const res = await fetch("/api/refine", {
         method: "POST",
@@ -409,13 +414,16 @@ export default function ClientApp({
           detailText = await res.text();
         }
         setError(`Refine error (${res.status}): ${detailText}`);
-        return null;
+        return { result: null, verseReference: null };
       }
       const data = await res.json();
-      return (data?.result as string) || null;
+      return {
+        result: (data?.result as string) || null,
+        verseReference: (data?.verseReference as string) || null,
+      };
     } catch (e: any) {
       setError(`Refine request failed: ${e?.message ?? String(e)}`);
-      return null;
+      return { result: null, verseReference: null };
     }
   }
 
@@ -516,7 +524,11 @@ export default function ClientApp({
     const next = pendingQueueRef.current.shift();
     if (!next) return;
     refiningRef.current = true;
-    const refined = await refineSegment(next.en, next.ar, !!next.fast);
+    const { result: refined, verseReference } = await refineSegment(
+      next.en,
+      next.ar,
+      !!next.fast
+    );
     // Don't update state if we've stopped (prevents post-stop UI changes)
     if (stoppedRef.current) {
       refiningRef.current = false;
@@ -530,6 +542,13 @@ export default function ClientApp({
       // Add all pieces at once to preserve order (CSS animation handles visual smoothness)
       // Previous drip approach caused interleaving when multiple refinements completed
       setRefinedParagraphs((prev) => [...prev, ...pieces]);
+
+      // Add verse references for each piece (only first piece gets the reference)
+      setVerseReferences((prev) => [
+        ...prev,
+        verseReference, // First piece gets the reference
+        ...Array(pieces.length - 1).fill(null), // Rest get null
+      ]);
 
       // Also store in translationMapRef for current targetLang
       const langKey = targetLangRef.current;
@@ -745,6 +764,7 @@ export default function ClientApp({
 
     // Clear ALL previous translations for fresh start
     setRefinedParagraphs([]);
+    setVerseReferences([]); // Clear verse references too
     translationMapRef.current.clear();
     loadedTranslationIdsRef.current.clear();
 
@@ -1378,6 +1398,37 @@ export default function ClientApp({
                 >
                   {p}
                 </p>
+                {verseReferences[i] && (
+                  <button
+                    onClick={() => {
+                      // Extract verse key from reference (e.g., "Al-Kahf 18:38-42" → "18:38-42")
+                      const match = verseReferences[i]?.match(/(\d+:\d+(?:-\d+)?)/);
+                      if (match) {
+                        setSelectedVerseKey(match[1]);
+                      }
+                    }}
+                    className="group mt-2 inline-flex items-center gap-1.5 text-sm text-[#2E7D32]/80 italic hover:text-[#2E7D32] active:text-[#1B5E20] transition-all cursor-pointer rounded-md px-2 py-1 -ml-2 hover:bg-[#2E7D32]/5 active:bg-[#2E7D32]/10"
+                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    >
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                    <span className="underline decoration-[#2E7D32]/30 underline-offset-2 group-hover:decoration-[#2E7D32]/60">
+                      {verseReferences[i]}
+                    </span>
+                  </button>
+                )}
               </div>
             ))}
 
@@ -1451,6 +1502,13 @@ export default function ClientApp({
         currency="$"
         baseAmount={0}
         presetAmounts={[7, 20, 50]}
+      />
+
+      {/* Verse Modal - shows Quran verse details when clicked */}
+      <VerseModal
+        verseKey={selectedVerseKey}
+        onClose={() => setSelectedVerseKey(null)}
+        targetLang={targetLang}
       />
 
       {/* Footer with controls */}

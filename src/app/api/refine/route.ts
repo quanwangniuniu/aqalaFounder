@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { findVerseReference } from "@/lib/quran/api";
 
 export const runtime = "nodejs";
 
@@ -125,7 +126,27 @@ export async function POST(req: Request) {
     const content =
       data?.choices?.[0]?.message?.content ??
       "";
-    return NextResponse.json({ result: content });
+
+    // Search for Quran verse reference if Arabic text is provided
+    // CONSERVATIVE: Only show when we're VERY confident it's an actual Quranic verse
+    // Most Arabic in khutbahs is regular speech, not Quran recitation
+    let verseReference: string | null = null;
+    if (typeof arabicText === "string" && arabicText.trim().length >= 10) {
+      try {
+        const verseResult = await findVerseReference(arabicText.trim());
+        // The findVerseReference function already has strict thresholds built in
+        // It only returns results when confidence is high
+        if (verseResult) {
+          verseReference = verseResult.reference;
+          console.log(`[Quran] Matched: "${verseResult.reference}" (confidence: ${verseResult.confidence.toFixed(2)})`);
+        }
+      } catch (err) {
+        // Silently fail - verse reference is optional enhancement
+        console.error("Verse reference lookup failed:", err);
+      }
+    }
+
+    return NextResponse.json({ result: content, verseReference });
   } catch (e: any) {
     return NextResponse.json(
       { error: "Unexpected error", detail: e?.message ?? String(e) },
