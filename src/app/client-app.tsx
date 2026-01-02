@@ -78,6 +78,10 @@ export default function ClientApp({
     { code: "th", label: "Thai" },
   ];
   const [targetLang, setTargetLang] = useState("en");
+  // Ref to track targetLang synchronously (avoids stale closures in callbacks)
+  const targetLangRef = useRef<string>("en");
+  // Flag to prevent onFinished from setting isListening=false during language switch
+  const switchingLanguageRef = useRef<boolean>(false);
   const labelFor = (code: string) =>
     LANG_OPTIONS.find((l) => l.code === code)?.label ?? code;
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
@@ -161,7 +165,7 @@ export default function ClientApp({
         sourceText: srcStable,
         sourcePartial: srcPartial,
         sourceLang: detectedLang || "unknown",
-        targetLang: targetLang,
+        targetLang: targetLangRef.current,
         translatorId: translatorId!,
         sessionId: sessionIdRef.current,
         isActive: true,
@@ -392,6 +396,7 @@ export default function ClientApp({
           context: buildContextSnippet(),
           arabicText: arabic ?? buildArabicSnippet(),
           fast: !!fast,
+          targetLang: targetLangRef.current,
         }),
       });
       if (!res.ok) {
@@ -527,7 +532,7 @@ export default function ClientApp({
       setRefinedParagraphs((prev) => [...prev, ...pieces]);
 
       // Also store in translationMapRef for current targetLang
-      const langKey = targetLang;
+      const langKey = targetLangRef.current;
       const existing = translationMapRef.current.get(langKey) || [];
       translationMapRef.current.set(langKey, [...existing, ...pieces]);
       // Save translation to history if mosqueId and translatorId are provided
@@ -537,7 +542,7 @@ export default function ClientApp({
             sourceText: next.ar.trim(),
             translatedText: refined.trim(),
             sourceLang: detectedLang || "unknown",
-            targetLang: targetLang,
+            targetLang: targetLangRef.current,
             translatorId,
             sessionId: sessionIdRef.current,
           });
@@ -573,7 +578,7 @@ export default function ClientApp({
     if (next && next.trim().length > 0) {
       setRefinedParagraphs((prev) => [...prev, next]);
       // Also store in translationMapRef for current targetLang
-      const langKey = targetLang;
+      const langKey = targetLangRef.current;
       const existing = translationMapRef.current.get(langKey) || [];
       translationMapRef.current.set(langKey, [...existing, next]);
     }
@@ -771,7 +776,10 @@ export default function ClientApp({
           setError(message || "Unexpected error");
         },
         onFinished: () => {
-          setIsListening(false);
+          // Don't change listening state if we're switching languages
+          if (!switchingLanguageRef.current) {
+            setIsListening(false);
+          }
           // Ensure the last snippet gets refined even without trailing punctuation
           flushPendingNow();
         },
@@ -952,6 +960,230 @@ export default function ClientApp({
     }
   }
 
+  // Handle language change - restart Soniox with new target if currently listening
+  async function handleLanguageChange(newLang: string) {
+    if (newLang === targetLang) return;
+
+    // Update ref synchronously FIRST (before async operations)
+    targetLangRef.current = newLang;
+    setTargetLang(newLang);
+
+    // If not listening, just update the state
+    if (!isListening) return;
+
+    // If listening, we need to restart the Soniox client with the new target language
+    // First, flush any pending text to preserve it
+    flushPendingNow();
+
+    // Set flag to prevent onFinished from changing isListening state
+    switchingLanguageRef.current = true;
+
+    // Stop current client gracefully (don't use handleStop as it sets hasStopped)
+    try {
+      clientRef.current?.stop();
+    } catch {}
+
+    // Clear timers
+    if (silenceTimerRef.current) {
+      window.clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    if (accFlushTimerRef.current) {
+      window.clearTimeout(accFlushTimerRef.current);
+      accFlushTimerRef.current = null;
+    }
+
+    // Clear partial/current state but KEEP refined paragraphs
+    enCurrentRef.current = "";
+    setEnCurrent("");
+    setEnPartial("");
+    lastLiveTextRef.current = "";
+    accumulatorRef.current = "";
+    arabicAccumulatorRef.current = "";
+    enFinalSeen.current = new Set();
+
+    // Restart with new language
+    try {
+      const { SonioxClient } = await import("@soniox/speech-to-text-web");
+      clientRef.current = new SonioxClient({
+        apiKey: SONIOX_API_KEY,
+        onError: (_status: any, message: string) => {
+          setError(message || "Unexpected error");
+        },
+        onFinished: () => {
+          // Don't change listening state if we're switching languages
+          if (!switchingLanguageRef.current) {
+            setIsListening(false);
+          }
+          flushPendingNow();
+        },
+      });
+
+      await clientRef.current.start({
+        model: "stt-rt-preview",
+        languageHints: LANG_OPTIONS.map((l) => l.code),
+        enableLanguageIdentification: true,
+        translation: {
+          type: "one_way",
+          target_language: newLang,
+        },
+        audioFormat: "auto",
+        enableEndpointDetection: true,
+        onPartialResult: (result: any) => {
+          // Same handler as in handleStart
+          const arTokens = (result.tokens || []).filter(
+            (t: any) =>
+              (t.translation_status || "").toLowerCase() !== "translation"
+          );
+          const enTokens = (result.tokens || []).filter(
+            (t: any) =>
+              (t.translation_status || "").toLowerCase() === "translation"
+          );
+
+          const pickLanguage = (tokens: any[]) => {
+            const counts = new Map<string, number>();
+            for (const t of tokens) {
+              const code = (t.language || t.source_language || "").trim();
+              if (!code) continue;
+              const weight = t.is_final ? 2 : 1;
+              counts.set(code, (counts.get(code) || 0) + weight);
+            }
+            let best: string | null = null;
+            let bestVal = 0;
+            for (const [code, val] of counts) {
+              if (val > bestVal) {
+                best = code;
+                bestVal = val;
+              }
+            }
+            return best;
+          };
+          const lang = pickLanguage(arTokens);
+          if (lang && lang !== detectedLang) {
+            setDetectedLang(lang);
+          }
+
+          const appendFinal = (
+            tokens: any[],
+            seen: Set<string>,
+            onText: (text: string) => void
+          ) => {
+            const finals = tokens.filter((t) => t.is_final);
+            if (finals.length === 0) return;
+            finals.sort((a, b) => (a.start_ms ?? 0) - (b.start_ms ?? 0));
+            const newText = finals
+              .filter((t, idx) => {
+                const key = `${t.start_ms ?? idx}-${t.text}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              })
+              .map((t) => t.text)
+              .join("");
+            if (newText) onText(newText);
+          };
+
+          const appendToParagraphs = (text: string) => {
+            if (!text) return;
+            let buffer = enCurrentRef.current + text;
+            const parts = buffer.split(/([\.!\?؟؛۔])/);
+            let leftover = "";
+            const maxRunOnWords = 28;
+            const sliceFirstWords = (
+              t: string,
+              n: number
+            ): { head: string; tail: string } => {
+              const words = t.trim().split(/\s+/);
+              if (words.length <= n) return { head: t.trim(), tail: "" };
+              const head = words.slice(0, n).join(" ");
+              const tail = words.slice(n).join(" ");
+              return { head, tail };
+            };
+            for (let i = 0; i < parts.length; i += 2) {
+              const segment = (parts[i] || "").trim();
+              const delim = parts[i + 1];
+              if (!segment && !delim) continue;
+              if (delim) {
+                const sentence = concatReadable(segment + delim);
+                if (sentence) {
+                  try {
+                    console.log("[transcribed]", sentence);
+                  } catch {}
+                  setEnParagraphs((prev) => [...prev, sentence]);
+                  scheduleRefinement(sentence);
+                }
+              } else {
+                leftover = concatReadable(segment);
+              }
+            }
+            while (leftover && leftover.split(/\s+/).length > maxRunOnWords) {
+              const { head, tail } = sliceFirstWords(leftover, maxRunOnWords);
+              if (head) {
+                try {
+                  console.log("[transcribed/run-on-slice]", head);
+                } catch {}
+                scheduleRefinement(head);
+              }
+              leftover = tail.trim();
+            }
+            enCurrentRef.current = leftover;
+            setEnCurrent(() => leftover);
+          };
+
+          appendFinal(enTokens, enFinalSeen.current, appendToParagraphs);
+          appendFinal(arTokens, arFinalSeen.current, (text) => {
+            setSrcStable((prev) => concatReadable(prev, text));
+            arabicAccumulatorRef.current = arabicAccumulatorRef.current
+              ? concatReadable(arabicAccumulatorRef.current, text)
+              : text;
+            let arBuf = concatReadable(arabicSentenceBufferRef.current, text);
+            const parts = arBuf.split(/([\.!\?؟؛۔])/);
+            let leftover = "";
+            for (let i = 0; i < parts.length; i += 2) {
+              const seg = (parts[i] || "").trim();
+              const delim = parts[i + 1];
+              if (!seg && !delim) continue;
+              if (delim) {
+                const full = concatReadable(seg + delim);
+                if (full) {
+                  arabicThreeRef.current.push(full);
+                  if (arabicThreeRef.current.length === 3) {
+                    try {
+                      console.log("[arabic x3]", arabicThreeRef.current);
+                    } catch {}
+                    arabicThreeRef.current = [];
+                  }
+                }
+              } else {
+                leftover = concatReadable(seg);
+              }
+            }
+            arabicSentenceBufferRef.current = leftover;
+          });
+
+          const partialText = (tokens: any[]) =>
+            tokens
+              .filter((t) => !t.is_final)
+              .map((t) => t.text)
+              .join("")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          setEnPartial(partialText(enTokens));
+          setSrcPartial(partialText(arTokens));
+          resetSilenceTimer();
+        },
+      });
+      resetSilenceTimer();
+      // Clear the language switching flag after successful restart
+      switchingLanguageRef.current = false;
+    } catch (e: any) {
+      switchingLanguageRef.current = false;
+      setIsListening(false);
+      setError(e?.message || "Failed to restart with new language");
+    }
+  }
+
   function handleStop() {
     // Set stopped flag FIRST to prevent any further state updates
     stoppedRef.current = true;
@@ -1105,9 +1337,7 @@ export default function ClientApp({
                 id="translation-language"
                 className="appearance-none bg-gray-50 text-gray-700 text-sm px-3 py-1.5 pr-8 rounded-lg border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2E7D32]/20 focus:border-[#2E7D32]"
                 value={targetLang}
-                onChange={(e) => setTargetLang(e.target.value)}
-                disabled={isListening}
-                style={{ pointerEvents: isListening ? "none" : "auto" }}
+                onChange={(e) => handleLanguageChange(e.target.value)}
               >
                 {LANG_OPTIONS.map((opt) => (
                   <option key={opt.code} value={opt.code}>
