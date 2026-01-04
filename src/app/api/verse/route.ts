@@ -129,6 +129,40 @@ interface VerseData {
   translation: string;
 }
 
+/**
+ * Decode HTML entities (e.g., &quot; → ", &amp; → &)
+ */
+function decodeHtmlEntities(text: string): string {
+  const entities: Record<string, string> = {
+    "&quot;": '"',
+    "&apos;": "'",
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&nbsp;": " ",
+    "&#39;": "'",
+    "&#x27;": "'",
+    "&#34;": '"',
+    "&#x22;": '"',
+  };
+  
+  return text
+    .replace(/&(?:#\d+|#x[\da-fA-F]+|[a-zA-Z]+);/g, (match) => {
+      // Check named/numeric entities
+      if (entities[match]) return entities[match];
+      // Handle numeric entities like &#123; or &#x7B;
+      if (match.startsWith("&#x")) {
+        const code = parseInt(match.slice(3, -1), 16);
+        return String.fromCharCode(code);
+      }
+      if (match.startsWith("&#")) {
+        const code = parseInt(match.slice(2, -1), 10);
+        return String.fromCharCode(code);
+      }
+      return match; // Return as-is if unknown
+    });
+}
+
 interface VerseResponse {
   chapter: number;
   chapterName: string;
@@ -239,11 +273,13 @@ export async function GET(req: Request) {
     for (let i = 0; i < fetchedVerses.length; i++) {
       const verse = fetchedVerses[i];
       const translationText = fetchedTranslations[i]?.text || "";
-      // Clean HTML tags and footnotes from translation
-      const cleanTranslation = translationText
-        .replace(/<sup[^>]*>.*?<\/sup>/gi, "") // Remove footnote markers
-        .replace(/<[^>]*>/g, "") // Remove other HTML tags
-        .trim();
+      // Clean HTML tags, footnotes, and decode HTML entities from translation
+      const cleanTranslation = decodeHtmlEntities(
+        translationText
+          .replace(/<sup[^>]*>.*?<\/sup>/gi, "") // Remove footnote markers
+          .replace(/<[^>]*>/g, "") // Remove other HTML tags
+          .trim()
+      );
       
       verses.push({
         verseKey: verse.verse_key,
