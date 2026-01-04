@@ -23,10 +23,8 @@ import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// NOTE: For MVP simplicity per user request, the API key is inlined.
-// In production, move this to a server-side temporary key generator.
-const SONIOX_API_KEY =
-  "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120";
+// Client-side API key - must be prefixed with NEXT_PUBLIC_ to be available in browser
+const SONIOX_API_KEY = process.env.NEXT_PUBLIC_SONIOX_API_KEY || "";
 
 function concatReadable(...parts: string[]) {
   return parts
