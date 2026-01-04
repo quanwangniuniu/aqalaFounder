@@ -131,6 +131,7 @@ export interface VerseReference {
   reference: string; // e.g., "Al-Fatihah 1:2"
   verseKey: string; // e.g., "1:2"
   confidence: number; // 0-1 score based on word match ratio
+  longestConsecutive: number; // Longest streak of consecutive matched words
 }
 
 interface SearchResultWord {
@@ -159,6 +160,10 @@ function countArabicWords(text: string): number {
  * Analyze search result to determine if it's a confident match
  * Returns confidence score 0-1
  * 
+ * BALANCED MATCHING: We use consecutive word sequences as a quality signal
+ * but also consider overall match density. This handles transcription
+ * variations while still blocking false positives from common words.
+ * 
  * @param result - The search result to analyze
  * @param inputWordCount - Number of Arabic words in the input
  * @param isTopResult - Whether this is the #1 ranked result (gets bonus)
@@ -167,9 +172,9 @@ function analyzeMatch(
   result: SearchResult,
   inputWordCount: number,
   isTopResult: boolean = false
-): { confidence: number; verseWordCount: number; highlightedCount: number } {
+): { confidence: number; verseWordCount: number; highlightedCount: number; longestConsecutive: number } {
   if (!result.words || result.words.length === 0) {
-    return { confidence: 0, verseWordCount: 0, highlightedCount: 0 };
+    return { confidence: 0, verseWordCount: 0, highlightedCount: 0, longestConsecutive: 0 };
   }
 
   // Count actual words (not verse numbers/end markers)
@@ -179,47 +184,83 @@ function analyzeMatch(
 
   // If no words highlighted, no match
   if (highlightedCount === 0) {
-    return { confidence: 0, verseWordCount, highlightedCount };
+    return { confidence: 0, verseWordCount, highlightedCount, longestConsecutive: 0 };
+  }
+
+  // Find longest consecutive sequence of highlighted words
+  let longestConsecutive = 0;
+  let currentStreak = 0;
+  for (const word of actualWords) {
+    if (word.highlight === true) {
+      currentStreak++;
+      longestConsecutive = Math.max(longestConsecutive, currentStreak);
+    } else {
+      currentStreak = 0;
+    }
   }
 
   // Calculate what percentage of the verse is highlighted
   const verseMatchRatio = highlightedCount / verseWordCount;
   
+  // Calculate what percentage of input was found in the verse
+  const inputMatchRatio = highlightedCount / inputWordCount;
+  
   let confidence = 0;
+
+  // FILTER: Reject very weak matches (scattered single words)
+  // Need at least 2 consecutive OR high density matches
+  const hasGoodConsecutive = longestConsecutive >= 2;
+  const hasHighDensity = highlightedCount >= 3 && inputMatchRatio >= 0.5;
+  
+  if (!hasGoodConsecutive && !hasHighDensity) {
+    return { confidence: 0, verseWordCount, highlightedCount, longestConsecutive };
+  }
 
   // Short verses (1-5 words): need high match ratio
   if (verseWordCount <= 5) {
     if (verseMatchRatio >= 0.5 && highlightedCount >= 2) {
-      confidence = verseMatchRatio;
+      confidence = verseMatchRatio * 0.9;
     }
   }
-  // Medium verses (6-15 words): more lenient
+  // Medium verses (6-15 words): balanced approach
   else if (verseWordCount <= 15) {
-    // For medium verses, 35%+ match with 3+ highlighted words
+    // Need either good consecutive OR high density
     if (verseMatchRatio >= 0.35 && highlightedCount >= 3) {
-      confidence = verseMatchRatio * 1.1; // Boost slightly
+      confidence = verseMatchRatio;
+      // Boost for good consecutive matches
+      if (longestConsecutive >= 3) {
+        confidence *= 1.15;
+      }
     }
   }
-  // Long verses (16+ words): even more lenient (harder to get high ratio)
+  // Long verses (16+ words): more lenient on ratio, focus on absolute matches
   else {
-    if (verseMatchRatio >= 0.25 && highlightedCount >= 4) {
-      confidence = verseMatchRatio * 1.3; // Bigger boost for long verses
+    if (highlightedCount >= 4 && verseMatchRatio >= 0.2) {
+      confidence = verseMatchRatio * 1.2;
+      // Boost for consecutive sequences in long verses
+      if (longestConsecutive >= 3) {
+        confidence *= 1.1;
+      }
     }
   }
 
-  // Boost confidence if highlighted words roughly match input word count
-  const inputMatchRatio = highlightedCount / inputWordCount;
-  if (inputMatchRatio >= 0.5) {
+  // Bonus for strong consecutive matches (indicates real phrase match)
+  if (longestConsecutive >= 4) {
+    confidence = Math.min(confidence * 1.15, 1);
+  }
+  if (longestConsecutive >= 5) {
+    confidence = Math.min(confidence * 1.1, 1);
+  }
+
+  // Top result from search API gets a boost (relevance ranking)
+  if (isTopResult && confidence > 0) {
     confidence = Math.min(confidence * 1.2, 1);
   }
 
-  // Top result from search API gets a significant boost
-  // The search algorithm already ranks by relevance
-  if (isTopResult && confidence > 0) {
-    confidence = Math.min(confidence * 1.25, 1);
-  }
+  // Cap confidence and ensure it's meaningful
+  confidence = Math.min(confidence, 1);
 
-  return { confidence, verseWordCount, highlightedCount };
+  return { confidence, verseWordCount, highlightedCount, longestConsecutive };
 }
 
 /**
@@ -350,6 +391,7 @@ export async function findVerseReference(
     // Analyze all results and collect confident matches
     const confidentMatches: Array<{ verseKey: string; confidence: number }> = [];
     let bestConfidence = 0;
+    let bestConsecutive = 0;
 
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
@@ -362,7 +404,8 @@ export async function findVerseReference(
       const isTopResult = i === 0; // First result gets ranking boost
       const analysis = analyzeMatch(result, inputWordCount, isTopResult);
       
-      // Collect all matches above a lower threshold for range detection
+      // Collect all matches above threshold for range detection
+      // Require at least 35% confidence for consideration
       if (analysis.confidence >= 0.35) {
         confidentMatches.push({
           verseKey: result.verse_key,
@@ -372,11 +415,12 @@ export async function findVerseReference(
 
       if (analysis.confidence > bestConfidence) {
         bestConfidence = analysis.confidence;
+        bestConsecutive = analysis.longestConsecutive;
       }
     }
 
     // THRESHOLD: Need at least one match with 45%+ confidence
-    // Lower than before because we trust the search API's ranking
+    // Balanced to catch real Quran while filtering false positives
     if (bestConfidence < 0.45) {
       return null;
     }
@@ -414,6 +458,7 @@ export async function findVerseReference(
       reference,
       verseKey,
       confidence: bestConfidence,
+      longestConsecutive: bestConsecutive,
     };
   } catch (error) {
     console.error("Error finding verse reference:", error);
