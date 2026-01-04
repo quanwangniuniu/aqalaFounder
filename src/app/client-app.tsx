@@ -13,6 +13,7 @@ import {
 } from "@/lib/firebase/translationHistory";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // NOTE: For MVP simplicity per user request, the API key is inlined.
 // In production, move this to a server-side temporary key generator.
@@ -46,6 +47,7 @@ export default function ClientApp({
   const router = useRouter();
   const { rooms } = useRooms();
   const { user } = useAuth();
+  const { language: preferredLanguage, t, isRTL } = useLanguage();
   const clientRef = useRef<any | null>(null);
   const startedRef = useRef<boolean>(false);
   const enFinalSeen = useRef<Set<string>>(new Set());
@@ -78,9 +80,10 @@ export default function ClientApp({
     { code: "vi", label: "Vietnamese" },
     { code: "th", label: "Thai" },
   ];
-  const [targetLang, setTargetLang] = useState("en");
+  // Initialize targetLang from user's preferred language (from language selection modal)
+  const [targetLang, setTargetLang] = useState(preferredLanguage || "en");
   // Ref to track targetLang synchronously (avoids stale closures in callbacks)
-  const targetLangRef = useRef<string>("en");
+  const targetLangRef = useRef<string>(preferredLanguage || "en");
   // Flag to prevent onFinished from setting isListening=false during language switch
   const switchingLanguageRef = useRef<boolean>(false);
   const labelFor = (code: string) =>
@@ -266,6 +269,14 @@ export default function ClientApp({
 
   // Track current targetLang to detect changes
   const prevTargetLangRef = useRef<string>(targetLang);
+
+  // Sync targetLang with preferredLanguage from context when it changes (e.g., from language modal)
+  useEffect(() => {
+    if (preferredLanguage && preferredLanguage !== targetLang && !isListening) {
+      setTargetLang(preferredLanguage);
+      targetLangRef.current = preferredLanguage;
+    }
+  }, [preferredLanguage]);
 
   // Subscribe to Firestore translations to load historical data
   useEffect(() => {
@@ -1003,6 +1014,10 @@ export default function ClientApp({
       clientRef.current?.stop();
     } catch {}
 
+    // Immediately re-assert listening state to prevent any flash
+    // (belt-and-suspenders in case onFinished fires synchronously)
+    setIsListening(true);
+
     // Clear timers
     if (silenceTimerRef.current) {
       window.clearTimeout(silenceTimerRef.current);
@@ -1195,8 +1210,13 @@ export default function ClientApp({
         },
       });
       resetSilenceTimer();
+      // Explicitly ensure listening state is true after language switch
+      setIsListening(true);
       // Clear the language switching flag after successful restart
-      switchingLanguageRef.current = false;
+      // Use a longer delay to ensure old client's onFinished has definitely fired
+      setTimeout(() => {
+        switchingLanguageRef.current = false;
+      }, 500);
     } catch (e: any) {
       switchingLanguageRef.current = false;
       setIsListening(false);
@@ -1306,7 +1326,7 @@ export default function ClientApp({
         <div className="flex-shrink-0 px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {detectedLang ? labelFor(detectedLang) : "Reference"}
+              {detectedLang ? labelFor(detectedLang) : t("listen.reference")}
             </span>
             {isListening && (
               <span className="flex items-center gap-2 text-xs text-[#2E7D32] font-medium">
@@ -1314,7 +1334,7 @@ export default function ClientApp({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E7D32] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2E7D32]"></span>
                 </span>
-                Live
+                {t("listen.live")}
               </span>
             )}
           </div>
@@ -1342,7 +1362,7 @@ export default function ClientApp({
               </p>
             ) : (
               <p className="text-gray-400 text-center py-2">
-                {isListening ? "Listening..." : "Waiting for audio…"}
+                {isListening ? t("listen.listening") : t("listen.waitingAudio")}
               </p>
             )}
           </div>
@@ -1351,7 +1371,9 @@ export default function ClientApp({
         {/* Language selector */}
         <div className="flex-shrink-0 px-6 py-3 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Translate to</span>
+            <span className="text-xs text-gray-500">
+              {t("listen.translateTo")}
+            </span>
             <div className="relative inline-flex items-center">
               <select
                 id="translation-language"
@@ -1402,7 +1424,8 @@ export default function ClientApp({
                   <button
                     onClick={() => {
                       // Extract verse key from reference (e.g., "Al-Kahf 18:38-42" → "18:38-42")
-                      const match = verseReferences[i]?.match(/(\d+:\d+(?:-\d+)?)/);
+                      const match =
+                        verseReferences[i]?.match(/(\d+:\d+(?:-\d+)?)/);
                       if (match) {
                         setSelectedVerseKey(match[1]);
                       }
@@ -1436,7 +1459,7 @@ export default function ClientApp({
             {!isListening && renderList.length === 0 && (
               <div className="flex items-center justify-center py-16">
                 <span className="text-gray-400 text-lg">
-                  {labelFor(targetLang)} translation will appear here…
+                  {labelFor(targetLang)} {t("listen.translationWillAppear")}
                 </span>
               </div>
             )}
@@ -1519,8 +1542,8 @@ export default function ClientApp({
               <>
                 <button
                   onClick={() => router.push("/")}
-                  className="inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5"
-                  aria-label="Return home"
+                  className={`inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5`}
+                  aria-label={t("listen.returnHome")}
                 >
                   <svg
                     width="18"
@@ -1531,17 +1554,17 @@ export default function ClientApp({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="mr-2"
+                    className={isRTL ? "ml-2" : "mr-2"}
                   >
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
-                  Return home
+                  {t("listen.returnHome")}
                 </button>
                 <button
                   onClick={() => setIsSheetOpen(true)}
-                  className="inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5"
-                  aria-label="Go to donation"
+                  className={`inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5`}
+                  aria-label={t("footer.donate")}
                 >
                   <svg
                     width="18"
@@ -1552,11 +1575,11 @@ export default function ClientApp({
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="mr-2"
+                    className={isRTL ? "ml-2" : "mr-2"}
                   >
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                   </svg>
-                  Donate
+                  {t("footer.donate")}
                 </button>
               </>
             )}
