@@ -91,9 +91,8 @@ export async function POST(req: Request) {
     parts.push(`Output ONLY the corrected ${langName} text. No instructions, no explanations, no prefixes, no meta-text.`);
     const userPrompt = parts.join("\n");
 
-    const model =
-      (fast ? process.env.OPENAI_FAST_MODEL : process.env.OPENAI_MODEL) ||
-      (fast ? "gpt-4o-mini" : "gpt-4o");
+    // Default to gpt-4o-mini (cheaper) - override with OPENAI_MODEL env var if needed
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
