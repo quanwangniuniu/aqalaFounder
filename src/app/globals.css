@@ -336,3 +336,274 @@ body {
     opacity: 0.5;
   }
 }
+
+/* Modal animations */
+@keyframes zoomIn95 {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.zoom-in-95 {
+  animation: zoomIn95 0.2s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-in-95 {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ================================================
+   Language Selection Modal Animations
+   ================================================ */
+
+/* Backdrop animations */
+.lang-modal-backdrop-in {
+  animation: backdropFadeIn 0.5s ease-out forwards;
+}
+
+.lang-modal-backdrop-out {
+  animation: backdropFadeOut 0.4s ease-in forwards;
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdropFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Animated gradient background */
+.lang-modal-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(12, 31, 45, 0.97) 0%,
+    rgba(13, 79, 92, 0.95) 35%,
+    rgba(21, 107, 107, 0.93) 65%,
+    rgba(12, 31, 45, 0.97) 100%
+  );
+  background-size: 400% 400%;
+  animation: langModalGradient 8s ease infinite;
+}
+
+@keyframes langModalGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Floating geometric shapes */
+.lang-modal-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.08;
+  background: linear-gradient(135deg, #c9a962, #e4d4a5);
+}
+
+.lang-modal-shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  right: -100px;
+  animation: floatShape1 12s ease-in-out infinite;
+}
+
+.lang-modal-shape-2 {
+  width: 200px;
+  height: 200px;
+  bottom: -50px;
+  left: -50px;
+  animation: floatShape2 15s ease-in-out infinite;
+}
+
+.lang-modal-shape-3 {
+  width: 150px;
+  height: 150px;
+  top: 40%;
+  left: 20%;
+  animation: floatShape3 10s ease-in-out infinite;
+}
+
+@keyframes floatShape1 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(-30px, 20px) rotate(60deg);
+  }
+  66% {
+    transform: translate(20px, -30px) rotate(120deg);
+  }
+}
+
+@keyframes floatShape2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(40px, -20px) scale(1.1);
+  }
+}
+
+@keyframes floatShape3 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.06;
+  }
+  50% {
+    transform: translate(-20px, 30px) rotate(180deg);
+    opacity: 0.12;
+  }
+}
+
+/* Content panel animations */
+.lang-modal-content-in {
+  animation: contentSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.lang-modal-content-out {
+  animation: contentSlideOut 0.4s ease-in forwards;
+}
+
+@keyframes contentSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes contentSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}
+
+/* Icon bounce animation */
+.lang-modal-icon {
+  animation: iconBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+}
+
+@keyframes iconBounce {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Grid scroll styling */
+.lang-modal-grid {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 169, 98, 0.3) transparent;
+}
+
+.lang-modal-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lang-modal-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lang-modal-grid::-webkit-scrollbar-thumb {
+  background: rgba(201, 169, 98, 0.3);
+  border-radius: 2px;
+}
+
+.lang-modal-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 169, 98, 0.5);
+}
+
+/* Language item staggered animation */
+.lang-modal-item {
+  animation: itemFadeIn 0.4s ease-out both;
+}
+
+@keyframes itemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button pulse animation */
+.lang-modal-btn {
+  animation: btnPulse 2s ease-in-out infinite;
+}
+
+@keyframes btnPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(201, 169, 98, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(201, 169, 98, 0.5);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .lang-modal-backdrop-in,
+  .lang-modal-backdrop-out,
+  .lang-modal-content-in,
+  .lang-modal-content-out,
+  .lang-modal-icon,
+  .lang-modal-item,
+  .lang-modal-btn,
+  .lang-modal-shape,
+  .lang-modal-shape-1,
+  .lang-modal-shape-2,
+  .lang-modal-shape-3 {
+    animation: none;
+  }
+  
+  .lang-modal-backdrop-in,
+  .lang-modal-content-in,
+  .lang-modal-icon,
+  .lang-modal-item {
+    opacity: 1;
+    transform: none;
+  }
+  
+  .lang-modal-bg {
+    animation: none;
+    background-position: 0% 50%;
+  }
+}

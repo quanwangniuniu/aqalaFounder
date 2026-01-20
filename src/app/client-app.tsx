@@ -1,8 +1,17 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useRouter } from "next/navigation";
 import CharityModal from "./charity-modal";
+import VerseModal from "@/components/VerseModal";
+import EmailModal from "@/components/EmailModal";
+import Toast from "@/components/Toast";
 import {
   saveTranslation,
   subscribeTranslations,
@@ -12,11 +21,10 @@ import {
 } from "@/lib/firebase/translationHistory";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-// NOTE: For MVP simplicity per user request, the API key is inlined.
-// In production, move this to a server-side temporary key generator.
-const SONIOX_API_KEY =
-  "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120";
+// Client-side API key - must be prefixed with NEXT_PUBLIC_ to be available in browser
+const SONIOX_API_KEY = process.env.NEXT_PUBLIC_SONIOX_API_KEY || "";
 
 function concatReadable(...parts: string[]) {
   return parts
@@ -45,6 +53,7 @@ export default function ClientApp({
   const router = useRouter();
   const { rooms } = useRooms();
   const { user } = useAuth();
+  const { language: preferredLanguage, t, isRTL } = useLanguage();
   const clientRef = useRef<any | null>(null);
   const startedRef = useRef<boolean>(false);
   const enFinalSeen = useRef<Set<string>>(new Set());
@@ -77,9 +86,10 @@ export default function ClientApp({
     { code: "vi", label: "Vietnamese" },
     { code: "th", label: "Thai" },
   ];
-  const [targetLang, setTargetLang] = useState("en");
+  // Initialize targetLang from user's preferred language (from language selection modal)
+  const [targetLang, setTargetLang] = useState(preferredLanguage || "en");
   // Ref to track targetLang synchronously (avoids stale closures in callbacks)
-  const targetLangRef = useRef<string>("en");
+  const targetLangRef = useRef<string>(preferredLanguage || "en");
   // Flag to prevent onFinished from setting isListening=false during language switch
   const switchingLanguageRef = useRef<boolean>(false);
   const labelFor = (code: string) =>
@@ -87,6 +97,10 @@ export default function ClientApp({
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [enParagraphs, setEnParagraphs] = useState<string[]>([]);
   const [refinedParagraphs, setRefinedParagraphs] = useState<string[]>([]);
+  // Verse references corresponding to each refined paragraph (e.g., "Al-Fatiha 1:2")
+  const [verseReferences, setVerseReferences] = useState<(string | null)[]>([]);
+  // Currently selected verse key for the modal (e.g., "18:38" or "18:38-42")
+  const [selectedVerseKey, setSelectedVerseKey] = useState<string | null>(null);
   const [enPartial, setEnPartial] = useState("");
   const [enCurrent, setEnCurrent] = useState("");
   const enCurrentRef = useRef("");
@@ -117,6 +131,13 @@ export default function ClientApp({
   const silenceTimerRef = useRef<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string>("");
+
+  // Email & copy feature states
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
   // Track loaded translation IDs to avoid duplicates
   const loadedTranslationIdsRef = useRef<Set<string>>(new Set());
   // Track translations by targetLang to handle language switching
@@ -262,6 +283,14 @@ export default function ClientApp({
   // Track current targetLang to detect changes
   const prevTargetLangRef = useRef<string>(targetLang);
 
+  // Sync targetLang with preferredLanguage from context when it changes (e.g., from language modal)
+  useEffect(() => {
+    if (preferredLanguage && preferredLanguage !== targetLang && !isListening) {
+      setTargetLang(preferredLanguage);
+      targetLangRef.current = preferredLanguage;
+    }
+  }, [preferredLanguage]);
+
   // Subscribe to Firestore translations to load historical data
   useEffect(() => {
     if (!mosqueId || !user) {
@@ -386,7 +415,7 @@ export default function ClientApp({
     text: string,
     arabic?: string,
     fast?: boolean
-  ): Promise<string | null> {
+  ): Promise<{ result: string | null; verseReference: string | null }> {
     try {
       const res = await fetch("/api/refine", {
         method: "POST",
@@ -409,13 +438,16 @@ export default function ClientApp({
           detailText = await res.text();
         }
         setError(`Refine error (${res.status}): ${detailText}`);
-        return null;
+        return { result: null, verseReference: null };
       }
       const data = await res.json();
-      return (data?.result as string) || null;
+      return {
+        result: (data?.result as string) || null,
+        verseReference: (data?.verseReference as string) || null,
+      };
     } catch (e: any) {
       setError(`Refine request failed: ${e?.message ?? String(e)}`);
-      return null;
+      return { result: null, verseReference: null };
     }
   }
 
@@ -516,7 +548,11 @@ export default function ClientApp({
     const next = pendingQueueRef.current.shift();
     if (!next) return;
     refiningRef.current = true;
-    const refined = await refineSegment(next.en, next.ar, !!next.fast);
+    const { result: refined, verseReference } = await refineSegment(
+      next.en,
+      next.ar,
+      !!next.fast
+    );
     // Don't update state if we've stopped (prevents post-stop UI changes)
     if (stoppedRef.current) {
       refiningRef.current = false;
@@ -530,6 +566,13 @@ export default function ClientApp({
       // Add all pieces at once to preserve order (CSS animation handles visual smoothness)
       // Previous drip approach caused interleaving when multiple refinements completed
       setRefinedParagraphs((prev) => [...prev, ...pieces]);
+
+      // Add verse references for each piece (only first piece gets the reference)
+      setVerseReferences((prev) => [
+        ...prev,
+        verseReference, // First piece gets the reference
+        ...Array(pieces.length - 1).fill(null), // Rest get null
+      ]);
 
       // Also store in translationMapRef for current targetLang
       const langKey = targetLangRef.current;
@@ -745,6 +788,7 @@ export default function ClientApp({
 
     // Clear ALL previous translations for fresh start
     setRefinedParagraphs([]);
+    setVerseReferences([]); // Clear verse references too
     translationMapRef.current.clear();
     loadedTranslationIdsRef.current.clear();
 
@@ -983,6 +1027,10 @@ export default function ClientApp({
       clientRef.current?.stop();
     } catch {}
 
+    // Immediately re-assert listening state to prevent any flash
+    // (belt-and-suspenders in case onFinished fires synchronously)
+    setIsListening(true);
+
     // Clear timers
     if (silenceTimerRef.current) {
       window.clearTimeout(silenceTimerRef.current);
@@ -1175,8 +1223,13 @@ export default function ClientApp({
         },
       });
       resetSilenceTimer();
+      // Explicitly ensure listening state is true after language switch
+      setIsListening(true);
       // Clear the language switching flag after successful restart
-      switchingLanguageRef.current = false;
+      // Use a longer delay to ensure old client's onFinished has definitely fired
+      setTimeout(() => {
+        switchingLanguageRef.current = false;
+      }, 500);
     } catch (e: any) {
       switchingLanguageRef.current = false;
       setIsListening(false);
@@ -1221,6 +1274,70 @@ export default function ClientApp({
       }
     }
   }
+
+  // Copy translation to clipboard
+  const handleCopyTranslation = useCallback(async () => {
+    const fullText = refinedParagraphs.join("\n\n");
+    if (!fullText.trim()) {
+      setToast({ message: t("share.nothingToCopy"), type: "error" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(fullText);
+      setToast({ message: t("share.copied"), type: "success" });
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement("textarea");
+      textarea.value = fullText;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setToast({ message: t("share.copied"), type: "success" });
+    }
+  }, [refinedParagraphs, t]);
+
+  // Get translation content for email
+  const getEmailContent = useCallback(() => {
+    const sourceText = srcStable.trim();
+    const translatedText = refinedParagraphs.join("\n\n");
+    const langLabel =
+      LANG_OPTIONS.find((l) => l.code === targetLang)?.label || targetLang;
+    const sourceLangLabel = detectedLang
+      ? LANG_OPTIONS.find((l) => l.code === detectedLang)?.label || detectedLang
+      : "Unknown";
+
+    return {
+      subject: `Quran Translation - ${new Date().toLocaleDateString()}`,
+      body: `
+══════════════════════════════════════
+       QURAN TRANSLATION RECORD
+══════════════════════════════════════
+
+📅 Date: ${new Date().toLocaleString()}
+🌐 Source Language: ${sourceLangLabel}
+🔄 Translation Language: ${langLabel}
+
+──────────────────────────────────────
+           ORIGINAL TEXT
+──────────────────────────────────────
+
+${sourceText || "(No source text recorded)"}
+
+──────────────────────────────────────
+          TRANSLATION
+──────────────────────────────────────
+
+${translatedText || "(No translation recorded)"}
+
+══════════════════════════════════════
+      Powered by Aqala - aqala.io
+══════════════════════════════════════
+`.trim(),
+    };
+  }, [srcStable, refinedParagraphs, targetLang, detectedLang, LANG_OPTIONS]);
 
   // Track whether the reader is near the bottom of the translation container; if scrolled up, disable auto-scroll.
   useEffect(() => {
@@ -1286,7 +1403,7 @@ export default function ClientApp({
         <div className="flex-shrink-0 px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {detectedLang ? labelFor(detectedLang) : "Reference"}
+              {detectedLang ? labelFor(detectedLang) : t("listen.reference")}
             </span>
             {isListening && (
               <span className="flex items-center gap-2 text-xs text-[#2E7D32] font-medium">
@@ -1294,7 +1411,7 @@ export default function ClientApp({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E7D32] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2E7D32]"></span>
                 </span>
-                Live
+                {t("listen.live")}
               </span>
             )}
           </div>
@@ -1322,7 +1439,7 @@ export default function ClientApp({
               </p>
             ) : (
               <p className="text-gray-400 text-center py-2">
-                {isListening ? "Listening..." : "Waiting for audio…"}
+                {isListening ? t("listen.listening") : t("listen.waitingAudio")}
               </p>
             )}
           </div>
@@ -1331,7 +1448,9 @@ export default function ClientApp({
         {/* Language selector */}
         <div className="flex-shrink-0 px-6 py-3 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Translate to</span>
+            <span className="text-xs text-gray-500">
+              {t("listen.translateTo")}
+            </span>
             <div className="relative inline-flex items-center">
               <select
                 id="translation-language"
@@ -1378,6 +1497,38 @@ export default function ClientApp({
                 >
                   {p}
                 </p>
+                {verseReferences[i] && (
+                  <button
+                    onClick={() => {
+                      // Extract verse key from reference (e.g., "Al-Kahf 18:38-42" → "18:38-42")
+                      const match =
+                        verseReferences[i]?.match(/(\d+:\d+(?:-\d+)?)/);
+                      if (match) {
+                        setSelectedVerseKey(match[1]);
+                      }
+                    }}
+                    className="group mt-2 inline-flex items-center gap-1.5 text-sm text-[#2E7D32]/80 italic hover:text-[#2E7D32] active:text-[#1B5E20] transition-all cursor-pointer rounded-md px-2 py-1 -ml-2 hover:bg-[#2E7D32]/5 active:bg-[#2E7D32]/10"
+                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    >
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                    <span className="underline decoration-[#2E7D32]/30 underline-offset-2 group-hover:decoration-[#2E7D32]/60">
+                      {verseReferences[i]}
+                    </span>
+                  </button>
+                )}
               </div>
             ))}
 
@@ -1385,7 +1536,7 @@ export default function ClientApp({
             {!isListening && renderList.length === 0 && (
               <div className="flex items-center justify-center py-16">
                 <span className="text-gray-400 text-lg">
-                  {labelFor(targetLang)} translation will appear here…
+                  {labelFor(targetLang)} {t("listen.translationWillAppear")}
                 </span>
               </div>
             )}
@@ -1453,54 +1604,139 @@ export default function ClientApp({
         presetAmounts={[7, 20, 50]}
       />
 
+      {/* Verse Modal - shows Quran verse details when clicked */}
+      <VerseModal
+        verseKey={selectedVerseKey}
+        onClose={() => setSelectedVerseKey(null)}
+        targetLang={targetLang}
+      />
+
+      {/* Email Modal - send translation via email */}
+      <EmailModal
+        open={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        content={getEmailContent()}
+        onSuccess={() => {
+          setToast({ message: t("share.emailSent"), type: "success" });
+        }}
+        onError={(msg) => {
+          setToast({ message: msg, type: "error" });
+        }}
+      />
+
+      {/* Toast notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Footer with controls */}
       <footer className="flex-shrink-0 border-t border-gray-100 bg-white">
         <div className="px-6 py-4">
           <div className="flex items-center justify-center gap-4">
             {hasStopped && !isListening && (
-              <>
-                <button
-                  onClick={() => router.push("/")}
-                  className="inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5"
-                  aria-label="Return home"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-2"
+              <div className="flex flex-col items-center gap-3 w-full">
+                {/* Quick actions row - Copy & Email */}
+                {refinedParagraphs.length > 0 && (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <button
+                      onClick={handleCopyTranslation}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2E7D32] text-white font-medium text-sm px-5 py-2.5 transition-all hover:bg-[#1B5E20] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#2E7D32]/20"
+                      aria-label={t("share.copy")}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                      {t("share.copy")}
+                    </button>
+                    <button
+                      onClick={() => setShowEmailModal(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2E7D32] text-white font-medium text-sm px-5 py-2.5 transition-all hover:bg-[#1B5E20] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#2E7D32]/20"
+                      aria-label={t("share.email")}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="2" y="4" width="20" height="16" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      </svg>
+                      {t("share.email")}
+                    </button>
+                  </div>
+                )}
+
+                {/* Secondary actions row */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => router.push("/")}
+                    className="inline-flex items-center justify-center rounded-full border border-gray-300 text-gray-600 font-medium text-sm px-4 py-2 transition-colors hover:bg-gray-50 hover:border-gray-400"
+                    aria-label={t("listen.returnHome")}
                   >
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                  Return home
-                </button>
-                <button
-                  onClick={() => setIsSheetOpen(true)}
-                  className="inline-flex items-center justify-center rounded-full border border-[#2E7D32] text-[#2E7D32] font-medium text-sm px-5 py-2 transition-colors hover:bg-[#2E7D32]/5"
-                  aria-label="Go to donation"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-2"
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={isRTL ? "ml-1.5" : "mr-1.5"}
+                    >
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    {t("listen.returnHome")}
+                  </button>
+                  <button
+                    onClick={() => setIsSheetOpen(true)}
+                    className="inline-flex items-center justify-center rounded-full border border-gray-300 text-gray-600 font-medium text-sm px-4 py-2 transition-colors hover:bg-gray-50 hover:border-gray-400"
+                    aria-label={t("footer.donate")}
                   >
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                  </svg>
-                  Donate
-                </button>
-              </>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={isRTL ? "ml-1.5" : "mr-1.5"}
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    {t("footer.donate")}
+                  </button>
+                </div>
+              </div>
             )}
             <button
               onClick={isListening ? handleStop : handleStart}

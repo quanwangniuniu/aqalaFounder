@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { findVerseReference } from "@/lib/quran/api";
 
 export const runtime = "nodejs";
 
@@ -90,9 +91,8 @@ export async function POST(req: Request) {
     parts.push(`Output ONLY the corrected ${langName} text. No instructions, no explanations, no prefixes, no meta-text.`);
     const userPrompt = parts.join("\n");
 
-    const model =
-      (fast ? process.env.OPENAI_FAST_MODEL : process.env.OPENAI_MODEL) ||
-      (fast ? "gpt-4o-mini" : "gpt-4o");
+    // Default to gpt-4o-mini (cheaper) - override with OPENAI_MODEL env var if needed
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -125,7 +125,27 @@ export async function POST(req: Request) {
     const content =
       data?.choices?.[0]?.message?.content ??
       "";
-    return NextResponse.json({ result: content });
+
+    // Search for Quran verse reference if Arabic text is provided
+    // CONSERVATIVE: Only show when we're VERY confident it's an actual Quranic verse
+    // Most Arabic in khutbahs is regular speech, not Quran recitation
+    let verseReference: string | null = null;
+    if (typeof arabicText === "string" && arabicText.trim().length >= 10) {
+      try {
+        const verseResult = await findVerseReference(arabicText.trim());
+        // The findVerseReference function already has strict thresholds built in
+        // It only returns results when confidence is high
+        if (verseResult) {
+          verseReference = verseResult.reference;
+          console.log(`[Quran] Matched: "${verseResult.reference}" (confidence: ${verseResult.confidence.toFixed(2)}, consecutive: ${verseResult.longestConsecutive})`);
+        }
+      } catch (err) {
+        // Silently fail - verse reference is optional enhancement
+        console.error("Verse reference lookup failed:", err);
+      }
+    }
+
+    return NextResponse.json({ result: content, verseReference });
   } catch (e: any) {
     return NextResponse.json(
       { error: "Unexpected error", detail: e?.message ?? String(e) },

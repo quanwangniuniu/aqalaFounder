@@ -1,10 +1,13 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Page() {
+  const { t, isRTL } = useLanguage();
+
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
       {/* Background layers */}
       <div className="absolute inset-0 hero-gradient-bg" />
       <div className="absolute inset-0 hero-geometric-overlay" />
@@ -45,21 +48,21 @@ export default function Page() {
           <div className="max-w-2xl mx-auto text-center -mt-8">
             {/* Headline */}
             <h1 className="hero-fade-in hero-fade-in-delay-1 text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white leading-[1.15] mb-4 sm:mb-6">
-              Don't just listen.
-              <span className="block text-gradient-gold">Understand.</span>
+              {t("home.headline1")}
+              <span className="block text-gradient-gold">{t("home.headline2")}</span>
             </h1>
 
             {/* Subheadline */}
             <p className="hero-fade-in hero-fade-in-delay-2 text-base sm:text-xl text-white/80 leading-relaxed max-w-xl mx-auto mb-6 sm:mb-8">
-            Aqala translates spoken Islamic word - Qur'an, khutbahs, and lectures - into clear, real-time meaning,<br />
-            From any language - to any language.
+              {t("home.subheadline")}<br />
+              {t("home.subheadline2")}
             </p>
 
             {/* Quranic reasoning */}
             <p className="hero-fade-in hero-fade-in-delay-3 quran-verse text-sm sm:text-lg text-white/60 mb-8 sm:mb-12 max-w-sm sm:max-w-md mx-auto">
-              Because Allah calls us to reflect, not merely recite.
+              {t("home.quranVerse")}
               <span className="block mt-1 text-xs sm:text-sm text-white/40">
-                (Qur'an 47:24)
+                {t("home.quranRef")}
               </span>
             </p>
 
@@ -85,7 +88,7 @@ export default function Page() {
                     fill="currentColor"
                   />
                 </svg>
-                Start Listening
+                {t("home.startListening")}
               </Link>
 
               <Link
@@ -104,13 +107,13 @@ export default function Page() {
                     fill="currentColor"
                   />
                 </svg>
-                Help keep Aqala free
+                {t("home.helpKeepFree")}
               </Link>
             </div>
 
             {/* Trust indicator */}
             <p className="hero-fade-in hero-fade-in-delay-5 mt-8 sm:mt-12 text-xs sm:text-sm text-white/40">
-              Free forever 
+              {t("home.freeForever")}
             </p>
 
             {/* Review link */}
@@ -131,7 +134,7 @@ export default function Page() {
                 >
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
-                Share your thoughts
+                {t("home.shareThoughts")}
               </Link>
             </div>
           </div>
