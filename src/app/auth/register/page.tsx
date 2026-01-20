@@ -1,7 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import AuthForm from "@/components/auth/AuthForm";
+
+function AuthFormWrapper() {
+  return <AuthForm mode="register" />;
+}
 
 export default function RegisterPage() {
   return (
@@ -10,7 +15,9 @@ export default function RegisterPage() {
         <h1 className="text-2xl font-bold text-center mb-2">Create Account</h1>
         <p className="text-gray-600 text-center mb-8">Sign up to get started with Aqala.</p>
 
-        <AuthForm mode="register" />
+        <Suspense fallback={<div className="text-center text-gray-600">Loading...</div>}>
+          <AuthFormWrapper />
+        </Suspense>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
