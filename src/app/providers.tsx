@@ -11,18 +11,15 @@ import React from "react";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <LanguageProvider>
-        <OpenReplayProvider>
-          <RoomsProvider>
-            {children}
-            <LanguageSelectionModal />
-          </RoomsProvider>
-        </OpenReplayProvider>
-      </LanguageProvider>
       <SubscriptionProvider>
-        <OpenReplayProvider>
-          <RoomsProvider>{children}</RoomsProvider>
-        </OpenReplayProvider>
+        <LanguageProvider>
+          <OpenReplayProvider>
+            <RoomsProvider>
+              {children}
+              <LanguageSelectionModal />
+            </RoomsProvider>
+          </OpenReplayProvider>
+        </LanguageProvider>
       </SubscriptionProvider>
     </AuthProvider>
   );
