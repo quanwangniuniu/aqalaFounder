@@ -1,7 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import AuthForm from "@/components/auth/AuthForm";
+
+function AuthFormWrapper() {
+  return <AuthForm mode="login" />;
+}
 
 export default function LoginPage() {
   return (
@@ -10,7 +15,9 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center mb-2">Sign In</h1>
         <p className="text-gray-600 text-center mb-8">Welcome back! Please sign in to your account.</p>
 
-        <AuthForm mode="login" />
+        <Suspense fallback={<div className="text-center text-gray-600">Loading...</div>}>
+          <AuthFormWrapper />
+        </Suspense>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
