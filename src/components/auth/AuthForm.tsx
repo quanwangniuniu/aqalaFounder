@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import GoogleSignInButton from "./GoogleSignInButton";
 
@@ -17,6 +17,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, error: authError } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,8 +51,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
       } else {
         await signIn(email, password);
       }
-      // Redirect to home page on success
-      router.push("/");
+      // Redirect to returnUrl if provided, otherwise home page
+      const returnUrl = searchParams.get("returnUrl");
+      router.push(returnUrl || "/");
     } catch (err: any) {
       // Error is already set in AuthContext, but we can show a user-friendly message
       const errorMessage = err.code

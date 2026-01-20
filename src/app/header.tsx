@@ -3,9 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import UserAvatar from "@/components/UserAvatar";
 
 export default function Header() {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   // Hide header on landing page
   if (pathname === "/") return null;
@@ -24,6 +27,7 @@ export default function Header() {
           />
           <span className="sr-only">Home</span>
         </Link>
+        {user && <UserAvatar />}
       </div>
     </header>
   );

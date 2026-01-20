@@ -15,19 +15,22 @@ let app: FirebaseApp | null = null;
 let auth: Auth;
 let db: Firestore | null = null;
 
+// Initialize Firebase on both client and server
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
 if (typeof window !== "undefined") {
-  // Initialize Firebase only on client side
-  if (getApps().length === 0) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0];
-  }
+  // Client-side: use auth
   auth = getAuth(app);
   db = getFirestore(app);
 } else {
-  // Server-side: create dummy objects to avoid errors
+  // Server-side: initialize Firestore for API routes
+  db = getFirestore(app);
+  // Auth is not typically needed server-side in API routes, but we create a dummy object
   auth = {} as Auth;
-  db = null;
 }
 
 export { auth, db };
