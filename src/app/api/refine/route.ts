@@ -1,12 +1,35 @@
 import { NextResponse } from "next/server";
+import { findVerseReference } from "@/lib/quran/api";
 
 export const runtime = "nodejs";
 
+const LANG_NAMES: Record<string, string> = {
+  en: "English",
+  ar: "Arabic",
+  ur: "Urdu",
+  hi: "Hindi",
+  bn: "Bengali",
+  pa: "Punjabi",
+  tr: "Turkish",
+  id: "Indonesian",
+  es: "Spanish",
+  fr: "French",
+  de: "German",
+  it: "Italian",
+  pt: "Portuguese",
+  ru: "Russian",
+  zh: "Chinese",
+  ja: "Japanese",
+  ko: "Korean",
+  vi: "Vietnamese",
+  th: "Thai",
+};
+
 // POST /api/refine
-// Body: { text: string; arabicText?: string; context?: string; fast?: boolean }
+// Body: { text: string; arabicText?: string; context?: string; fast?: boolean; targetLang?: string }
 export async function POST(req: Request) {
   try {
-    const { text, arabicText, context, fast } = await req.json();
+    const { text, arabicText, context, fast, targetLang } = await req.json();
     if (!text || typeof text !== "string") {
       return NextResponse.json({ error: "Missing 'text'." }, { status: 400 });
     }
@@ -22,73 +45,54 @@ export async function POST(req: Request) {
       );
     }
 
+    // Resolve target language name (default to English for backwards compatibility)
+    const langCode = targetLang || "en";
+    const langName = LANG_NAMES[langCode] || "English";
+
     const systemPrompt = [
-      "You are an expert editor of English translations of Islamic sermons and Friday khutbahs.",
+      `You are a precise editor fixing grammar and flow in ${langName} translations of Islamic content.`,
       "",
-      "Do NOT add generic moral guidance, advice, or commentary that is not explicitly present in the source.",
-      "Your task is NOT to summarise, condense, or shorten the text.",
+      "CRITICAL RULES - NEVER VIOLATE:",
       "",
-      "Your goal is to:",
+      `1. Output ONLY in ${langName}. The input is already in ${langName} - keep it that way.`,
+      "2. Output ONLY what is in the input. NEVER add new sentences, ideas, stories, or content.",
+      "3. If input has 2 sentences, output has 2 sentences. If input has 10 words, output has roughly 10 words.",
+      "4. Do NOT expand, elaborate, or infer beyond what is explicitly stated.",
+      "5. Do NOT add greetings, blessings, advice, or commentary not in the original.",
+      "6. Do NOT generate typical khutbah content unless it is LITERALLY in the input.",
+      `7. NEVER translate to a different language - input and output must both be in ${langName}.`,
       "",
-      "Preserve every idea, detail, and emotional meaning in the input.",
-      "Expand and clarify where the English is broken, unclear, or machine-translated.",
-      "Fix grammar, flow, and structure.",
-      "Maintain respectful Islamic language and honorifics (e.g. “peace and blessings be upon him”).",
-      "Correct obvious transcription or translation glitches without removing meaning.",
+      "Your ONLY job is to:",
+      "- Fix grammar and sentence structure",
+      "- Correct obvious typos or transcription errors",
+      "- Make the existing text flow naturally",
+      "- Add appropriate Islamic honorifics ONLY where contextually required",
       "",
-      "Tense and person consistency requirements:",
-      "- Default to past tense for narrated events unless the context explicitly requires otherwise.",
-      "- Keep person (first/second/third) consistent and grammatically correct; do not drift.",
-      "- Use third-person narration outside of quotes; keep first-person INSIDE the quotes of the speaker.",
-      "- Maintain gender/number agreement (she/her vs. he/him) according to the Arabic meaning.",
-      "- If the rough English mixes tenses/persons, resolve this cleanly and consistently in the refined segment.",
-      "",
-      "Do NOT:",
-      "",
-      "Remove stories, examples, repetitions, or emphasis.",
-      "Summarise, condense, or “clean up” by cutting content.",
-      "Add new religious rulings, facts, or interpretations.",
-      "",
-      "If a sentence is unclear due to bad translation or speech-to-text errors:",
-      "",
-      "Infer the most likely intended meaning from context",
-      "Rewrite it clearly while preserving intent",
-      "",
-      "Output a full, expanded, fluent English khutbah-style text that sounds natural when read aloud.",
-      "",
-      "Treat the input as sacred content: accuracy and preservation of meaning are more important than brevity.",
+      "Be MINIMAL. Preserve the LENGTH of the input. Fix grammar ONLY.",
     ].join("\n");
 
-    const prefix = arabicText
-      ? "The original Arabic meaning must be preserved. If the English is unclear, prioritise the intended Arabic meaning.\n\n"
-      : "";
-
     const parts: string[] = [];
-    parts.push("Here is an English translation of a Friday sermon that contains errors from speech-to-text and machine translation.");
-    parts.push("");
-    parts.push("Rewrite it in clear, natural English without losing any meaning, without shortening it, and without summarising.");
-    parts.push("");
-    parts.push("Keep all ideas, lessons, and emotional weight intact.");
-    parts.push("");
-    if (typeof context === "string" && context.trim().length > 0) {
-      parts.push("Context so far (for continuity, do not rewrite this):");
-      parts.push(context.trim());
-      parts.push("");
+    parts.push(`Fix the grammar in this ${langName} text. Output ONLY the corrected version in ${langName}.`);
+    parts.push("Do NOT add any new content, sentences, or ideas.");
+    parts.push("Keep the same length - if input is short, output is short.");
+    parts.push(`IMPORTANT: Keep the output in ${langName}. Do NOT translate to any other language.`);
+    if (arabicText) {
+      parts.push(`If the ${langName} is unclear, prioritize the intended Arabic meaning.`);
     }
+    parts.push("");
     if (typeof arabicText === "string" && arabicText.trim().length > 0) {
-      parts.push("Original Arabic snippet (for grounding, do not translate this directly, use it to resolve ambiguity):");
+      parts.push("Arabic reference (for word choice only, do not translate or expand):");
       parts.push(arabicText.trim());
       parts.push("");
     }
-    parts.push("New segment to refine (rough English):");
-    parts.push(prefix + text);
+    parts.push(`${langName} text to fix:`);
+    parts.push(text);
     parts.push("");
-    parts.push('Output ONLY the refined English for the "New segment", ensuring it fits seamlessly with the context and khutbah tone. Do NOT add new stories or rulings.');
+    parts.push(`Output ONLY the corrected ${langName} text. No instructions, no explanations, no prefixes, no meta-text.`);
     const userPrompt = parts.join("\n");
 
-    const model =
-      (fast ? process.env.OPENAI_FAST_MODEL : process.env.OPENAI_MODEL) ||
-      (fast ? "gpt-4o-mini" : "gpt-4o");
+    // Default to gpt-4o-mini (cheaper) - override with OPENAI_MODEL env var if needed
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model,
-        temperature: fast ? 0.2 : 0.2,
+        temperature: 0,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -121,7 +125,27 @@ export async function POST(req: Request) {
     const content =
       data?.choices?.[0]?.message?.content ??
       "";
-    return NextResponse.json({ result: content });
+
+    // Search for Quran verse reference if Arabic text is provided
+    // CONSERVATIVE: Only show when we're VERY confident it's an actual Quranic verse
+    // Most Arabic in khutbahs is regular speech, not Quran recitation
+    let verseReference: string | null = null;
+    if (typeof arabicText === "string" && arabicText.trim().length >= 10) {
+      try {
+        const verseResult = await findVerseReference(arabicText.trim());
+        // The findVerseReference function already has strict thresholds built in
+        // It only returns results when confidence is high
+        if (verseResult) {
+          verseReference = verseResult.reference;
+          console.log(`[Quran] Matched: "${verseResult.reference}" (confidence: ${verseResult.confidence.toFixed(2)}, consecutive: ${verseResult.longestConsecutive})`);
+        }
+      } catch (err) {
+        // Silently fail - verse reference is optional enhancement
+        console.error("Verse reference lookup failed:", err);
+      }
+    }
+
+    return NextResponse.json({ result: content, verseReference });
   } catch (e: any) {
     return NextResponse.json(
       { error: "Unexpected error", detail: e?.message ?? String(e) },

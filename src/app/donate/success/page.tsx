@@ -16,7 +16,7 @@ export default function DonateSuccessPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-100 to-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#d4eede] to-white px-4">
       <div className="max-w-md w-full text-center space-y-6">
         <div className="text-6xl mb-4">✅</div>
         <h1 className="text-3xl font-semibold text-gray-900">
@@ -27,7 +27,7 @@ export default function DonateSuccessPage() {
         </p>
         <button
           onClick={() => router.push("/")}
-          className="mt-6 w-full inline-flex items-center justify-center rounded-full bg-[#10B981] hover:bg-[#059669] text-white font-medium text-base leading-7 px-6 py-3 shadow-sm transition-colors"
+          className="mt-6 w-full inline-flex items-center justify-center rounded-full bg-[#06402B] hover:bg-[#053521] text-white font-medium text-base leading-7 px-6 py-3 shadow-sm transition-colors"
         >
           Return Home
         </button>

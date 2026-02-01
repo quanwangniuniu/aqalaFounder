@@ -221,13 +221,13 @@ export default function RoomDetailPage() {
             <h1 className="text-xl font-semibold text-white">Room</h1>
             <Link
               href="/rooms"
-              className="text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+              className="text-[#0a5c3e] text-sm font-medium hover:text-[#06402B] transition-colors"
             >
               ← Back
             </Link>
           </div>
           <div className="flex items-center gap-2 text-zinc-500">
-            <div className="w-4 h-4 border-2 border-zinc-600 border-t-emerald-400 rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-zinc-600 border-t-[#0a5c3e] rounded-full animate-spin"></div>
             Loading room...
           </div>
         </div>
@@ -243,7 +243,7 @@ export default function RoomDetailPage() {
             <h1 className="text-xl font-semibold text-white">Room</h1>
             <Link
               href="/rooms"
-              className="text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+              className="text-[#0a5c3e] text-sm font-medium hover:text-[#06402B] transition-colors"
             >
               ← Back
             </Link>
@@ -290,7 +290,7 @@ export default function RoomDetailPage() {
             </div>
             <Link
               href="/rooms"
-              className="text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+              className="text-[#0a5c3e] text-sm font-medium hover:text-[#06402B] transition-colors"
             >
               ← Back
             </Link>
@@ -343,8 +343,8 @@ export default function RoomDetailPage() {
               <div className="px-6 py-3 border-b border-[#2a3142]">
                 <div className="flex items-center gap-3">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0a5c3e] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#06402B]"></span>
                   </span>
                   <span className="text-sm text-zinc-400 font-medium">
                     Lead Reciter

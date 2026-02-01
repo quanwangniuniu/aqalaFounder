@@ -100,10 +100,10 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
                 <div
                   key={member.userId}
                   className={`flex items-center gap-3 p-3 rounded-lg ${
-                    isCurrentUser ? "bg-emerald-50 border border-emerald-200" : "bg-zinc-50"
+                    isCurrentUser ? "bg-[#d4eede] border border-[#06402B]/30" : "bg-zinc-50"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#10B981] text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[#06402B] text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
                     {getUserInitials(member.userId === user?.uid ? user : null, member.userId)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -112,7 +112,7 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
                         {member.userId === user?.uid ? "You" : getUserDisplayName(null, member.userId, member.email)}
                       </p>
                       {isLeadReciter && (
-                        <span className="px-2 py-0.5 text-xs font-medium bg-[#10B981] text-white rounded-full">
+                        <span className="px-2 py-0.5 text-xs font-medium bg-[#06402B] text-white rounded-full">
                           Lead Reciter
                         </span>
                       )}

@@ -21,81 +21,118 @@ export default function DonatePage() {
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-8 md:p-12 space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
-            <div className="text-5xl mb-2">🙌</div>
+            <div className="text-5xl mb-2">🤲</div>
           </div>
 
           {/* Main content */}
           <div className="space-y-6 text-center">
             {/* Quranic verse */}
             <div className="space-y-2">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed font-medium">
-                <span className="text-emerald-800 font-semibold">Allah</span> calls us to reflect upon the Qur'an, not merely recite it
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
+                Then do they not reflect upon the Qur'an, or are there locks upon their hearts?
               </p>
-              <p className="text-sm text-emerald-800 font-medium">
+              <p className="text-base md:text-lg text-[#06402B] font-medium">
                 (Qur'an 47:24)
               </p>
             </div>
 
             {/* Aqala mission */}
             <div className="space-y-4 pt-2">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed">
-                <span className="font-semibold text-emerald-800">Aqala</span> helps turn spoken islamic knowledge into understanding no matter the language, allowing knowledge to reach the heart.
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed">
+                <span className="font-semibold text-[#06402B]">Aqala</span> helps transform spoken Islamic knowledge into understanding — no matter the language — allowing knowledge to reach the heart.
               </p>
             </div>
 
             {/* Hadith */}
             <div className="space-y-2 pt-4">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed font-medium">
-                The Prophet <span className="text-emerald-800">ﷺ</span> said that beneficial knowledge continues to reward a person even after death
-              </p>
-              <p className="text-sm text-emerald-800 font-medium">
-                (Sahih Muslim)
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
+                The Prophet <span className="text-[#06402B]">ﷺ</span> taught that beneficial knowledge continues to reward a person even after death (Sahih Muslim).
               </p>
             </div>
 
             {/* Support message */}
             <div className="space-y-2 pt-4">
-              <p className="text-lg md:text-xl text-gray-800 leading-relaxed font-medium">
-                Support Aqala for the sake of <span className="text-emerald-800 font-semibold">Allah</span> and give yourself a means of <span className="text-emerald-800 font-semibold">Sadaqah Jariyah</span>.
+              <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
+                By supporting Aqala, you help create ongoing access to understanding for the global <span className="text-[#06402B] font-semibold">Ummah</span> — a form of <span className="text-[#06402B] font-semibold">Sadaqah Jariyah</span>, inshaAllah.
               </p>
             </div>
 
             {/* Mission statement */}
             <div className="space-y-3 pt-6">
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Our mission is simple. Remove the barriers to understanding and empower the global <span className="text-emerald-800 font-semibold">Ummah</span> with knowledge that connects hearts and minds.
+                Our mission is simple: remove the barriers to understanding and reconnect hearts and minds through knowledge.
               </p>
             </div>
 
             {/* Call to action */}
             <div className="space-y-2 pt-4">
               <p className="text-xl md:text-2xl text-gray-900 leading-relaxed font-semibold">
-                Be the reasons others understand.
+                Be the reason someone understands.
               </p>
             </div>
 
-            {/* Tagline */}
-            <div className="pt-4">
-              <p className="text-lg md:text-xl text-emerald-800 font-bold italic">
-                Aqala - Connecting through comprehension
+            {/* Alternative ways to help */}
+            <div className="space-y-2 pt-4">
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                If you're unable to donate, sharing Aqala, leaving a review, or making duʿā' for this project is also deeply appreciated.
               </p>
             </div>
+          </div>
+
+          {/* Closing statements */}
+          <div className="space-y-4 pt-6 text-center">
+            <div className="space-y-2">
+              <p className="text-xl md:text-2xl text-gray-900 leading-relaxed font-bold">
+                One donation. Endless understanding.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                AQALA is free to use. Your support keeps it that way.
+              </p>
+            </div>
+            <div className="space-y-2 pt-2">
+              <p className="text-base md:text-lg text-[#06402B] leading-relaxed font-medium">
+                Together, we can remove language as a barrier to faith.
+              </p>
+            </div>
+          </div>
+
+          {/* Du'a */}
+          <div className="space-y-2 pt-4 text-center">
+            <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium" dir="rtl">
+              اللهم انفعنا بما علمتنا وزِدنا علماً نافعاً
+            </p>
+            <p className="text-base md:text-lg text-gray-700 leading-relaxed italic">
+              Allahumma anfaʿnā bimā ʿallamtanā wa zidnā ʿilman nāfiʿā.
+            </p>
+            <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+              O Allah, benefit us through what You have taught us and increase us in beneficial knowledge.
+            </p>
           </div>
 
           {/* Buttons */}
           <div className="flex flex-col items-center gap-4 pt-6">
             <button
               onClick={() => setDonateOpen(true)}
-              className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white font-semibold text-lg leading-7 px-8 py-4 shadow-lg transition-all transform hover:scale-105"
+              className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-[#06402B] hover:bg-[#053521] active:bg-[#032117] text-white font-semibold text-lg leading-7 px-8 py-4 shadow-lg transition-all transform hover:scale-105"
             >
-              Donate to Charity
+              Donate to Aqala
             </button>
-            <Link
-              href="/"
-              className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline"
-            >
-              Return to Home
-            </Link>
+            <div className="flex flex-col items-center gap-3">
+              <Link
+                href="/"
+                className="text-[#06402B] hover:text-[#053521] font-medium text-sm underline"
+              >
+                Return to Home
+              </Link>
+              <Link
+                href="/reviews"
+                className="text-[#06402B] hover:text-[#053521] font-medium text-sm underline"
+              >
+                Share Your Thoughts
+              </Link>
+            </div>
           </div>
         </div>
       </div>
