@@ -1,16 +1,20 @@
 "use client";
 
-import Script from "next/script";
+import { useEffect } from "react";
 
 const ADSENSE_CLIENT =
   process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || "ca-pub-3882364799598893";
 
 export default function AdSense() {
-  return (
-    <Script
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-      strategy="lazyOnload"
-      crossOrigin="anonymous"
-    />
-  );
+  useEffect(() => {
+    if (document.querySelector('script[src*="adsbygoogle.js"]')) return;
+
+    const script = document.createElement("script");
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    document.head.appendChild(script);
+  }, []);
+
+  return null;
 }
