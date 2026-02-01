@@ -20,7 +20,7 @@ export default function Footer() {
         <div className="flex items-center justify-center gap-3 sm:gap-5">
           {/* Instagram Link */}
           <a
-            href="https://www.instagram.com/aqala.foundation?igsh=MXJ6cGNvcXdoazJ3aw=="
+            href="https://www.instagram.com/aqala.io/"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-2 px-3 py-2 rounded-xl text-white/60 hover:text-[#D4AF37] hover:bg-white/5 transition-all duration-200"
