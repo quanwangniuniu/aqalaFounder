@@ -52,7 +52,7 @@ export default function Toast({
           : "opacity-0 translate-y-4"
         }
         ${type === "success"
-          ? "bg-[#2E7D32]/95 border-[#4CAF50]/30 text-white"
+          ? "bg-[#06402B]/95 border-[#4CAF50]/30 text-white"
           : "bg-red-500/95 border-red-400/30 text-white"
         }
       `}

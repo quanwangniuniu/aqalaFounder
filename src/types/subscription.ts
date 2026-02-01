@@ -1,21 +1,14 @@
-export type SubscriptionPlan = "free" | "premium" | "business";
+export type SubscriptionPlan = "free" | "premium";
 
-export type SubscriptionStatus =
-  | "active"
-  | "canceled"
-  | "past_due"
-  | "trialing"
-  | "incomplete"
-  | "incomplete_expired";
+export type SubscriptionStatus = "active" | "inactive";
 
 export interface Subscription {
   userId: string;
   stripeCustomerId: string;
-  stripeSubscriptionId: string | null;
+  stripePaymentId: string | null; // One-time payment ID
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
-  currentPeriodEnd: Date | null;
-  cancelAtPeriodEnd: boolean;
+  purchasedAt: Date | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -26,50 +19,37 @@ export interface PlanConfig {
   price: number;
   priceId: string;
   currency: string;
-  interval: "month" | "year";
+  isOneTime: boolean;
   features: string[];
 }
 
 export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
   free: {
     id: "free",
-    name: "Aqala Free Plan",
+    name: "Free",
     price: 0,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_FREE || "",
-    currency: "AUD",
-    interval: "month",
+    priceId: "",
+    currency: "USD",
+    isOneTime: true,
     features: [
-      "Basic translation features",
-      "Limited usage",
-      "Community support",
+      "Full translation features",
+      "Verse detection & references",
+      "Prayer times",
+      "Supported by ads",
     ],
   },
   premium: {
     id: "premium",
-    name: "Aqala Premium Plan",
-    price: 49,
+    name: "Ad-Free Forever",
+    price: 15,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PREMIUM || "",
-    currency: "AUD",
-    interval: "month",
+    currency: "USD",
+    isOneTime: true,
     features: [
-      "Unlimited translations",
-      "Priority support",
-      "Advanced features",
-      "Ad-free experience",
-    ],
-  },
-  business: {
-    id: "business",
-    name: "Aqala Business Plan",
-    price: 39,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_BUSINESS || "",
-    currency: "AUD",
-    interval: "month",
-    features: [
-      "All Premium features",
-      "Team collaboration",
-      "Business analytics",
-      "Dedicated support",
+      "Everything in Free",
+      "No ads, ever",
+      "Support Aqala's mission",
+      "One-time payment",
     ],
   },
 };

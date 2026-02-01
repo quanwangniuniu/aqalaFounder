@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { PLAN_CONFIGS, SubscriptionPlan } from "@/types/subscription";
+import { PLAN_CONFIGS } from "@/types/subscription";
 
 export default function SubscriptionPage() {
   const { user, loading: authLoading } = useAuth();
-  const { plan, loading: subscriptionLoading } = useSubscription();
+  const { isPremium, loading: subscriptionLoading, subscription } = useSubscription();
   const router = useRouter();
-  const [isSubscribing, setIsSubscribing] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -19,23 +19,17 @@ export default function SubscriptionPage() {
     }
   }, [user, authLoading, router]);
 
-  const handleSubscribe = async (planId: SubscriptionPlan) => {
+  const handlePurchase = async () => {
     if (!user) {
       router.push(`/auth/login?returnUrl=${encodeURIComponent("/subscription")}`);
       return;
     }
 
-    if (planId === "free") {
+    if (isPremium) {
       return;
     }
 
-    const planConfig = PLAN_CONFIGS[planId];
-    if (!planConfig.priceId) {
-      alert("Price ID not configured for this plan");
-      return;
-    }
-
-    setIsSubscribing(planId);
+    setIsProcessing(true);
 
     try {
       const response = await fetch("/api/subscriptions/checkout", {
@@ -45,7 +39,7 @@ export default function SubscriptionPage() {
         },
         body: JSON.stringify({
           userId: user.uid,
-          priceId: planConfig.priceId,
+          userEmail: user.email,
         }),
       });
 
@@ -57,15 +51,12 @@ export default function SubscriptionPage() {
 
       if (data.url) {
         window.location.href = data.url;
-      } else if (data.success && data.plan === "free") {
-        // Free plan subscription completed
-        router.push("/subscription/manage");
       } else {
         throw new Error("No checkout URL received");
       }
     } catch (error: any) {
       alert(error.message || "Something went wrong. Please try again.");
-      setIsSubscribing(null);
+      setIsProcessing(false);
     }
   };
 
@@ -73,223 +64,138 @@ export default function SubscriptionPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-68px)] px-4 py-8">
         <div className="text-center">
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/60">Loading...</p>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return null; // Will redirect
+    return null;
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-68px)] px-4 sm:px-6 py-6 sm:py-8">
-      <div className="max-w-4xl mx-auto w-full">
+    <div className="flex flex-col min-h-[calc(100vh-68px)] px-4 sm:px-6 py-8">
+      <div className="max-w-md mx-auto w-full">
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-2">
-            Choose Your Plan
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-full bg-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
+            {isPremium ? "You're Ad-Free! 🎉" : "Support Aqala"}
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Select the plan that best fits your needs
+          <p className="text-white/60 text-sm sm:text-base">
+            {isPremium 
+              ? "Thank you for supporting our mission to bring Quranic translations to everyone."
+              : "Remove all ads forever with a one-time payment of just $15."}
           </p>
         </div>
 
-        {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Free Plan */}
-          <div
-            className={`rounded-xl sm:rounded-2xl border-2 p-5 sm:p-6 ${
-              plan === "free"
-                ? "border-[#10B981] bg-[#10B981]/5"
-                : "border-gray-200 bg-white"
-            }`}
-          >
-            <div className="text-center mb-5 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                {PLAN_CONFIGS.free.name}
-              </h3>
-              <div className="mb-3 sm:mb-4">
-                <span className="text-3xl sm:text-4xl font-bold text-gray-900">$0</span>
-                <span className="text-sm sm:text-base text-gray-600">/month</span>
-              </div>
-              {plan === "free" && (
-                <span className="inline-block px-3 py-1 bg-[#10B981] text-white text-xs sm:text-sm font-medium rounded-full">
-                  Current Plan
-                </span>
-              )}
+        {isPremium ? (
+          /* Premium User View */
+          <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-2xl p-6 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D4AF37] text-[#032117] rounded-full font-semibold text-sm mb-4">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Premium Member
             </div>
-            <ul className="space-y-2.5 sm:space-y-3 mb-5 sm:mb-6">
-              {PLAN_CONFIGS.free.features.map((feature, idx) => (
-                <li key={idx} className="flex items-start">
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#10B981] mr-2 flex-shrink-0 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className="text-sm sm:text-base text-gray-700">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleSubscribe("free")}
-              disabled={plan === "free" || isSubscribing !== null}
-              className={`w-full py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                plan === "free"
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {plan === "free" ? "Current Plan" : "Select Free"}
-            </button>
-          </div>
-
-          {/* Premium Plan */}
-          <div
-            className={`rounded-xl sm:rounded-2xl border-2 p-5 sm:p-6 ${
-              plan === "premium"
-                ? "border-[#10B981] bg-[#10B981]/5"
-                : "border-gray-200 bg-white"
-            }`}
-          >
-            <div className="text-center mb-5 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                {PLAN_CONFIGS.premium.name}
-              </h3>
-              <div className="mb-3 sm:mb-4">
-                <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  ${PLAN_CONFIGS.premium.price}
-                </span>
-                <span className="text-sm sm:text-base text-gray-600">/month</span>
-              </div>
-              {plan === "premium" && (
-                <span className="inline-block px-3 py-1 bg-[#10B981] text-white text-xs sm:text-sm font-medium rounded-full">
-                  Current Plan
-                </span>
-              )}
-            </div>
-            <ul className="space-y-2.5 sm:space-y-3 mb-5 sm:mb-6">
-              {PLAN_CONFIGS.premium.features.map((feature, idx) => (
-                <li key={idx} className="flex items-start">
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#10B981] mr-2 flex-shrink-0 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className="text-sm sm:text-base text-gray-700">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleSubscribe("premium")}
-              disabled={plan === "premium" || isSubscribing !== null}
-              className={`w-full py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                plan === "premium"
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : isSubscribing === "premium"
-                  ? "bg-[#10B981] text-white opacity-75 cursor-wait"
-                  : "bg-[#10B981] text-white hover:bg-[#059669]"
-              }`}
-            >
-              {isSubscribing === "premium"
-                ? "Processing..."
-                : plan === "premium"
-                ? "Current Plan"
-                : "Subscribe"}
-            </button>
-          </div>
-
-          {/* Business Plan */}
-          <div
-            className={`rounded-xl sm:rounded-2xl border-2 p-5 sm:p-6 ${
-              plan === "business"
-                ? "border-[#10B981] bg-[#10B981]/5"
-                : "border-gray-200 bg-white"
-            }`}
-          >
-            <div className="text-center mb-5 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                {PLAN_CONFIGS.business.name}
-              </h3>
-              <div className="mb-3 sm:mb-4">
-                <span className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  ${PLAN_CONFIGS.business.price}
-                </span>
-                <span className="text-sm sm:text-base text-gray-600">/month</span>
-              </div>
-              {plan === "business" && (
-                <span className="inline-block px-3 py-1 bg-[#10B981] text-white text-xs sm:text-sm font-medium rounded-full">
-                  Current Plan
-                </span>
-              )}
-            </div>
-            <ul className="space-y-2.5 sm:space-y-3 mb-5 sm:mb-6">
-              {PLAN_CONFIGS.business.features.map((feature, idx) => (
-                <li key={idx} className="flex items-start">
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#10B981] mr-2 flex-shrink-0 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className="text-sm sm:text-base text-gray-700">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleSubscribe("business")}
-              disabled={plan === "business" || isSubscribing !== null}
-              className={`w-full py-2.5 sm:py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                plan === "business"
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : isSubscribing === "business"
-                  ? "bg-[#10B981] text-white opacity-75 cursor-wait"
-                  : "bg-[#10B981] text-white hover:bg-[#059669]"
-              }`}
-            >
-              {isSubscribing === "business"
-                ? "Processing..."
-                : plan === "business"
-                ? "Current Plan"
-                : "Subscribe"}
-            </button>
-          </div>
-        </div>
-
-        {/* Manage Subscription Link */}
-        {plan !== "free" && (
-          <div className="text-center">
+            <p className="text-white/70 text-sm mb-4">
+              Purchased on {subscription?.purchasedAt?.toLocaleDateString() || "N/A"}
+            </p>
             <Link
-              href="/subscription/manage"
-              className="text-sm sm:text-base text-[#10B981] hover:text-[#059669] font-medium underline"
+              href="/"
+              className="inline-flex items-center gap-2 text-[#D4AF37] text-sm hover:text-[#D4AF37]/80 transition-colors"
             >
-              Manage your subscription
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Return to Home
             </Link>
           </div>
+        ) : (
+          /* Free User View */
+          <>
+            {/* Pricing Card */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+              <div className="flex items-baseline justify-center gap-1 mb-6">
+                <span className="text-5xl font-bold text-white">${PLAN_CONFIGS.premium.price}</span>
+                <span className="text-white/50 text-lg">USD</span>
+              </div>
+
+              <div className="text-center mb-6">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#D4AF37]/20 text-[#D4AF37] text-xs font-medium rounded-full">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  One-time payment • Forever
+                </span>
+              </div>
+
+              <ul className="space-y-3 mb-6">
+                {PLAN_CONFIGS.premium.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3 h-3 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-white/80 text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={handlePurchase}
+                disabled={isProcessing}
+                className="w-full py-3 px-4 bg-[#D4AF37] text-[#032117] font-semibold rounded-xl hover:bg-[#D4AF37]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-[#032117] border-t-transparent rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Remove Ads Forever
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Trust badges */}
+            <div className="flex items-center justify-center gap-6 text-white/40 text-xs">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Secure checkout
+              </div>
+              <div className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Powered by Stripe
+              </div>
+            </div>
+
+            {/* Back link */}
+            <div className="text-center mt-8">
+              <Link
+                href="/"
+                className="text-white/50 text-sm hover:text-white/70 transition-colors"
+              >
+                Maybe later
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </div>

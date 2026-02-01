@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { PLAN_CONFIGS } from "@/types/subscription";
 
 export default function ManageSubscriptionPage() {
   const { user, loading: authLoading } = useAuth();
-  const { subscription, plan, refreshSubscription } = useSubscription();
+  const { isPremium, subscription, loading: subscriptionLoading } = useSubscription();
   const router = useRouter();
-  const [isCanceling, setIsCanceling] = useState(false);
-  const [isResuming, setIsResuming] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -21,211 +17,113 @@ export default function ManageSubscriptionPage() {
     }
   }, [user, authLoading, router]);
 
-  const handleCancel = async () => {
-    if (!user) return;
-
-    setIsCanceling(true);
-    try {
-      const response = await fetch("/api/subscriptions/cancel", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.uid,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to cancel subscription");
-      }
-
-      await refreshSubscription();
-      setShowCancelConfirm(false);
-    } catch (error: any) {
-      alert(error.message || "Something went wrong. Please try again.");
-    } finally {
-      setIsCanceling(false);
-    }
-  };
-
-  const handleResume = async () => {
-    if (!user) return;
-
-    setIsResuming(true);
-    try {
-      const response = await fetch("/api/subscriptions/resume", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.uid,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to resume subscription");
-      }
-
-      await refreshSubscription();
-    } catch (error: any) {
-      alert(error.message || "Something went wrong. Please try again.");
-    } finally {
-      setIsResuming(false);
-    }
-  };
-
-  if (authLoading) {
+  if (authLoading || subscriptionLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-68px)] px-4 py-8">
-        <div className="text-center">
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto" />
       </div>
     );
   }
 
   if (!user) {
-    return null; // Will redirect
+    return null;
   }
 
-  const planConfig = PLAN_CONFIGS[plan];
-  const isCanceled = subscription?.cancelAtPeriodEnd || subscription?.status === "canceled";
-  const currentPeriodEnd = subscription?.currentPeriodEnd
-    ? new Date(subscription.currentPeriodEnd)
-    : null;
+  // If not premium, redirect to subscription page
+  if (!isPremium) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-68px)] px-4 py-8">
+        <div className="max-w-md w-full text-center">
+          <p className="text-white/60 mb-6">You don't have an active premium membership.</p>
+          <Link
+            href="/subscription"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37] text-[#032117] font-semibold rounded-xl hover:bg-[#D4AF37]/90 transition-colors"
+          >
+            Get Premium
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-68px)] px-4 py-8">
-      <div className="max-w-2xl mx-auto w-full">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-2">
-            Manage Subscription
+      <div className="max-w-md mx-auto w-full">
+        {/* Premium Status Card */}
+        <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-2xl p-6 text-center mb-6">
+          <div className="w-16 h-16 rounded-full bg-[#D4AF37]/20 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          
+          <h1 className="text-2xl font-semibold text-white mb-2">
+            Premium Member ✨
           </h1>
-          <p className="text-gray-600">
-            View and manage your subscription details
+          
+          <p className="text-white/60 text-sm mb-4">
+            Thank you for supporting Aqala's mission to bring Quranic translations to everyone.
           </p>
+
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D4AF37] text-[#032117] rounded-full font-semibold text-sm">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Ad-Free Forever
+          </div>
         </div>
 
-        {/* Current Plan Card */}
-        <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Current Plan
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-lg font-medium text-gray-900">
-                  {planConfig.name}
-                </span>
-                <span className="px-3 py-1 bg-[#10B981] text-white text-sm font-medium rounded-full">
-                  {plan.toUpperCase()}
-                </span>
-              </div>
-              <p className="text-gray-600">
-                ${planConfig.price}/month
-              </p>
+        {/* Purchase Details */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-6">
+          <h2 className="text-white/80 font-medium mb-3">Purchase Details</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-white/50">Status</span>
+              <span className="text-[#D4AF37]">Active</span>
             </div>
-
-            {currentPeriodEnd && (
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Current Period Ends</p>
-                <p className="text-base font-medium text-gray-900">
-                  {currentPeriodEnd.toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-            )}
-
-            {isCanceled && (
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-sm text-red-600 font-medium">
-                  Your subscription will cancel at the end of the current billing period.
-                </p>
+            <div className="flex justify-between">
+              <span className="text-white/50">Plan</span>
+              <span className="text-white/80">Ad-Free Premium</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/50">Amount</span>
+              <span className="text-white/80">$15 (one-time)</span>
+            </div>
+            {subscription?.purchasedAt && (
+              <div className="flex justify-between">
+                <span className="text-white/50">Purchased</span>
+                <span className="text-white/80">
+                  {new Date(subscription.purchasedAt).toLocaleDateString()}
+                </span>
               </div>
             )}
           </div>
         </div>
 
         {/* Actions */}
-        {plan !== "free" && (
-          <div className="space-y-4">
-            {!isCanceled ? (
-              <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Cancel Subscription
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Your subscription will remain active until the end of the current billing period.
-                  You can resume it anytime before then.
-                </p>
-                {!showCancelConfirm ? (
-                  <button
-                    onClick={() => setShowCancelConfirm(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-                  >
-                    Cancel Subscription
-                  </button>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-gray-700 font-medium">
-                      Are you sure you want to cancel your subscription?
-                    </p>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleCancel}
-                        disabled={isCanceling}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isCanceling ? "Canceling..." : "Yes, Cancel"}
-                      </button>
-                      <button
-                        onClick={() => setShowCancelConfirm(false)}
-                        disabled={isCanceling}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        No, Keep It
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border-2 border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Resume Subscription
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Your subscription is scheduled to cancel. Click below to resume it.
-                </p>
-                <button
-                  onClick={handleResume}
-                  disabled={isResuming}
-                  className="px-4 py-2 bg-[#10B981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isResuming ? "Resuming..." : "Resume Subscription"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Change Plan */}
-        <div className="mt-6 text-center">
+        <div className="text-center space-y-3">
           <Link
-            href="/subscription"
-            className="text-[#10B981] hover:text-[#059669] font-medium underline"
+            href="/listen"
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#D4AF37] text-[#032117] font-semibold rounded-xl hover:bg-[#D4AF37]/90 transition-colors"
           >
-            Change Plan
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
+                fill="currentColor"
+              />
+              <path
+                d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
+                fill="currentColor"
+              />
+            </svg>
+            Start Listening
+          </Link>
+          
+          <Link
+            href="/"
+            className="block text-white/50 hover:text-white/70 text-sm transition-colors"
+          >
+            Return to Home
           </Link>
         </div>
       </div>

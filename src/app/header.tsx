@@ -14,16 +14,16 @@ export default function Header() {
   if (pathname === "/") return null;
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-transparent z-50">
-      <div className="mx-auto max-w-[554px] h-[68px] px-6 flex items-center justify-between bg-white">
+    <header className="bg-[#032117] z-50">
+      <div className="mx-auto max-w-[554px] h-[60px] px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Image
             src="/aqala-logo.png"
             alt="Logo"
-            width={100}
-            height={100}
+            width={72}
+            height={72}
             priority
-            className="bg-white rounded-md p-1"
+            className="invert"
           />
           <span className="sr-only">Home</span>
         </Link>

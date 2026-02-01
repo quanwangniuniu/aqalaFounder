@@ -63,7 +63,7 @@ export default function ReviewsPage() {
               </p>
               <Link
                 href="/"
-                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#c9a962] to-[#b8944d] text-[#0c1f2d] font-semibold text-base px-6 py-3 shadow-xl shadow-black/20 transition-all transform hover:scale-105"
+                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#032117] font-semibold text-base px-6 py-3 shadow-xl shadow-black/20 transition-all transform hover:scale-105"
               >
                 Return to Home
               </Link>
@@ -106,7 +106,7 @@ export default function ReviewsPage() {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#06402B] focus:border-[#06402B] outline-none transition-colors"
                   placeholder="Your name"
                 />
               </div>
@@ -121,7 +121,7 @@ export default function ReviewsPage() {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#06402B] focus:border-[#06402B] outline-none transition-colors"
                   placeholder="your.email@example.com"
                 />
               </div>
@@ -138,7 +138,7 @@ export default function ReviewsPage() {
                       type="button"
                       onClick={() => setRating(star)}
                       className={`text-3xl transition-transform hover:scale-110 ${
-                        star <= rating ? "text-[#c9a962]" : "text-gray-300"
+                        star <= rating ? "text-[#D4AF37]" : "text-gray-300"
                       }`}
                       aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
                     >
@@ -167,7 +167,7 @@ export default function ReviewsPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#06402B] focus:border-[#06402B] outline-none transition-colors resize-none"
                   placeholder="Share your feedback, suggestions, or experience with Aqala..."
                   required
                 />
@@ -185,7 +185,7 @@ export default function ReviewsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#c9a962] to-[#b8944d] disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-[#0c1f2d] font-semibold text-lg leading-7 px-8 py-4 shadow-xl shadow-black/20 transition-all transform hover:scale-105 disabled:transform-none"
+                  className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#D4AF37] to-[#b8944d] disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-[#032117] font-semibold text-lg leading-7 px-8 py-4 shadow-xl shadow-black/20 transition-all transform hover:scale-105 disabled:transform-none"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Review"}
                 </button>

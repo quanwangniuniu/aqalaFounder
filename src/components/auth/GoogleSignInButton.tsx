@@ -15,7 +15,7 @@ export default function GoogleSignInButton() {
       await signInWithGoogle();
       // Redirect to home page on success
       router.push("/");
-    } catch (error) {
+    } catch {
       // Error is handled by AuthContext
     } finally {
       setIsLoading(false);
@@ -26,13 +26,19 @@ export default function GoogleSignInButton() {
     <button
       onClick={handleClick}
       disabled={isLoading}
-      className="w-full inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 font-medium text-base leading-7 px-6 py-2 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 text-white font-medium text-base px-6 py-3.5 transition-all duration-300 hover:bg-white/10 hover:border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? (
-        <span>Signing in...</span>
+        <>
+          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          Signing in...
+        </>
       ) : (
         <>
-          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -56,4 +62,3 @@ export default function GoogleSignInButton() {
     </button>
   );
 }
-

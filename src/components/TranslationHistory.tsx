@@ -83,7 +83,7 @@ export default function TranslationHistory({ mosqueId }: TranslationHistoryProps
               setAutoScroll(true);
               scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" });
             }}
-            className="text-xs text-[#10B981] hover:underline"
+            className="text-xs text-[#06402B] hover:underline"
           >
             Scroll to latest
           </button>
@@ -106,7 +106,7 @@ export default function TranslationHistory({ mosqueId }: TranslationHistoryProps
                   {entry.sourceLang.toUpperCase()}
                 </span>
                 <span className="text-zinc-400">→</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-[#10B981]/10 text-[#10B981] font-medium">
+                <span className="text-xs px-2 py-0.5 rounded bg-[#06402B]/10 text-[#06402B] font-medium">
                   {entry.targetLang.toUpperCase()}
                 </span>
                 <span className="text-xs text-zinc-500 ml-auto">{formatTime(entry.timestamp)}</span>

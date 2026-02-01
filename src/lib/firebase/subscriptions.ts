@@ -31,11 +31,10 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
   return {
     userId: data.userId,
     stripeCustomerId: data.stripeCustomerId,
-    stripeSubscriptionId: data.stripeSubscriptionId || null,
+    stripePaymentId: data.stripePaymentId || null,
     plan: data.plan || "free",
     status: data.status || "active",
-    currentPeriodEnd: data.currentPeriodEnd?.toDate() || null,
-    cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+    purchasedAt: data.purchasedAt?.toDate() || null,
     createdAt: data.createdAt?.toDate() || null,
     updatedAt: data.updatedAt?.toDate() || null,
   };
@@ -45,11 +44,10 @@ export async function createOrUpdateSubscription(
   userId: string,
   subscriptionData: {
     stripeCustomerId: string;
-    stripeSubscriptionId?: string | null;
+    stripePaymentId?: string | null;
     plan: SubscriptionPlan;
     status: SubscriptionStatus;
-    currentPeriodEnd?: Date | null;
-    cancelAtPeriodEnd?: boolean;
+    purchasedAt?: Date | null;
   }
 ): Promise<void> {
   const firestore = ensureDb();
@@ -61,14 +59,14 @@ export async function createOrUpdateSubscription(
   if (existingDoc.exists()) {
     await updateDoc(subscriptionRef, {
       ...subscriptionData,
-      currentPeriodEnd: subscriptionData.currentPeriodEnd || null,
+      purchasedAt: subscriptionData.purchasedAt || null,
       updatedAt: now,
     });
   } else {
     await setDoc(subscriptionRef, {
       userId,
       ...subscriptionData,
-      currentPeriodEnd: subscriptionData.currentPeriodEnd || null,
+      purchasedAt: subscriptionData.purchasedAt || null,
       createdAt: now,
       updatedAt: now,
     });
@@ -95,11 +93,10 @@ export function subscribeToSubscription(
       onSubscription({
         userId: data.userId,
         stripeCustomerId: data.stripeCustomerId,
-        stripeSubscriptionId: data.stripeSubscriptionId || null,
+        stripePaymentId: data.stripePaymentId || null,
         plan: data.plan || "free",
         status: data.status || "active",
-        currentPeriodEnd: data.currentPeriodEnd?.toDate() || null,
-        cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+        purchasedAt: data.purchasedAt?.toDate() || null,
         createdAt: data.createdAt?.toDate() || null,
         updatedAt: data.updatedAt?.toDate() || null,
       });

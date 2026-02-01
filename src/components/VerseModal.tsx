@@ -144,7 +144,7 @@ export default function VerseModal({
       <div
         className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200"
         style={{
-          background: "linear-gradient(180deg, #0c1f2d 0%, #0d4f5c 100%)",
+          background: "linear-gradient(180deg, #032117 0%, #06402B 100%)",
         }}
       >
         {/* Close button - positioned above all content */}
@@ -179,7 +179,7 @@ export default function VerseModal({
               {/* Loading spinner */}
               <div className="relative w-16 h-16">
                 <div className="absolute inset-0 border-4 border-white/20 rounded-full" />
-                <div className="absolute inset-0 border-4 border-transparent border-t-[#c9a962] rounded-full animate-spin" />
+                <div className="absolute inset-0 border-4 border-transparent border-t-[#D4AF37] rounded-full animate-spin" />
               </div>
               <p className="mt-4 text-white/60 text-sm">Loading surah...</p>
             </div>
@@ -204,7 +204,7 @@ export default function VerseModal({
           ) : data ? (
             <>
               {/* Header with Surah info */}
-              <div className="sticky top-0 z-10 px-6 py-5 border-b border-white/10" style={{ background: "linear-gradient(180deg, #0c1f2d 0%, #0c1f2d 80%, transparent 100%)" }}>
+              <div className="sticky top-0 z-10 px-6 py-5 border-b border-white/10" style={{ background: "linear-gradient(180deg, #032117 0%, #032117 80%, transparent 100%)" }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h2
@@ -212,7 +212,7 @@ export default function VerseModal({
                       className="text-2xl font-semibold"
                       style={{
                         background:
-                          "linear-gradient(135deg, #e4d4a5 0%, #c9a962 100%)",
+                          "linear-gradient(135deg, #E8D5A3 0%, #D4AF37 100%)",
                         WebkitBackgroundClip: "text",
                         backgroundClip: "text",
                         color: "transparent",
@@ -230,7 +230,7 @@ export default function VerseModal({
                       className="text-3xl"
                       style={{
                         fontFamily: "'Amiri', serif",
-                        color: "#c9a962",
+                        color: "#D4AF37",
                       }}
                     >
                       {data.chapterNameArabic}
@@ -238,8 +238,8 @@ export default function VerseModal({
                   </div>
                 </div>
                 {/* Highlighted verse indicator */}
-                <div className="mt-3 flex items-center gap-2 text-xs text-[#c9a962]">
-                  <div className="w-3 h-3 rounded-full bg-[#c9a962]/30 border border-[#c9a962]" />
+                <div className="mt-3 flex items-center gap-2 text-xs text-[#D4AF37]">
+                  <div className="w-3 h-3 rounded-full bg-[#D4AF37]/30 border border-[#D4AF37]" />
                   <span>
                     Scrolled to verse{data.startVerse === data.endVerse ? ` ${data.startVerse}` : `s ${data.startVerse}-${data.endVerse}`}
                   </span>
@@ -273,13 +273,13 @@ export default function VerseModal({
                       ref={isFirstHighlighted ? highlightedVerseRef : undefined}
                       className={`relative rounded-xl transition-all duration-300 ${
                         isHighlighted
-                          ? "bg-[#c9a962]/10 border border-[#c9a962]/30 p-5 -mx-2"
+                          ? "bg-[#D4AF37]/10 border border-[#D4AF37]/30 p-5 -mx-2"
                           : "p-3 hover:bg-white/5"
                       }`}
                     >
                       {/* Highlighted badge */}
                       {isHighlighted && isFirstHighlighted && (
-                        <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-xs font-medium bg-[#c9a962] text-[#0c1f2d]">
+                        <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-xs font-medium bg-[#D4AF37] text-[#032117]">
                           Referenced Verse{data.startVerse !== data.endVerse ? "s" : ""}
                         </div>
                       )}
@@ -292,7 +292,7 @@ export default function VerseModal({
                           }`}
                           style={{
                             fontFamily: "'Amiri', 'Scheherazade New', serif",
-                            textShadow: isHighlighted ? "0 2px 20px rgba(201, 169, 98, 0.2)" : "none",
+                            textShadow: isHighlighted ? "0 2px 20px rgba(212, 175, 55, 0.2)" : "none",
                           }}
                           dir="rtl"
                         >
@@ -307,8 +307,8 @@ export default function VerseModal({
                                 isHighlighted ? "w-10 h-10 text-base" : "w-8 h-8 text-sm"
                               }`}
                               style={{
-                                borderColor: isHighlighted ? "#c9a962" : "rgba(201, 169, 98, 0.6)",
-                                color: isHighlighted ? "#c9a962" : "rgba(201, 169, 98, 0.8)",
+                                borderColor: isHighlighted ? "#D4AF37" : "rgba(212, 175, 55, 0.6)",
+                                color: isHighlighted ? "#D4AF37" : "rgba(212, 175, 55, 0.8)",
                                 fontFamily: "'Amiri', serif",
                               }}
                             >
@@ -323,18 +323,18 @@ export default function VerseModal({
                         <>
                           {/* Separator line */}
                           <div className={`flex items-center gap-4 ${isHighlighted ? "my-4" : "my-2"}`}>
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a962]/20 to-transparent" />
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent" />
                             {isHighlighted && (
                               <div
                                 className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: "#c9a962" }}
+                                style={{ backgroundColor: "#D4AF37" }}
                               />
                             )}
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#c9a962]/20 to-transparent" />
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent" />
                           </div>
 
                           {/* Translation */}
-                          <div className={`pl-4 border-l-2 ${isHighlighted ? "border-[#c9a962]/40" : "border-[#c9a962]/30"}`}>
+                          <div className={`pl-4 border-l-2 ${isHighlighted ? "border-[#D4AF37]/40" : "border-[#D4AF37]/30"}`}>
                             <p
                               className={`leading-relaxed select-text ${
                                 isHighlighted 
@@ -356,7 +356,7 @@ export default function VerseModal({
               </div>
 
               {/* Footer with quran.com link */}
-              <div className="sticky bottom-0 px-6 py-4 border-t border-white/10 bg-[#0c1f2d]/95 backdrop-blur-sm">
+              <div className="sticky bottom-0 px-6 py-4 border-t border-white/10 bg-[#032117]/95 backdrop-blur-sm">
                 <div className="flex items-center justify-end">
                   <a
                     href={`https://quran.com/${data.chapter}/${data.startVerse}${
@@ -366,7 +366,7 @@ export default function VerseModal({
                     }`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-[#c9a962] hover:text-[#e4d4a5] transition-colors"
+                    className="inline-flex items-center gap-2 text-sm text-[#D4AF37] hover:text-[#E8D5A3] transition-colors"
                   >
                     View on Quran.com
                     <svg

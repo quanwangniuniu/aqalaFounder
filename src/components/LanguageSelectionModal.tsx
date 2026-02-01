@@ -78,16 +78,16 @@ export default function LanguageSelectionModal() {
           {/* Header */}
           <div className="relative px-8 pt-10 pb-6 text-center">
             {/* Decorative top accent */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-[#c9a962] to-transparent rounded-full" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
 
             {/* Arabic-styled icon with crescent and globe */}
-            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#0c1f2d] to-[#156b6b] flex items-center justify-center shadow-lg lang-modal-icon">
+            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#032117] to-[#06402B] flex items-center justify-center shadow-lg lang-modal-icon">
               <svg
                 width="36"
                 height="36"
                 viewBox="0 0 48 48"
                 fill="none"
-                className="text-[#c9a962]"
+                className="text-[#D4AF37]"
               >
                 {/* Globe outline */}
                 <circle
@@ -143,7 +143,7 @@ export default function LanguageSelectionModal() {
               </svg>
             </div>
 
-            <h2 className="text-2xl font-semibold text-[#0c1f2d] mb-2 transition-all duration-300">
+            <h2 className="text-2xl font-semibold text-[#032117] mb-2 transition-all duration-300">
               {t.title}
             </h2>
             <p className="text-gray-600 text-sm transition-all duration-300">
@@ -160,7 +160,7 @@ export default function LanguageSelectionModal() {
                   onClick={() => setSelectedLang(lang.code)}
                   className={`group relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-300 lang-modal-item ${
                     selectedLang === lang.code
-                      ? "bg-gradient-to-br from-[#0c1f2d] to-[#156b6b] text-white shadow-lg scale-[1.02]"
+                      ? "bg-gradient-to-br from-[#032117] to-[#06402B] text-white shadow-lg scale-[1.02]"
                       : "bg-gray-50 hover:bg-gray-100 text-gray-700"
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
@@ -173,7 +173,7 @@ export default function LanguageSelectionModal() {
                         height="16"
                         viewBox="0 0 24 24"
                         fill="none"
-                        className="text-[#c9a962]"
+                        className="text-[#D4AF37]"
                       >
                         <path
                           d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
@@ -203,7 +203,7 @@ export default function LanguageSelectionModal() {
           <div className="px-8 pb-8 pt-2">
             <button
               onClick={handleConfirm}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#c9a962] to-[#b8944d] text-[#0c1f2d] font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] lang-modal-btn"
+              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#032117] font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] lang-modal-btn"
             >
               <span
                 className={`flex items-center justify-center gap-2 ${

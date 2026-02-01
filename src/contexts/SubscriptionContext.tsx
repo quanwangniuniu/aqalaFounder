@@ -10,7 +10,7 @@ interface SubscriptionContextType {
   loading: boolean;
   plan: SubscriptionPlan;
   isPremium: boolean;
-  isBusiness: boolean;
+  showAds: boolean;
   refreshSubscription: () => Promise<void>;
 }
 
@@ -67,15 +67,15 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   };
 
   const plan: SubscriptionPlan = subscription?.plan || "free";
-  const isPremium = plan === "premium" || plan === "business";
-  const isBusiness = plan === "business";
+  const isPremium = plan === "premium" && subscription?.status === "active";
+  const showAds = !isPremium; // Show ads to free users
 
   const value: SubscriptionContextType = {
     subscription,
     loading,
     plan,
     isPremium,
-    isBusiness,
+    showAds,
     refreshSubscription,
   };
 

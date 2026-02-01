@@ -147,7 +147,7 @@ export default function CharityModal({
                                     setSelectedPreset(amt);
                                 }}
                                 className={`w-full h-16 rounded-xl border text-lg font-medium ${active
-                                        ? "bg-emerald-50 border-emerald-400 text-emerald-700"
+                                        ? "bg-[#d4eede] border-[#06402B] text-[#06402B]"
                                         : "bg-white border-zinc-200 text-zinc-800"
                                     }`}
                             >
@@ -211,7 +211,7 @@ export default function CharityModal({
                             placeholder="0"
                             value={customValue}
                             onChange={(e) => setCustomValue(e.target.value)}
-                            className="flex-1 border-0 border-b border-zinc-300 focus:border-emerald-400 outline-none px-1 py-2 text-2xl leading-7"
+                            className="flex-1 border-0 border-b border-zinc-300 focus:border-[#06402B] outline-none px-1 py-2 text-2xl leading-7"
                         />
                     </div>
                 )}
@@ -231,13 +231,13 @@ export default function CharityModal({
                     <div className="space-y-0">
                         <button
                             onClick={() => setMethod("apple")}
-                            className={`mb-4 w-full flex items-center justify-between rounded-xl px-3 py-4 border ${method === "apple" ? "bg-emerald-50 border-emerald-300" : "bg-white border-zinc-200"
+                            className={`mb-4 w-full flex items-center justify-between rounded-xl px-3 py-4 border ${method === "apple" ? "bg-[#d4eede] border-[#06402B]" : "bg-white border-zinc-200"
                                 }`}
                         >
                             <div className="flex items-center gap-3">
                                 <span
                                     className={`h-6 w-6 rounded-full flex items-center justify-center border ${method === "apple"
-                                            ? "bg-emerald-600 border-emerald-600 text-white"
+                                            ? "bg-[#06402B] border-[#06402B] text-white"
                                             : "border-zinc-300 text-transparent"
                                         }`}
                                 >
@@ -259,13 +259,13 @@ export default function CharityModal({
                         </button>
                         <button
                             onClick={() => setMethod("card")}
-                            className={`w-full flex items-center justify-between rounded-xl px-3 py-4 border ${method === "card" ? "bg-emerald-50 border-emerald-300" : "bg-white border-zinc-200"
+                            className={`w-full flex items-center justify-between rounded-xl px-3 py-4 border ${method === "card" ? "bg-[#d4eede] border-[#06402B]" : "bg-white border-zinc-200"
                                 }`}
                         >
                             <div className="flex items-center gap-3">
                                 <span
                                     className={`h-6 w-6 rounded-full flex items-center justify-center border ${method === "card"
-                                            ? "bg-emerald-600 border-emerald-600 text-white"
+                                            ? "bg-[#06402B] border-[#06402B] text-white"
                                             : "border-zinc-300 text-transparent"
                                         }`}
                                 >

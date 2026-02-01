@@ -5,11 +5,11 @@
   --foreground: #171717;
   
   /* Aqala Brand Colors */
-  --aqala-deep: #0c1f2d;
-  --aqala-teal: #0d4f5c;
-  --aqala-emerald: #156b6b;
-  --aqala-gold: #c9a962;
-  --aqala-gold-light: #e4d4a5;
+  --aqala-deep: #032117;
+  --aqala-primary: #06402B;
+  --aqala-primary-light: #0a5c3e;
+  --aqala-gold: #D4AF37;
+  --aqala-gold-light: #E8D5A3;
   --aqala-cream: #f8f6f1;
   --aqala-warm-white: #fefdfb;
 }
@@ -21,15 +21,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Force light theme always */
+/* Base body styling */
 html,
 body {
-  background: rgb(238, 242, 249);
+  background: #032117;
   min-height: 100vh;
 }
 
 body {
-  background: rgb(238, 242, 249);
+  background: #032117;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
@@ -76,18 +76,71 @@ body {
   background: linear-gradient(
     135deg,
     var(--aqala-deep) 0%,
-    var(--aqala-teal) 35%,
-    var(--aqala-emerald) 65%,
-    var(--aqala-teal) 100%
+    var(--aqala-primary) 35%,
+    var(--aqala-primary-light) 65%,
+    var(--aqala-primary) 100%
   );
   background-size: 300% 300%;
   animation: gradientShift 12s ease infinite;
 }
 
+/* Enhanced hero gradient with more depth */
+.hero-gradient-bg-enhanced {
+  background: 
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(10, 92, 62, 0.7) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 80% 100%, rgba(6, 64, 43, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(10, 92, 62, 0.3) 0%, transparent 50%),
+    linear-gradient(
+      180deg,
+      #021a12 0%,
+      #032117 15%,
+      #042d1d 40%,
+      #032117 70%,
+      #021a12 100%
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+}
+
+/* Hero floating orbs */
+.hero-orb {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.12) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.hero-orb-1 {
+  animation: heroOrbFloat1 25s ease-in-out infinite;
+}
+
+.hero-orb-2 {
+  animation: heroOrbFloat2 30s ease-in-out infinite;
+}
+
+.hero-orb-3 {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+  animation: heroOrbFloat3 20s ease-in-out infinite;
+}
+
+@keyframes heroOrbFloat1 {
+  0%, 100% { transform: translate(5%, -5%) scale(1); opacity: 0.6; }
+  33% { transform: translate(-10%, 5%) scale(1.1); opacity: 0.8; }
+  66% { transform: translate(0%, -10%) scale(0.95); opacity: 0.5; }
+}
+
+@keyframes heroOrbFloat2 {
+  0%, 100% { transform: translate(-5%, 5%) scale(1); opacity: 0.5; }
+  50% { transform: translate(10%, -5%) scale(1.15); opacity: 0.7; }
+}
+
+@keyframes heroOrbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+  50% { transform: translate(-15%, 10%) scale(1.2); opacity: 0.6; }
+}
+
 .hero-geometric-overlay {
   background-image: 
-    radial-gradient(circle at 20% 80%, rgba(201, 169, 98, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(201, 169, 98, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.06) 0%, transparent 40%),
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
 }
 
@@ -118,7 +171,7 @@ body {
 
 .btn-primary-glow:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px -8px rgba(201, 169, 98, 0.4);
+  box-shadow: 0 12px 40px -8px rgba(212, 175, 55, 0.4);
 }
 
 .btn-secondary-subtle {
@@ -148,6 +201,12 @@ body {
     opacity: 1;
   }
   .hero-gradient-bg {
+    animation: none;
+  }
+  .hero-orb,
+  .hero-orb-1,
+  .hero-orb-2,
+  .hero-orb-3 {
     animation: none;
   }
 }
@@ -297,8 +356,8 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #2E7D32;
-  opacity: 0.3;
+  background-color: #D4AF37;
+  opacity: 0.5;
   animation: typingBounce 1.4s ease-in-out infinite;
 }
 
@@ -362,6 +421,421 @@ body {
 }
 
 /* ================================================
+   Translation Page - World-Class UI Styles
+   ================================================ */
+
+/* Main container background */
+.translation-container {
+  background: var(--aqala-deep);
+}
+
+.translation-bg-gradient {
+  background: 
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(6, 64, 43, 0.8) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(10, 92, 62, 0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #021a12 0%, #032117 30%, #021a12 100%);
+}
+
+/* Subtle Islamic geometric pattern */
+.translation-geometric-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.5'%3E%3Cpath d='M40 0L80 40L40 80L0 40Z'/%3E%3Cpath d='M40 10L70 40L40 70L10 40Z'/%3E%3Cpath d='M40 20L60 40L40 60L20 40Z'/%3E%3Ccircle cx='40' cy='40' r='8'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+}
+
+/* Floating orbs */
+.translation-orb {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.translation-orb-1 {
+  animation: orbFloat1 20s ease-in-out infinite;
+}
+
+.translation-orb-2 {
+  animation: orbFloat2 25s ease-in-out infinite;
+}
+
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(10%, -10%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-5%, 5%) scale(1.1); opacity: 0.7; }
+}
+
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(-10%, 10%) scale(1); opacity: 0.4; }
+  50% { transform: translate(5%, -5%) scale(1.15); opacity: 0.6; }
+}
+
+/* Source section styling */
+.source-section {
+  background: linear-gradient(180deg, rgba(6, 64, 43, 0.6) 0%, rgba(3, 33, 23, 0.8) 100%);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.source-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+}
+
+.source-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.source-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 2px;
+}
+
+.source-text {
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Language selector float animation */
+.lang-selector-float {
+  animation: selectorFloat 4s ease-in-out infinite;
+}
+
+@keyframes selectorFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* Translation scroll area */
+.translation-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.15) transparent;
+}
+
+.translation-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.translation-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.translation-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.15);
+  border-radius: 3px;
+}
+
+.translation-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.25);
+}
+
+/* Translation paragraph styling */
+.translation-paragraph {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  animation: paragraphReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes paragraphReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.translation-text {
+  letter-spacing: 0.01em;
+}
+
+/* Verse reference button */
+.verse-reference-btn {
+  position: relative;
+}
+
+.verse-reference-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--aqala-gold), transparent);
+  transition: width 0.3s ease;
+}
+
+.verse-reference-btn:hover::before {
+  width: 100%;
+}
+
+/* Empty state animation */
+.empty-state-animation {
+  animation: emptyStateFloat 6s ease-in-out infinite;
+}
+
+@keyframes emptyStateFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Live preview panel */
+.live-preview-panel {
+  position: relative;
+}
+
+.live-preview-border {
+  background: linear-gradient(
+    90deg,
+    rgba(212, 175, 55, 0.3) 0%,
+    rgba(212, 175, 55, 0.1) 25%,
+    rgba(212, 175, 55, 0.3) 50%,
+    rgba(212, 175, 55, 0.1) 75%,
+    rgba(212, 175, 55, 0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: borderGlow 3s linear infinite;
+}
+
+@keyframes borderGlow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* Live cursor animation */
+.live-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background: var(--aqala-gold);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: cursorBlink 1s ease-in-out infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Session end actions animation */
+.session-end-actions {
+  animation: actionsSlideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes actionsSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Primary action buttons */
+.action-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--aqala-gold) 0%, #c9a431 100%);
+  color: var(--aqala-deep);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 
+    0 4px 12px rgba(212, 175, 55, 0.25),
+    0 0 0 1px rgba(212, 175, 55, 0.1) inset;
+}
+
+.action-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 24px rgba(212, 175, 55, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  background: linear-gradient(135deg, var(--aqala-gold-light) 0%, var(--aqala-gold) 100%);
+}
+
+.action-btn-primary:active {
+  transform: translateY(0);
+}
+
+.action-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary action buttons */
+.action-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.action-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Mic button */
+.mic-button {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mic-button-idle {
+  background: linear-gradient(145deg, #0a5c3e 0%, #053521 100%);
+  color: white;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 2px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+.mic-button-idle:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 2px 0 rgba(255, 255, 255, 0.15) inset;
+}
+
+.mic-button-active {
+  background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow:
+    0 8px 32px rgba(239, 68, 68, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.mic-glow-idle {
+  box-shadow: 0 0 40px rgba(10, 92, 62, 0.5);
+  opacity: 0;
+}
+
+.mic-button-idle:hover .mic-glow-idle {
+  opacity: 1;
+}
+
+.mic-glow-active {
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.5);
+  animation: micGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes micGlowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* Mic pulse rings */
+.mic-pulse-ring {
+  position: absolute;
+  inset: -8px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: micPulse 1.5s ease-out infinite;
+  pointer-events: none;
+}
+
+.mic-pulse-ring-delay {
+  animation-delay: 0.5s;
+}
+
+@keyframes micPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Summary modal backdrop */
+.summary-backdrop-in {
+  animation: summaryBackdropIn 0.3s ease-out forwards;
+}
+
+@keyframes summaryBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Summary modal content */
+.summary-modal-content {
+  animation: summaryModalIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes summaryModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.summary-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.15) transparent;
+}
+
+.summary-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.summary-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.15);
+  border-radius: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .translation-orb,
+  .translation-orb-1,
+  .translation-orb-2,
+  .lang-selector-float,
+  .empty-state-animation,
+  .live-preview-border,
+  .live-cursor,
+  .session-end-actions,
+  .mic-glow-active,
+  .mic-pulse-ring,
+  .summary-backdrop-in,
+  .summary-modal-content,
+  .translation-paragraph {
+    animation: none;
+  }
+  
+  .translation-paragraph,
+  .summary-backdrop-in,
+  .summary-modal-content {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ================================================
    Language Selection Modal Animations
    ================================================ */
 
@@ -396,10 +870,10 @@ body {
 .lang-modal-bg {
   background: linear-gradient(
     135deg,
-    rgba(12, 31, 45, 0.97) 0%,
-    rgba(13, 79, 92, 0.95) 35%,
-    rgba(21, 107, 107, 0.93) 65%,
-    rgba(12, 31, 45, 0.97) 100%
+    rgba(3, 33, 23, 0.97) 0%,
+    rgba(6, 64, 43, 0.95) 35%,
+    rgba(10, 92, 62, 0.93) 65%,
+    rgba(3, 33, 23, 0.97) 100%
   );
   background-size: 400% 400%;
   animation: langModalGradient 8s ease infinite;
@@ -419,7 +893,7 @@ body {
   position: absolute;
   border-radius: 50%;
   opacity: 0.08;
-  background: linear-gradient(135deg, #c9a962, #e4d4a5);
+  background: linear-gradient(135deg, #D4AF37, #E8D5A3);
 }
 
 .lang-modal-shape-1 {
@@ -528,7 +1002,7 @@ body {
 /* Grid scroll styling */
 .lang-modal-grid {
   scrollbar-width: thin;
-  scrollbar-color: rgba(201, 169, 98, 0.3) transparent;
+  scrollbar-color: rgba(212, 175, 55, 0.3) transparent;
 }
 
 .lang-modal-grid::-webkit-scrollbar {
@@ -540,12 +1014,12 @@ body {
 }
 
 .lang-modal-grid::-webkit-scrollbar-thumb {
-  background: rgba(201, 169, 98, 0.3);
+  background: rgba(212, 175, 55, 0.3);
   border-radius: 2px;
 }
 
 .lang-modal-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 169, 98, 0.5);
+  background: rgba(212, 175, 55, 0.5);
 }
 
 /* Language item staggered animation */
@@ -571,10 +1045,10 @@ body {
 
 @keyframes btnPulse {
   0%, 100% {
-    box-shadow: 0 4px 20px rgba(201, 169, 98, 0.3);
+    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
   }
   50% {
-    box-shadow: 0 8px 30px rgba(201, 169, 98, 0.5);
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
   }
 }
 

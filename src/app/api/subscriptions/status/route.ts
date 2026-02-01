@@ -3,10 +3,9 @@ import { getSubscriptionServer } from "@/lib/firebase/subscriptions-server";
 
 export const runtime = "nodejs";
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
+    const { userId } = await req.json();
 
     if (!userId || typeof userId !== "string") {
       return NextResponse.json(
@@ -19,21 +18,22 @@ export async function GET(req: Request) {
 
     if (!subscription) {
       return NextResponse.json({
+        isPremium: false,
         plan: "free",
         status: "active",
       });
     }
 
     return NextResponse.json({
+      isPremium: subscription.plan === "premium" && subscription.status === "active",
       plan: subscription.plan,
       status: subscription.status,
-      currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() || null,
-      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      purchasedAt: subscription.purchasedAt?.toISOString() || null,
     });
   } catch (error: any) {
-    console.error("Get subscription status error:", error);
+    console.error("Status check error:", error);
     return NextResponse.json(
-      { error: "Failed to get subscription status", detail: error?.message },
+      { error: "Failed to check status", detail: error?.message },
       { status: 500 }
     );
   }

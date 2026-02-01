@@ -123,13 +123,13 @@ export default function EmailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#2E7D32]/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[#06402B]/10 flex items-center justify-center">
               <svg
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#2E7D32"
+                stroke="#06402B"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -184,13 +184,13 @@ export default function EmailModal({
                 w-full px-4 py-3.5 rounded-xl
                 bg-gray-50 border border-gray-200
                 text-gray-900 placeholder:text-gray-400
-                focus:outline-none focus:ring-2 focus:ring-[#2E7D32]/20 focus:border-[#2E7D32]
+                focus:outline-none focus:ring-2 focus:ring-[#06402B]/20 focus:border-[#06402B]
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all
               "
             />
             {email && validateEmail(email) && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2E7D32]">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#06402B]">
                 <svg
                   width="18"
                   height="18"
@@ -232,8 +232,8 @@ export default function EmailModal({
               disabled={isSending || !email.trim()}
               className="
                 flex-1 px-4 py-3 rounded-xl
-                bg-[#2E7D32] text-white font-medium
-                hover:bg-[#1B5E20] active:bg-[#145214]
+                bg-[#06402B] text-white font-medium
+                hover:bg-[#053521] active:bg-[#145214]
                 disabled:opacity-50 disabled:cursor-not-allowed
                 flex items-center justify-center gap-2
                 transition-colors

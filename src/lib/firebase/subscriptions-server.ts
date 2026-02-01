@@ -22,11 +22,10 @@ export async function getSubscriptionServer(userId: string): Promise<Subscriptio
   return {
     userId: data.userId,
     stripeCustomerId: data.stripeCustomerId,
-    stripeSubscriptionId: data.stripeSubscriptionId || null,
+    stripePaymentId: data.stripePaymentId || null,
     plan: data.plan || "free",
     status: data.status || "active",
-    currentPeriodEnd: data.currentPeriodEnd?.toDate() || null,
-    cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+    purchasedAt: data.purchasedAt?.toDate() || null,
     createdAt: data.createdAt?.toDate() || null,
     updatedAt: data.updatedAt?.toDate() || null,
   };
@@ -36,11 +35,10 @@ export async function createOrUpdateSubscriptionServer(
   userId: string,
   subscriptionData: {
     stripeCustomerId: string;
-    stripeSubscriptionId?: string | null;
+    stripePaymentId?: string | null;
     plan: SubscriptionPlan;
     status: SubscriptionStatus;
-    currentPeriodEnd?: Date | null;
-    cancelAtPeriodEnd?: boolean;
+    purchasedAt?: Date | null;
   }
 ): Promise<void> {
   const firestore = ensureAdminDb();
@@ -52,7 +50,7 @@ export async function createOrUpdateSubscriptionServer(
   const updateData: any = {
     userId,
     ...subscriptionData,
-    currentPeriodEnd: subscriptionData.currentPeriodEnd || null,
+    purchasedAt: subscriptionData.purchasedAt || null,
     updatedAt: now,
   };
 

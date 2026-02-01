@@ -31,7 +31,7 @@ export default function DonatePage() {
               <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
                 Then do they not reflect upon the Qur'an, or are there locks upon their hearts?
               </p>
-              <p className="text-base md:text-lg text-emerald-800 font-medium">
+              <p className="text-base md:text-lg text-[#06402B] font-medium">
                 (Qur'an 47:24)
               </p>
             </div>
@@ -39,21 +39,21 @@ export default function DonatePage() {
             {/* Aqala mission */}
             <div className="space-y-4 pt-2">
               <p className="text-base md:text-lg text-gray-800 leading-relaxed">
-                <span className="font-semibold text-emerald-800">Aqala</span> helps transform spoken Islamic knowledge into understanding — no matter the language — allowing knowledge to reach the heart.
+                <span className="font-semibold text-[#06402B]">Aqala</span> helps transform spoken Islamic knowledge into understanding — no matter the language — allowing knowledge to reach the heart.
               </p>
             </div>
 
             {/* Hadith */}
             <div className="space-y-2 pt-4">
               <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
-                The Prophet <span className="text-emerald-800">ﷺ</span> taught that beneficial knowledge continues to reward a person even after death (Sahih Muslim).
+                The Prophet <span className="text-[#06402B]">ﷺ</span> taught that beneficial knowledge continues to reward a person even after death (Sahih Muslim).
               </p>
             </div>
 
             {/* Support message */}
             <div className="space-y-2 pt-4">
               <p className="text-base md:text-lg text-gray-800 leading-relaxed font-medium">
-                By supporting Aqala, you help create ongoing access to understanding for the global <span className="text-emerald-800 font-semibold">Ummah</span> — a form of <span className="text-emerald-800 font-semibold">Sadaqah Jariyah</span>, inshaAllah.
+                By supporting Aqala, you help create ongoing access to understanding for the global <span className="text-[#06402B] font-semibold">Ummah</span> — a form of <span className="text-[#06402B] font-semibold">Sadaqah Jariyah</span>, inshaAllah.
               </p>
             </div>
 
@@ -92,7 +92,7 @@ export default function DonatePage() {
               </p>
             </div>
             <div className="space-y-2 pt-2">
-              <p className="text-base md:text-lg text-emerald-800 leading-relaxed font-medium">
+              <p className="text-base md:text-lg text-[#06402B] leading-relaxed font-medium">
                 Together, we can remove language as a barrier to faith.
               </p>
             </div>
@@ -115,20 +115,20 @@ export default function DonatePage() {
           <div className="flex flex-col items-center gap-4 pt-6">
             <button
               onClick={() => setDonateOpen(true)}
-              className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white font-semibold text-lg leading-7 px-8 py-4 shadow-lg transition-all transform hover:scale-105"
+              className="w-full max-w-md inline-flex items-center justify-center rounded-full bg-[#06402B] hover:bg-[#053521] active:bg-[#032117] text-white font-semibold text-lg leading-7 px-8 py-4 shadow-lg transition-all transform hover:scale-105"
             >
               Donate to Aqala
             </button>
             <div className="flex flex-col items-center gap-3">
               <Link
                 href="/"
-                className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline"
+                className="text-[#06402B] hover:text-[#053521] font-medium text-sm underline"
               >
                 Return to Home
               </Link>
               <Link
                 href="/reviews"
-                className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline"
+                className="text-[#06402B] hover:text-[#053521] font-medium text-sm underline"
               >
                 Share Your Thoughts
               </Link>

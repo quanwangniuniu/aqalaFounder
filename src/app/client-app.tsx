@@ -138,6 +138,10 @@ export default function ClientApp({
     message: string;
     type: "success" | "error";
   } | null>(null);
+  // Summary feature states
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryText, setSummaryText] = useState("");
+  const [isSummarizing, setIsSummarizing] = useState(false);
   // Track loaded translation IDs to avoid duplicates
   const loadedTranslationIdsRef = useRef<Set<string>>(new Set());
   // Track translations by targetLang to handle language switching
@@ -948,7 +952,18 @@ export default function ClientApp({
             setEnCurrent(() => leftover);
           };
 
-          appendFinal(enTokens, enFinalSeen.current, appendToParagraphs);
+          // If detected language equals target language, use source tokens for translation display
+          // (Soniox won't produce translation tokens when source = target)
+          const sameLanguage = lang === targetLangRef.current;
+          
+          if (sameLanguage) {
+            // Use source tokens directly as translation since no translation needed
+            appendFinal(arTokens, enFinalSeen.current, appendToParagraphs);
+          } else {
+            // Normal case: use translation tokens
+            appendFinal(enTokens, enFinalSeen.current, appendToParagraphs);
+          }
+          
           // Accumulate reference source text (original stream)
           appendFinal(arTokens, arFinalSeen.current, (text) => {
             setSrcStable((prev) => concatReadable(prev, text));
@@ -990,7 +1005,12 @@ export default function ClientApp({
               .replace(/\s+/g, " ")
               .trim();
 
-          setEnPartial(partialText(enTokens));
+          // For same language, also use source partials as translation partials
+          if (sameLanguage) {
+            setEnPartial(partialText(arTokens));
+          } else {
+            setEnPartial(partialText(enTokens));
+          }
           setSrcPartial(partialText(arTokens));
           // Reset inactivity timer since we received audio tokens
           resetSilenceTimer();
@@ -1178,7 +1198,15 @@ export default function ClientApp({
             setEnCurrent(() => leftover);
           };
 
-          appendFinal(enTokens, enFinalSeen.current, appendToParagraphs);
+          // If detected language equals target language, use source tokens for translation display
+          const sameLanguage = lang === targetLangRef.current;
+          
+          if (sameLanguage) {
+            appendFinal(arTokens, enFinalSeen.current, appendToParagraphs);
+          } else {
+            appendFinal(enTokens, enFinalSeen.current, appendToParagraphs);
+          }
+          
           appendFinal(arTokens, arFinalSeen.current, (text) => {
             setSrcStable((prev) => concatReadable(prev, text));
             arabicAccumulatorRef.current = arabicAccumulatorRef.current
@@ -1217,7 +1245,12 @@ export default function ClientApp({
               .replace(/\s+/g, " ")
               .trim();
 
-          setEnPartial(partialText(enTokens));
+          // For same language, also use source partials as translation partials
+          if (sameLanguage) {
+            setEnPartial(partialText(arTokens));
+          } else {
+            setEnPartial(partialText(enTokens));
+          }
           setSrcPartial(partialText(arTokens));
           resetSilenceTimer();
         },
@@ -1339,6 +1372,47 @@ ${translatedText || "(No translation recorded)"}
     };
   }, [srcStable, refinedParagraphs, targetLang, detectedLang, LANG_OPTIONS]);
 
+  // Generate AI summary of the translation
+  const handleSummarize = useCallback(async () => {
+    const translatedText = refinedParagraphs.join("\n\n");
+    if (!translatedText.trim()) {
+      setToast({ message: t("share.nothingToCopy"), type: "error" });
+      return;
+    }
+
+    setIsSummarizing(true);
+    setShowSummaryModal(true);
+    setSummaryText("");
+
+    try {
+      const res = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: translatedText,
+          sourceText: srcStable,
+          targetLang,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error || "Failed to generate summary");
+      }
+
+      const data = await res.json();
+      setSummaryText(data.summary || "No summary generated.");
+    } catch (err: any) {
+      setToast({
+        message: err?.message || "Failed to generate summary",
+        type: "error",
+      });
+      setShowSummaryModal(false);
+    } finally {
+      setIsSummarizing(false);
+    }
+  }, [refinedParagraphs, srcStable, targetLang, t]);
+
   // Track whether the reader is near the bottom of the translation container; if scrolled up, disable auto-scroll.
   useEffect(() => {
     const container = translationScrollRef.current;
@@ -1386,80 +1460,91 @@ ${translatedText || "(No translation recorded)"}
   }, [refinedParagraphs.length, enCurrent, enPartial, userAtBottom]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-white overflow-hidden">
-      {/* Google Fonts for Arabic (Amiri) and Translation (Crimson Pro) */}
+    <div className="flex flex-col h-full w-full overflow-hidden bg-[#032117]">
+      {/* Google Fonts */}
       <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Crimson+Pro:wght@400;500&display=swap");
+        @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap");
       `}</style>
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {error && (
-          <div className="mx-4 mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-            {error}
+          <div className="mx-4 mt-3 rounded-xl border border-red-400/30 bg-red-950/50 p-4 text-sm text-red-200">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {error}
+            </div>
           </div>
         )}
 
-        {/* Reference/Source text section (Arabic) */}
-        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {detectedLang ? labelFor(detectedLang) : t("listen.reference")}
-            </span>
-            {isListening && (
-              <span className="flex items-center gap-2 text-xs text-[#2E7D32] font-medium">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E7D32] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2E7D32]"></span>
+        {/* Source text section */}
+        <div className="flex-shrink-0 bg-[#032117] border-b border-white/5">
+          
+          <div className="relative px-5 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-0.5 h-4 rounded-full bg-[#D4AF37]/60" />
+                <span className="text-[10px] font-medium text-white/40 uppercase tracking-[0.15em]">
+                  {detectedLang ? labelFor(detectedLang) : t("listen.reference")}
                 </span>
-                {t("listen.live")}
-              </span>
-            )}
-          </div>
-          <div
-            ref={refScrollRef}
-            className="max-h-[120px] overflow-y-auto pr-2"
-            dir="auto"
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "#d1d5db transparent",
-            }}
-          >
-            {concatReadable(srcStable, srcPartial) ? (
-              <p
-                className="text-right text-xl leading-[2] text-[#1B5E20]"
-                style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}
-              >
-                {srcStable.replace(/<end>/gi, "")}
-                {srcPartial && (
-                  <span className="text-[#2E7D32]/50">
-                    {" "}
-                    {srcPartial.replace(/<end>/gi, "")}
+              </div>
+              {isListening && (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#D4AF37]/10">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D4AF37]"></span>
                   </span>
-                )}
-              </p>
-            ) : (
-              <p className="text-gray-400 text-center py-2">
-                {isListening ? t("listen.listening") : t("listen.waitingAudio")}
-              </p>
-            )}
+                  <span className="text-[9px] text-[#D4AF37] font-semibold uppercase tracking-wider">
+                    {t("listen.live")}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div
+              ref={refScrollRef}
+              className="max-h-[80px] overflow-y-auto source-scroll-area"
+              dir="auto"
+            >
+              {concatReadable(srcStable, srcPartial) ? (
+                <p
+                  className="text-right text-[18px] leading-[1.8] text-white/90 source-text"
+                  style={{ fontFamily: "'Amiri', serif" }}
+                >
+                  {srcStable.replace(/<end>/gi, "")}
+                  {srcPartial && (
+                    <span className="text-white/40">
+                      {" "}
+                      {srcPartial.replace(/<end>/gi, "")}
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <div className="flex items-center justify-center py-2">
+                  <p className="text-white/35 text-xs italic">
+                    {isListening ? t("listen.listening") : t("listen.waitingAudio")}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Language selector */}
-        <div className="flex-shrink-0 px-6 py-3 border-b border-gray-100 bg-white">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">
+        <div className="flex-shrink-0 px-5 py-3 bg-[#032117] border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-white/40">
               {t("listen.translateTo")}
             </span>
-            <div className="relative inline-flex items-center">
+            <div className="relative">
               <select
                 id="translation-language"
-                className="appearance-none bg-gray-50 text-gray-700 text-sm px-3 py-1.5 pr-8 rounded-lg border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2E7D32]/20 focus:border-[#2E7D32]"
+                className="appearance-none bg-white/5 text-white text-sm pl-3 pr-8 py-1.5 rounded-lg border border-white/10 cursor-pointer focus:outline-none focus:border-[#D4AF37]/50 transition-all"
                 value={targetLang}
                 onChange={(e) => handleLanguageChange(e.target.value)}
               >
                 {LANG_OPTIONS.map((opt) => (
-                  <option key={opt.code} value={opt.code}>
+                  <option key={opt.code} value={opt.code} className="bg-[#032117] text-white">
                     {opt.label}
                   </option>
                 ))}
@@ -1467,7 +1552,7 @@ ${translatedText || "(No translation recorded)"}
               <svg
                 aria-hidden="true"
                 viewBox="0 0 20 20"
-                className="pointer-events-none absolute right-2 h-4 w-4 text-gray-400"
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#D4AF37]/60"
               >
                 <path d="M6 8l4 4 4-4" fill="currentColor" />
               </svg>
@@ -1475,123 +1560,118 @@ ${translatedText || "(No translation recorded)"}
           </div>
         </div>
 
-        {/* Translation output (scrollable) - STABLE ZONE: only finalized paragraphs */}
+        {/* Translation output */}
         <div
           ref={translationScrollRef}
-          className="flex-1 min-h-0 overflow-y-auto px-6 py-4 bg-white"
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "#d1d5db transparent",
-          }}
+          className="flex-1 min-h-0 overflow-y-auto px-5 py-4 bg-[#032117]"
         >
-          <div className="space-y-0">
-            {/* Finalized paragraphs - these never change once displayed */}
-            {renderList.map((p, i) => (
-              <div
-                key={`en-p-${i}`}
-                className="py-4 border-b border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300"
-              >
-                <p
-                  className="text-xl leading-[2] text-gray-800"
-                  style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+          {/* Content wrapper */}
+          <div className={`max-w-2xl mx-auto w-full ${renderList.length === 0 ? 'flex-1 flex flex-col justify-center' : 'py-4'}`}>
+            {/* Finalized paragraphs */}
+            {renderList.length > 0 ? (
+              renderList.map((p, i) => (
+                <div
+                  key={`en-p-${i}`}
+                  className="translation-paragraph group"
                 >
-                  {p}
-                </p>
-                {verseReferences[i] && (
-                  <button
-                    onClick={() => {
-                      // Extract verse key from reference (e.g., "Al-Kahf 18:38-42" → "18:38-42")
-                      const match =
-                        verseReferences[i]?.match(/(\d+:\d+(?:-\d+)?)/);
-                      if (match) {
-                        setSelectedVerseKey(match[1]);
-                      }
-                    }}
-                    className="group mt-2 inline-flex items-center gap-1.5 text-sm text-[#2E7D32]/80 italic hover:text-[#2E7D32] active:text-[#1B5E20] transition-all cursor-pointer rounded-md px-2 py-1 -ml-2 hover:bg-[#2E7D32]/5 active:bg-[#2E7D32]/10"
-                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
+                  <p
+                    className="text-[20px] leading-[2.1] text-white/90 translation-text"
+                    style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    {p}
+                  </p>
+                  {verseReferences[i] && (
+                    <button
+                      onClick={() => {
+                        const match = verseReferences[i]?.match(/(\d+:\d+(?:-\d+)?)/);
+                        if (match) {
+                          setSelectedVerseKey(match[1]);
+                        }
+                      }}
+                      className="verse-reference-btn group/btn mt-3 inline-flex items-center gap-2 text-[13px] text-[#D4AF37]/70 italic transition-all cursor-pointer rounded-lg px-3 py-1.5 -ml-3 hover:text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                      style={{ fontFamily: "'Cormorant Garamond', serif" }}
                     >
-                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                    </svg>
-                    <span className="underline decoration-[#2E7D32]/30 underline-offset-2 group-hover:decoration-[#2E7D32]/60">
-                      {verseReferences[i]}
-                    </span>
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {/* Empty state when not listening and no content */}
-            {!isListening && renderList.length === 0 && (
-              <div className="flex items-center justify-center py-16">
-                <span className="text-gray-400 text-lg">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="opacity-50 group-hover/btn:opacity-100 transition-opacity"
+                      >
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                      </svg>
+                      <span className="underline decoration-[#D4AF37]/20 underline-offset-4 group-hover/btn:decoration-[#D4AF37]/50">
+                        {verseReferences[i]}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              /* Empty state */
+              <div className="flex flex-col items-center justify-center gap-4 py-12">
+                <p className="text-white/50 text-base" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                   {labelFor(targetLang)} {t("listen.translationWillAppear")}
-                </span>
+                </p>
+                <p className="text-white/30 text-sm">
+                  Tap the microphone to begin
+                </p>
               </div>
             )}
           </div>
           <div ref={endRef} aria-hidden="true" />
         </div>
 
-        {/* LIVE PREVIEW: Shows incoming words with blur effect */}
+        {/* Live preview */}
         {isListening && (
-          <div className="flex-shrink-0 border-t border-gray-100 bg-white/80 backdrop-blur-sm">
-            <div className="px-6 py-4">
-              {(() => {
-                const currentLiveText = concatReadable(enCurrent, enPartial);
-                if (currentLiveText) {
-                  lastLiveTextRef.current = currentLiveText;
-                }
-                const displayText = currentLiveText || lastLiveTextRef.current;
+          <div className="flex-shrink-0 bg-[#032117] border-t border-white/5 px-5 py-4">
+            {(() => {
+              const currentLiveText = concatReadable(enCurrent, enPartial);
+              if (currentLiveText) {
+                lastLiveTextRef.current = currentLiveText;
+              }
+              const displayText = currentLiveText || lastLiveTextRef.current;
 
-                if (!displayText) {
-                  // Show subtle typing indicator when no text yet
-                  return (
-                    <div className="flex items-center justify-center py-2">
-                      <span className="typing-dots">
-                        <span className="typing-dot" />
-                        <span className="typing-dot" />
-                        <span className="typing-dot" />
-                      </span>
-                    </div>
-                  );
-                }
-
-                // Split text into words for staggered animation
-                const words = displayText.split(/\s+/);
-
+              if (!displayText) {
                 return (
-                  <p
-                    className="text-xl leading-[2] text-gray-800"
-                    style={{ fontFamily: "'Crimson Pro', Georgia, serif" }}
-                  >
-                    {words.map((word, i) => (
-                      <span
-                        key={`${i}-${word}`}
-                        className="live-word"
-                        style={{
-                          animationDelay: `${Math.min(i * 0.05, 0.5)}s`,
-                        }}
-                      >
-                        {word}{" "}
-                      </span>
-                    ))}
-                    <span className="inline-block w-0.5 h-5 bg-[#2E7D32] animate-pulse align-middle" />
-                  </p>
+                  <div className="flex items-center justify-center py-2 gap-3">
+                    <span className="typing-dots">
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                    </span>
+                    <span className="text-xs text-white/30">Listening...</span>
+                  </div>
                 );
-              })()}
-            </div>
+              }
+
+              const words = displayText.split(/\s+/);
+
+              return (
+                <p
+                  className="text-lg leading-relaxed text-white/70"
+                  style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                >
+                  {words.map((word, i) => (
+                    <span
+                      key={`${i}-${word}`}
+                      className="live-word"
+                      style={{
+                        animationDelay: `${Math.min(i * 0.04, 0.4)}s`,
+                      }}
+                    >
+                      {word}{" "}
+                    </span>
+                  ))}
+                  <span className="inline-block w-0.5 h-4 bg-[#D4AF37] animate-pulse align-middle ml-1" />
+                </p>
+              );
+            })()}
           </div>
         )}
       </main>
@@ -1604,14 +1684,12 @@ ${translatedText || "(No translation recorded)"}
         presetAmounts={[7, 20, 50]}
       />
 
-      {/* Verse Modal - shows Quran verse details when clicked */}
       <VerseModal
         verseKey={selectedVerseKey}
         onClose={() => setSelectedVerseKey(null)}
         targetLang={targetLang}
       />
 
-      {/* Email Modal - send translation via email */}
       <EmailModal
         open={showEmailModal}
         onClose={() => setShowEmailModal(false)}
@@ -1624,7 +1702,166 @@ ${translatedText || "(No translation recorded)"}
         }}
       />
 
-      {/* Toast notifications */}
+      {/* Summary Modal - refined glassmorphic design */}
+      {showSummaryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-md summary-backdrop-in"
+            onClick={() => !isSummarizing && setShowSummaryModal(false)}
+          />
+          <div className="relative w-full max-w-2xl max-h-[85vh] summary-modal-content">
+            {/* Glowing border effect */}
+            <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-br from-[#D4AF37]/30 via-[#D4AF37]/10 to-[#D4AF37]/30 opacity-50" />
+            <div className="relative bg-[#032117] rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
+              {/* Header */}
+              <div className="flex items-center justify-between px-8 py-5 border-b border-white/[0.06]">
+                <h2 className="text-lg font-medium text-white flex items-center gap-3" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                  <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      className="text-[#D4AF37]"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  Summary
+                </h2>
+                <button
+                  onClick={() => setShowSummaryModal(false)}
+                  disabled={isSummarizing}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors disabled:opacity-50"
+                  aria-label="Close"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              {/* Content */}
+              <div className="px-8 py-6 overflow-y-auto max-h-[60vh] summary-scroll-area">
+                {isSummarizing ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-5">
+                    <div className="relative w-14 h-14">
+                      <div className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/10" />
+                      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#D4AF37] animate-spin" />
+                      <div className="absolute inset-2 rounded-full border-2 border-transparent border-t-[#D4AF37]/50 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                    </div>
+                    <p className="text-white/40 text-sm" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                      Generating summary...
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                    {summaryText.split("\n").map((line, i) => {
+                      const formatBold = (text: string) =>
+                        text.replace(
+                          /\*\*(.+?)\*\*/g,
+                          '<strong class="text-[#D4AF37] font-semibold">$1</strong>'
+                        );
+
+                      if (!line.trim()) {
+                        return <div key={i} className="h-4" />;
+                      }
+
+                      if (line.startsWith("### ")) {
+                        return (
+                          <h3
+                            key={i}
+                            className="text-[#E8D5A3] text-base font-medium mt-5 mb-2"
+                            dangerouslySetInnerHTML={{ __html: formatBold(line.replace("### ", "")) }}
+                          />
+                        );
+                      }
+                      if (line.startsWith("## ")) {
+                        return (
+                          <h2
+                            key={i}
+                            className="text-[#E8D5A3] text-lg font-medium mt-6 mb-3"
+                            dangerouslySetInnerHTML={{ __html: formatBold(line.replace("## ", "")) }}
+                          />
+                        );
+                      }
+                      if (line.startsWith("# ")) {
+                        return (
+                          <h1
+                            key={i}
+                            className="text-[#E8D5A3] text-xl font-semibold mt-6 mb-3"
+                            dangerouslySetInnerHTML={{ __html: formatBold(line.replace("# ", "")) }}
+                          />
+                        );
+                      }
+                      if (line.startsWith("- ") || line.startsWith("* ")) {
+                        return (
+                          <p
+                            key={i}
+                            className="text-white/80 leading-relaxed pl-5 my-1.5 relative before:content-['•'] before:absolute before:left-0 before:text-[#D4AF37]/60"
+                            dangerouslySetInnerHTML={{ __html: formatBold(line.slice(2)) }}
+                          />
+                        );
+                      }
+                      const numberedMatch = line.match(/^(\d+)\.\s/);
+                      if (numberedMatch) {
+                        return (
+                          <p
+                            key={i}
+                            className="text-white/80 leading-relaxed pl-5 my-1.5"
+                            dangerouslySetInnerHTML={{ __html: formatBold(line) }}
+                          />
+                        );
+                      }
+                      return (
+                        <p
+                          key={i}
+                          className="text-white/80 text-[17px] leading-[1.9] my-2.5"
+                          dangerouslySetInnerHTML={{ __html: formatBold(line) }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {/* Footer */}
+              {!isSummarizing && summaryText && (
+                <div className="px-8 py-5 border-t border-white/[0.06] flex justify-end gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(summaryText);
+                        setToast({ message: t("share.copied"), type: "success" });
+                      } catch {
+                        setToast({ message: "Failed to copy", type: "error" });
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-white/80 text-sm font-medium hover:bg-white/10 transition-all border border-white/[0.08]"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => setShowSummaryModal(false)}
+                    className="px-5 py-2 rounded-xl bg-[#D4AF37] text-[#032117] text-sm font-semibold hover:bg-[#E8D5A3] transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <Toast
           message={toast.message}
@@ -1633,142 +1870,100 @@ ${translatedText || "(No translation recorded)"}
         />
       )}
 
-      {/* Footer with controls */}
-      <footer className="flex-shrink-0 border-t border-gray-100 bg-white">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-center gap-4">
-            {hasStopped && !isListening && (
-              <div className="flex flex-col items-center gap-3 w-full">
-                {/* Quick actions row - Copy & Email */}
-                {refinedParagraphs.length > 0 && (
-                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <button
-                      onClick={handleCopyTranslation}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2E7D32] text-white font-medium text-sm px-5 py-2.5 transition-all hover:bg-[#1B5E20] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#2E7D32]/20"
-                      aria-label={t("share.copy")}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect
-                          x="9"
-                          y="9"
-                          width="13"
-                          height="13"
-                          rx="2"
-                          ry="2"
-                        />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                      {t("share.copy")}
-                    </button>
-                    <button
-                      onClick={() => setShowEmailModal(true)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2E7D32] text-white font-medium text-sm px-5 py-2.5 transition-all hover:bg-[#1B5E20] hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#2E7D32]/20"
-                      aria-label={t("share.email")}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                      </svg>
-                      {t("share.email")}
-                    </button>
-                  </div>
-                )}
+      {/* Footer */}
+      <footer className="flex-shrink-0 bg-[#032117] px-5 py-6 border-t border-white/5">
+        {/* Session ended actions */}
+        {hasStopped && !isListening && refinedParagraphs.length > 0 && (
+          <div className="mb-6 space-y-4">
+            {/* Primary actions row */}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={handleSummarize}
+                disabled={isSummarizing}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium bg-[#D4AF37] text-[#032117] rounded-full hover:bg-[#E8C547] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#D4AF37]/20"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                {isSummarizing ? "Summarizing..." : "Summarize"}
+              </button>
+              <button
+                onClick={handleCopyTranslation}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white rounded-full hover:bg-white/15 active:scale-[0.98] transition-all border border-white/10"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                {t("share.copy")}
+              </button>
+              <button
+                onClick={() => setShowEmailModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white rounded-full hover:bg-white/15 active:scale-[0.98] transition-all border border-white/10"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                {t("share.email")}
+              </button>
+            </div>
+            
+            {/* Secondary actions */}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => router.push("/")}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+                {t("listen.returnHome")}
+              </button>
+              <button
+                onClick={() => setIsSheetOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/15 rounded-full border border-[#D4AF37]/30 transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                Support Aqala
+              </button>
+            </div>
+          </div>
+        )}
 
-                {/* Secondary actions row */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => router.push("/")}
-                    className="inline-flex items-center justify-center rounded-full border border-gray-300 text-gray-600 font-medium text-sm px-4 py-2 transition-colors hover:bg-gray-50 hover:border-gray-400"
-                    aria-label={t("listen.returnHome")}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={isRTL ? "ml-1.5" : "mr-1.5"}
-                    >
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                      <polyline points="9 22 9 12 15 12 15 22" />
-                    </svg>
-                    {t("listen.returnHome")}
-                  </button>
-                  <button
-                    onClick={() => setIsSheetOpen(true)}
-                    className="inline-flex items-center justify-center rounded-full border border-gray-300 text-gray-600 font-medium text-sm px-4 py-2 transition-colors hover:bg-gray-50 hover:border-gray-400"
-                    aria-label={t("footer.donate")}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={isRTL ? "ml-1.5" : "mr-1.5"}
-                    >
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                    </svg>
-                    {t("footer.donate")}
-                  </button>
-                </div>
-              </div>
+        {/* Mic button */}
+        <div className="flex items-center justify-center">
+          <button
+            onClick={isListening ? handleStop : handleStart}
+            aria-label={isListening ? "Stop" : "Start listening"}
+            className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+              isListening 
+                ? "bg-red-500 text-white shadow-lg shadow-red-500/30" 
+                : "bg-[#0a5c3e] text-white hover:bg-[#0d6b47] shadow-lg shadow-black/20"
+            }`}
+          >
+            {isListening && (
+              <>
+                <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-20" />
+                <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-10" style={{ animationDelay: '0.5s' }} />
+              </>
             )}
-            <button
-              onClick={isListening ? handleStop : handleStart}
-              aria-label={isListening ? "Stop" : "Start listening"}
-              className={`relative h-14 w-14 rounded-full flex items-center justify-center transition-all outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight ${
-                isListening
-                  ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/25"
-                  : "bg-[#2E7D32] hover:bg-[#1B5E20] hover:scale-105 shadow-lg shadow-[#2E7D32]/30"
-              }`}
-            >
+            <span className="relative z-10">
               {isListening ? (
-                <>
-                  <div className="h-5 w-5 rounded-sm bg-white" />
-                  <span
-                    className="pulse-ring"
-                    style={{ borderColor: "#ef4444" }}
-                  />
-                </>
+                <div className="h-5 w-5 rounded-sm bg-white" />
               ) : (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
-                    fill="white"
-                  />
-                  <path
-                    d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
-                    fill="white"
-                  />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
+                  <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
                 </svg>
               )}
-            </button>
-          </div>
+            </span>
+          </button>
         </div>
       </footer>
     </div>
