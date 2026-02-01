@@ -54,16 +54,6 @@ export default function ManageSubscriptionPage() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-68px)] px-4 py-8">
       <div className="max-w-2xl mx-auto w-full">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-2">
-            Your Plan
-          </h1>
-          <p className="text-gray-600">
-            View your plan details
-          </p>
-        </div>
-
         {/* Current Plan Card */}
         <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">

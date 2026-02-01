@@ -107,7 +107,7 @@ function SubscriptionPageContent() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-68px)] px-4 py-8">
         <div className="text-center">
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-white/80">Loading...</p>
         </div>
       </div>
     );
@@ -122,10 +122,10 @@ function SubscriptionPageContent() {
       <div className="max-w-4xl mx-auto w-full">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white mb-2">
             Choose Your Plan
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">
+          <p className="text-sm sm:text-base text-white/80">
             Select the plan that best fits your needs
           </p>
         </div>
@@ -133,10 +133,10 @@ function SubscriptionPageContent() {
         {/* Invite banner */}
         {referrerId && plan === "free" && (
           <div className="mb-6 p-4 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 text-center">
-            <p className="text-[#059669] font-medium">
+            <p className="text-[#4ADE80] font-medium">
               You&apos;ve been invited — save $10 on Premium
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-white/90 mt-1">
               Pay only $5 instead of $15 for your first purchase
             </p>
           </div>
@@ -148,7 +148,7 @@ function SubscriptionPageContent() {
           <div
             className={`rounded-xl sm:rounded-2xl border-2 p-5 sm:p-6 ${
               plan === "free"
-                ? "border-[#10B981] bg-[#10B981]/5"
+                ? "border-[#10B981] bg-white"
                 : "border-gray-200 bg-white"
             }`}
           >
@@ -203,7 +203,7 @@ function SubscriptionPageContent() {
           <div
             className={`rounded-xl sm:rounded-2xl border-2 p-5 sm:p-6 ${
               plan === "premium"
-                ? "border-[#10B981] bg-[#10B981]/5"
+                ? "border-[#10B981] bg-white"
                 : "border-gray-200 bg-white"
             }`}
           >
@@ -263,12 +263,12 @@ function SubscriptionPageContent() {
           </div>
         </div>
 
-        {/* Manage Subscription Link */}
+        {/* Manage Plan Link */}
         {plan !== "free" && (
           <div className="text-center">
             <Link
               href="/subscription/manage"
-              className="text-sm sm:text-base text-[#10B981] hover:text-[#059669] font-medium underline"
+              className="text-sm sm:text-base text-[#4ADE80] hover:text-[#86EFAC] font-medium underline"
             >
               Manage plan
             </Link>
@@ -285,7 +285,7 @@ export default function SubscriptionPage() {
       fallback={
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-68px)] px-4 py-8">
           <div className="text-center">
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-white/80">Loading...</p>
           </div>
         </div>
       }
