@@ -149,10 +149,10 @@ export default function AccountSettingsPage() {
           </p>
         </section>
 
-        {/* Subscription Section */}
+        {/* Plan Section */}
         <section>
           <h2 className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-            Subscription
+            Plan
           </h2>
           <div className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
             {isPremium ? (
@@ -192,7 +192,7 @@ export default function AccountSettingsPage() {
                   href="/subscription"
                   className="block w-full text-center py-3 text-sm font-semibold text-[#032117] bg-gradient-to-r from-[#D4AF37] to-[#c9a431] hover:from-[#E8D5A3] hover:to-[#D4AF37] rounded-xl transition-all shadow-lg shadow-[#D4AF37]/20"
                 >
-                  Go Ad-Free • $15/year
+                  Go Ad-Free • $15 one-time
                 </Link>
               </div>
             )}
