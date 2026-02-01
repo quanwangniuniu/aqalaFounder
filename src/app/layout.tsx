@@ -54,6 +54,9 @@ export const metadata: Metadata = {
       "Connecting through comprehension. Aqala enables real-time translation and seamless multilingual communication across languages.",
     images: ["/aqala-logo.png"],
   },
+  other: {
+    "google-adsense-account": "ca-pub-3882364799598893",
+  },
 };
 
 export default function RootLayout({
