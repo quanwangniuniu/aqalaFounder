@@ -30,14 +30,27 @@ export default function QiblaPage() {
 
   // Get user location
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
+    const useFallbackLocation = () => {
+      // Use default location (Sydney, Australia) as fallback
+      const defaultLat = -33.8688;
+      const defaultLng = 151.2093;
+      setLocation({ lat: defaultLat, lng: defaultLng });
+      setQiblaDirection(calculateQiblaDirection(defaultLat, defaultLng));
+      setDistanceToKaaba(calculateDistanceToKaaba(defaultLat, defaultLng));
       setLoadingLocation(false);
+    };
+
+    if (!navigator.geolocation) {
+      useFallbackLocation();
       return;
     }
 
+    // Set a timeout in case geolocation hangs
+    const timeoutId = setTimeout(useFallbackLocation, 3000);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        clearTimeout(timeoutId);
         const { latitude, longitude } = position.coords;
         setLocation({ lat: latitude, lng: longitude });
         setQiblaDirection(calculateQiblaDirection(latitude, longitude));
@@ -45,23 +58,13 @@ export default function QiblaPage() {
         setLoadingLocation(false);
       },
       (error) => {
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationError("Location permission denied. Please enable location access.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocationError("Location unavailable. Please try again.");
-            break;
-          case error.TIMEOUT:
-            setLocationError("Location request timed out. Please try again.");
-            break;
-          default:
-            setLocationError("Unable to get your location.");
-        }
-        setLoadingLocation(false);
+        clearTimeout(timeoutId);
+        useFallbackLocation();
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 2000, maximumAge: 60000 }
     );
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Handle compass orientation
@@ -114,10 +117,11 @@ export default function QiblaPage() {
       setCompassPermission("granted");
       
       // Try deviceorientationabsolute first (more accurate on Android)
-      if ("ondeviceorientationabsolute" in window) {
-        window.addEventListener("deviceorientationabsolute", handleOrientation as any, true);
+      const hasAbsoluteOrientation = "ondeviceorientationabsolute" in window;
+      if (hasAbsoluteOrientation) {
+        (window as any).addEventListener("deviceorientationabsolute", handleOrientation, true);
       } else {
-        window.addEventListener("deviceorientation", handleOrientation, true);
+        (window as any).addEventListener("deviceorientation", handleOrientation, true);
       }
     }
   };
@@ -126,7 +130,7 @@ export default function QiblaPage() {
   useEffect(() => {
     return () => {
       window.removeEventListener("deviceorientation", handleOrientation, true);
-      window.removeEventListener("deviceorientationabsolute", handleOrientation as any, true);
+      window.removeEventListener("deviceorientationabsolute" as any, handleOrientation, true);
     };
   }, [handleOrientation]);
 
@@ -194,93 +198,146 @@ export default function QiblaPage() {
           <>
             {/* Compass */}
             <div className="relative w-72 h-72 sm:w-80 sm:h-80 mb-8">
-              {/* Outer ring */}
-              <div className="absolute inset-0 rounded-full border-2 border-white/10" />
+              {/* Glow effect when pointing to Qibla */}
+              {isPointingToQibla() && (
+                <div className="absolute inset-0 rounded-full bg-[#D4AF37]/10 blur-xl animate-pulse" />
+              )}
               
-              {/* Compass markings */}
-              <div className="absolute inset-2 rounded-full border border-white/5">
-                {/* Cardinal directions */}
-                {["N", "E", "S", "W"].map((dir, i) => (
+              {/* Outer decorative ring */}
+              <div className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/20">
+                {/* Decorative dots on outer ring */}
+                {[0, 90, 180, 270].map((deg) => (
                   <div
-                    key={dir}
-                    className="absolute text-xs text-white/40 font-medium"
+                    key={deg}
+                    className="absolute w-2 h-2 rounded-full bg-[#D4AF37]/40"
                     style={{
-                      top: i === 0 ? "8px" : i === 2 ? "auto" : "50%",
-                      bottom: i === 2 ? "8px" : "auto",
-                      left: i === 3 ? "8px" : i === 1 ? "auto" : "50%",
-                      right: i === 1 ? "8px" : "auto",
-                      transform: i === 0 || i === 2 ? "translateX(-50%)" : "translateY(-50%)",
+                      top: deg === 0 ? "-4px" : deg === 180 ? "auto" : "50%",
+                      bottom: deg === 180 ? "-4px" : "auto",
+                      left: deg === 270 ? "-4px" : deg === 90 ? "auto" : "50%",
+                      right: deg === 90 ? "-4px" : "auto",
+                      transform: deg === 0 || deg === 180 ? "translateX(-50%)" : "translateY(-50%)",
                     }}
-                  >
-                    {dir}
-                  </div>
+                  />
                 ))}
               </div>
-
-              {/* Rotating compass disk */}
-              <div
-                className="absolute inset-4 rounded-full transition-transform duration-100 ease-out"
-                style={{
-                  transform: compassHeading !== null ? `rotate(${-compassHeading}deg)` : "rotate(0deg)",
-                }}
-              >
-                {/* Degree markings */}
-                {Array.from({ length: 72 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute top-0 left-1/2 origin-bottom"
-                    style={{
-                      height: "50%",
-                      transform: `translateX(-50%) rotate(${i * 5}deg)`,
-                    }}
-                  >
+              
+              {/* Inner compass circle */}
+              <div className="absolute inset-3 rounded-full bg-gradient-to-b from-[#0a3d2a] to-[#032117] border border-white/10 shadow-inner">
+                {/* Cardinal directions - fixed position */}
+                <div className="absolute inset-0">
+                  {[
+                    { label: "N", deg: 0, color: "text-red-400" },
+                    { label: "E", deg: 90, color: "text-white/50" },
+                    { label: "S", deg: 180, color: "text-white/50" },
+                    { label: "W", deg: 270, color: "text-white/50" },
+                  ].map(({ label, deg, color }) => (
                     <div
-                      className={`w-px ${i % 6 === 0 ? "h-3 bg-white/30" : "h-1.5 bg-white/10"}`}
-                    />
-                  </div>
-                ))}
+                      key={label}
+                      className={`absolute text-sm font-bold ${color}`}
+                      style={{
+                        top: deg === 0 ? "12px" : deg === 180 ? "auto" : "50%",
+                        bottom: deg === 180 ? "12px" : "auto",
+                        left: deg === 270 ? "12px" : deg === 90 ? "auto" : "50%",
+                        right: deg === 90 ? "12px" : "auto",
+                        transform: deg === 0 || deg === 180 ? "translateX(-50%)" : "translateY(-50%)",
+                      }}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Rotating compass rose */}
+                <div
+                  className="absolute inset-6 rounded-full transition-transform duration-100 ease-out"
+                  style={{
+                    transform: compassHeading !== null ? `rotate(${-compassHeading}deg)` : "rotate(0deg)",
+                  }}
+                >
+                  {/* Tick marks */}
+                  {Array.from({ length: 36 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute top-0 left-1/2 origin-bottom"
+                      style={{
+                        height: "50%",
+                        transform: `translateX(-50%) rotate(${i * 10}deg)`,
+                      }}
+                    >
+                      <div
+                        className={`w-px ${
+                          i % 9 === 0 
+                            ? "h-4 bg-[#D4AF37]/60" 
+                            : i % 3 === 0 
+                            ? "h-2.5 bg-white/30" 
+                            : "h-1.5 bg-white/15"
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Qibla indicator (arrow pointing to Kaaba) */}
+              {/* Qibla direction indicator */}
               <div
-                className={`absolute inset-8 transition-transform duration-100 ease-out ${
-                  isPointingToQibla() ? "animate-pulse" : ""
-                }`}
+                className="absolute inset-6 transition-transform duration-100 ease-out"
                 style={{
                   transform: `rotate(${getQiblaRotation()}deg)`,
                 }}
               >
-                {/* Arrow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  <div
-                    className={`w-0 h-0 border-l-[12px] border-r-[12px] border-b-[24px] border-l-transparent border-r-transparent transition-colors ${
-                      isPointingToQibla() ? "border-b-[#D4AF37]" : "border-b-[#D4AF37]/70"
+                {/* Qibla pointer - Kaaba icon with stem */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-1/2 flex flex-col items-center">
+                  {/* Kaaba icon container */}
+                  <div 
+                    className={`relative transition-all ${
+                      isPointingToQibla() ? "scale-110" : ""
                     }`}
-                  />
-                  <div
-                    className={`w-1 h-16 rounded-b transition-colors ${
-                      isPointingToQibla() ? "bg-[#D4AF37]" : "bg-[#D4AF37]/70"
-                    }`}
-                  />
-                </div>
-                
-                {/* Kaaba icon at the tip */}
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                  <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                    isPointingToQibla() ? "bg-[#D4AF37]" : "bg-[#D4AF37]/70"
-                  }`}>
-                    <svg className="w-4 h-4 text-[#032117]" viewBox="0 0 24 24" fill="currentColor">
-                      <rect x="4" y="4" width="16" height="16" rx="1" />
-                    </svg>
+                  >
+                    {/* Kaaba symbol - stylized cube with gold band */}
+                    <div className={`w-11 h-11 rounded-lg relative overflow-hidden shadow-lg transition-all ${
+                      isPointingToQibla() 
+                        ? "bg-[#1a1a1a] shadow-[#D4AF37]/40 shadow-xl" 
+                        : "bg-[#1a1a1a]/90"
+                    }`}>
+                      {/* Kiswah (cloth) border */}
+                      <div className={`absolute inset-0 border-2 rounded-lg transition-colors ${
+                        isPointingToQibla() ? "border-[#D4AF37]" : "border-[#D4AF37]/60"
+                      }`} />
+                      {/* Gold band (Hizam) */}
+                      <div className={`absolute top-1/3 left-0 right-0 h-2.5 transition-colors ${
+                        isPointingToQibla() ? "bg-[#D4AF37]" : "bg-[#D4AF37]/70"
+                      }`} />
+                      {/* Decorative pattern on band */}
+                      <div className="absolute top-1/3 left-0 right-0 h-2.5 flex justify-around items-center px-1">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="w-1 h-1 rounded-full bg-[#1a1a1a]/40" />
+                        ))}
+                      </div>
+                      {/* Door indication */}
+                      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-3 bg-[#D4AF37]/30 rounded-t border border-[#D4AF37]/40" />
+                    </div>
                   </div>
+                  
+                  {/* Arrow stem - connects Kaaba to center */}
+                  <div className={`w-1 flex-1 rounded-full transition-colors ${
+                    isPointingToQibla() 
+                      ? "bg-gradient-to-b from-[#D4AF37] via-[#D4AF37]/60 to-transparent" 
+                      : "bg-gradient-to-b from-[#D4AF37]/70 via-[#D4AF37]/40 to-transparent"
+                  }`} />
                 </div>
               </div>
 
-              {/* Center point */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white/20 border-2 border-white/40" />
+              {/* Center compass point */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#D4AF37]/30 to-transparent border-2 border-[#D4AF37]/40 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-[#D4AF37]/60" />
+                </div>
+              </div>
 
-              {/* Pointing indicator (fixed at top) */}
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[12px] border-l-transparent border-r-transparent border-t-white/60" />
+              {/* Fixed pointing indicator at top */}
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-[#D4AF37]" />
+              </div>
             </div>
 
             {/* Info */}
