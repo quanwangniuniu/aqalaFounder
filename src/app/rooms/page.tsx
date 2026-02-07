@@ -1,65 +1,50 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRooms } from "@/contexts/RoomsContext";
-import { subscribeRoomMembers, RoomMember } from "@/lib/firebase/rooms";
 import CreateRoomModal from "@/components/CreateRoomModal";
 import AdBanner from "@/components/AdBanner";
 
 export default function RoomsPage() {
   const { user, partnerInfo } = useAuth();
   const { rooms, loading } = useRooms();
-  const [roomMembers, setRoomMembers] = useState<Record<string, RoomMember[]>>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const isPartner = partnerInfo?.isPartner ?? false;
 
-  // Only show LIVE rooms - filter by activeTranslatorId
+  // Only show LIVE rooms - filter by activeTranslatorId and recent activity
   const { livePartnerRooms, liveCommunityRooms } = useMemo(() => {
-    // Only get rooms that are currently live
-    const liveRooms = rooms.filter(r => r.activeTranslatorId);
+    const now = Date.now();
+    const INACTIVE_THRESHOLD_MS = 30000; // 30 seconds of no broadcast = inactive
+    
+    // Only get rooms that are currently live AND have recent activity
+    const liveRooms = rooms.filter(r => {
+      if (!r.activeTranslatorId) return false;
+      
+      // Check if room has had recent broadcast activity
+      if (r.lastBroadcastAt) {
+        const timeSinceLastBroadcast = now - r.lastBroadcastAt.getTime();
+        if (timeSinceLastBroadcast > INACTIVE_THRESHOLD_MS) {
+          return false; // Room is stale/inactive
+        }
+      }
+      
+      return true;
+    });
     
     const partner = liveRooms.filter(r => r.isBroadcast === true || r.roomType === "partner");
     const community = liveRooms.filter(r => r.isBroadcast !== true && r.roomType !== "partner");
     
     return {
-      livePartnerRooms: partner.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)),
-      liveCommunityRooms: community.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)),
+      livePartnerRooms: partner.sort((a, b) => (b.lastBroadcastAt?.getTime() || b.createdAt?.getTime() || 0) - (a.lastBroadcastAt?.getTime() || a.createdAt?.getTime() || 0)),
+      liveCommunityRooms: community.sort((a, b) => (b.lastBroadcastAt?.getTime() || b.createdAt?.getTime() || 0) - (a.lastBroadcastAt?.getTime() || a.createdAt?.getTime() || 0)),
     };
   }, [rooms]);
 
   const totalLiveRooms = livePartnerRooms.length + liveCommunityRooms.length;
-
-  // Subscribe to members for each room
-  useEffect(() => {
-    if (rooms.length === 0) {
-      setRoomMembers({});
-      return;
-    }
-
-    const unsubscribes: (() => void)[] = [];
-    rooms.forEach((room) => {
-      const unsubscribe = subscribeRoomMembers(
-        room.id,
-        (members) => {
-          setRoomMembers((prev) => ({ ...prev, [room.id]: members }));
-        },
-        (err) => {
-          if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
-            return;
-          }
-          console.error(`Error loading members for room ${room.id}:`, err);
-        }
-      );
-      unsubscribes.push(unsubscribe);
-    });
-    return () => {
-      unsubscribes.forEach((unsub) => unsub());
-    };
-  }, [rooms]);
 
   return (
     <div className="min-h-screen text-white">
@@ -160,7 +145,7 @@ export default function RoomsPage() {
 
           <div className="space-y-3">
               {livePartnerRooms.map((room) => (
-                <RoomCard key={room.id} room={room} members={roomMembers[room.id] || []} />
+                <RoomCard key={room.id} room={room} />
             ))}
           </div>
         </section>
@@ -193,7 +178,7 @@ export default function RoomsPage() {
             
             <div className="space-y-3">
               {liveCommunityRooms.map((room) => (
-                <CommunityRoomCard key={room.id} room={room} members={roomMembers[room.id] || []} />
+                <CommunityRoomCard key={room.id} room={room} />
               ))}
             </div>
           </section>
@@ -279,10 +264,9 @@ export default function RoomsPage() {
 }
 
 // Partner Room Card Component - All rooms shown are LIVE
-function RoomCard({ room, members }: { room: any; members: RoomMember[] }) {
-  // Use real-time members count for accurate viewer count
-  const listenerCount = members.filter(m => m.role === "listener").length;
-  const viewerCount = Math.max(listenerCount, members.length);
+function RoomCard({ room }: { room: any }) {
+  // Use memberCount from room (managed by join/leave transactions)
+  const viewerCount = room.memberCount || 0;
   
   return (
     <Link
@@ -340,9 +324,9 @@ function RoomCard({ room, members }: { room: any; members: RoomMember[] }) {
 }
 
 // Community Room Card Component - All rooms shown are LIVE
-function CommunityRoomCard({ room, members }: { room: any; members: RoomMember[] }) {
-  // Use real-time members count for accurate viewer count
-  const viewerCount = members.length;
+function CommunityRoomCard({ room }: { room: any }) {
+  // Use memberCount from room (managed by join/leave transactions)
+  const viewerCount = room.memberCount || 0;
   
   return (
     <Link

@@ -10,7 +10,7 @@ import {
   RoomMember,
   getRoom,
   Room,
-  updateViewerCount,
+  leaveRoom,
 } from "@/lib/firebase/rooms";
 import ClientApp from "@/app/client-app";
 import LiveTranslationView from "@/components/LiveTranslationView";
@@ -46,19 +46,15 @@ export default function RoomDetailPage() {
   const [showChat, setShowChat] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
 
-  // Track viewer count for ALL users (logged in or not)
-  // Uses atomic increment to avoid Firestore internal state issues
+  // Cleanup: leave room on unmount (removes from members, decrements memberCount)
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
     
-    // Increment on mount
-    updateViewerCount(roomId, 1);
-    
-    // Decrement on unmount
     return () => {
-      updateViewerCount(roomId, -1);
+      // Leave room on unmount - this properly decrements memberCount
+      leaveRoom(roomId, user.uid);
     };
-  }, [roomId]);
+  }, [roomId, user]);
 
   // Check for mobile view
   useEffect(() => {
@@ -113,7 +109,9 @@ export default function RoomDetailPage() {
   const isBroadcastRoom = room?.isBroadcast === true;
   const isPartnerRoom = room?.roomType === "partner" || isBroadcastRoom;
   const isPartnerOfRoom = user && room?.partnerId === user.uid;
-  const canClaimReciter = !isBroadcastRoom || isPartnerOfRoom;
+  const isRoomOwner = user && room?.ownerId === user.uid;
+  // Only room owner or partner can claim reciter - NOT regular listeners
+  const canClaimReciter = isRoomOwner || isPartnerOfRoom;
   const isLive = !!validTranslatorId;
 
   // Subscribe to members (works for all users, Firebase rules handle permissions)
@@ -131,7 +129,7 @@ export default function RoomDetailPage() {
         }
       },
       (err) => {
-        // Silently handle permission errors - viewer count will fall back to room.viewerCount
+        // Silently handle permission errors - viewer count will fall back to room.memberCount
         if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
           setMembers([]);
           return;
@@ -229,14 +227,14 @@ export default function RoomDetailPage() {
     );
   }
 
-  // Use room.viewerCount as it's updated for all users (auth or not)
-  // Falls back to members.length if viewerCount is somehow missing
-  const viewerCount = room?.viewerCount || members.length || 0;
+  // Use room.memberCount (managed by join/leave transactions)
+  // Falls back to members.length if memberCount is somehow missing
+  const viewerCount = room?.memberCount || members.length || 0;
 
   return (
     <div className="min-h-screen bg-[#0a0c0f] text-white flex flex-col">
       {/* Compact Header */}
-      <header className="flex-shrink-0 px-4 py-3 border-b border-white/5 bg-[#0a0c0f]/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="flex-shrink-0 px-4 py-3 border-b border-white/5 bg-[#0a0c0f]/95 backdrop-blur-sm sticky top-0 z-[70]">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           {/* Left side - Back + Room info */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -414,44 +412,50 @@ export default function RoomDetailPage() {
             </div>
           )}
         </div>
-
-        {/* Chat Panel - Desktop sidebar */}
-        {room.chatEnabled && showChat && !isMobileView && (
-          <aside className="fixed right-0 top-[57px] bottom-0 w-[360px] border-l border-white/5 bg-[#0d0f12] z-40">
-            <LiveChat
-              roomId={roomId}
-              isPartnerRoom={isPartnerRoom}
-              ownerId={room.ownerId}
-              donationsEnabled={room.donationsEnabled}
-              className="h-full"
-            />
-          </aside>
-        )}
-
-        {/* Chat Panel - Mobile overlay */}
-        {room.chatEnabled && showChat && isMobileView && (
-          <div className="fixed inset-0 z-50 bg-[#0a0c0f] flex flex-col animate-in slide-in-from-bottom duration-200">
-            <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 flex items-center justify-between bg-[#0a0c0f]">
-              <span className="font-semibold text-white">Live Chat</span>
-              <button
-                onClick={() => setShowChat(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6 6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <LiveChat
-              roomId={roomId}
-              isPartnerRoom={isPartnerRoom}
-              ownerId={room.ownerId}
-              donationsEnabled={room.donationsEnabled}
-              className="flex-1"
-            />
-          </div>
-        )}
       </div>
+
+      {/* Chat Panel - Desktop sidebar (outside overflow container) */}
+      {room.chatEnabled && showChat && !isMobileView && (
+        <aside className="fixed right-0 top-[57px] bottom-0 w-[360px] border-l border-white/5 bg-[#0d0f12] z-[60]">
+          <LiveChat
+            roomId={roomId}
+            isPartnerRoom={isPartnerRoom}
+            ownerId={room.ownerId}
+            donationsEnabled={room.donationsEnabled}
+            className="h-full"
+          />
+        </aside>
+      )}
+
+      {/* Chat Panel - Mobile overlay (outside overflow container) */}
+      {room.chatEnabled && showChat && isMobileView && (
+        <div className="fixed inset-0 z-[100] bg-[#0a0c0f] flex flex-col animate-in slide-in-from-bottom duration-200">
+          <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 flex items-center justify-between bg-[#0a0c0f]">
+            <div className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span className="font-semibold text-white">Live Chat</span>
+            </div>
+            <button
+              onClick={() => setShowChat(false)}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <LiveChat
+            roomId={roomId}
+            isPartnerRoom={isPartnerRoom}
+            ownerId={room.ownerId}
+            donationsEnabled={room.donationsEnabled}
+            className="flex-1"
+            hideHeader
+          />
+        </div>
+      )}
     </div>
   );
 }

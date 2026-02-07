@@ -17,6 +17,7 @@ interface LiveChatProps {
   ownerId?: string;
   donationsEnabled?: boolean;
   className?: string;
+  hideHeader?: boolean;
 }
 
 export default function LiveChat({ 
@@ -24,7 +25,8 @@ export default function LiveChat({
   isPartnerRoom = false,
   ownerId,
   donationsEnabled = true,
-  className = "" 
+  className = "",
+  hideHeader = false,
 }: LiveChatProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,6 +47,10 @@ export default function LiveChat({
         setMessages(msgs);
       },
       (err) => {
+        // Silently handle permission errors - unauthenticated users may not have access
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
+          return;
+        }
         console.error("Chat subscription error:", err);
       }
     );
@@ -177,30 +183,32 @@ export default function LiveChat({
   return (
     <div className={`flex flex-col bg-[#0a0d10] ${className}`}>
       {/* Chat Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <span className="text-sm font-medium text-white/70">Live Chat</span>
-          <span className="text-xs text-white/30">({messages.length})</span>
-        </div>
-        {donationsEnabled && user && (
-          <button
-            onClick={() => setShowDonation(!showDonation)}
-            className={`p-1.5 rounded-lg transition-colors ${
-              showDonation 
-                ? "bg-[#D4AF37]/20 text-[#D4AF37]" 
-                : "hover:bg-white/5 text-white/40 hover:text-white/60"
-            }`}
-            title="Support the streamer"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      {!hideHeader && (
+        <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-          </button>
-        )}
-      </div>
+            <span className="text-sm font-medium text-white/70">Live Chat</span>
+            <span className="text-xs text-white/30">({messages.length})</span>
+          </div>
+          {donationsEnabled && user && (
+            <button
+              onClick={() => setShowDonation(!showDonation)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                showDonation 
+                  ? "bg-[#D4AF37]/20 text-[#D4AF37]" 
+                  : "hover:bg-white/5 text-white/40 hover:text-white/60"
+              }`}
+              title="Support the streamer"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Donation Panel */}
       {showDonation && (

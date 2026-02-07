@@ -9,6 +9,7 @@ import {
   LocalAudioTrack,
   createLocalAudioTrack,
   ConnectionState,
+  DisconnectReason,
 } from "livekit-client";
 
 export interface BroadcastMessage {
@@ -44,6 +45,8 @@ export function useLiveKitBroadcast({
   const [participantCount, setParticipantCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [hasRemoteAudio, setHasRemoteAudio] = useState(false);
+  const [disconnectReason, setDisconnectReason] = useState<string | null>(null);
+  const intentionalDisconnectRef = useRef(false);
   const audioTrackRef = useRef<LocalAudioTrack | null>(null);
   const connectingRef = useRef(false);
   const audioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
@@ -76,9 +79,11 @@ export function useLiveKitBroadcast({
     if (roomRef.current?.state === ConnectionState.Connected) return;
 
     connectingRef.current = true;
+    intentionalDisconnectRef.current = false;
 
     try {
       setError(null);
+      setDisconnectReason(null);
 
       // Get token from API
       const response = await fetch("/api/livekit/token", {
@@ -124,7 +129,7 @@ export function useLiveKitBroadcast({
         updateParticipantCount(room);
       });
 
-      room.on(RoomEvent.Disconnected, () => {
+      room.on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
         setIsConnected(false);
         setHasRemoteAudio(false);
         onConnectionChangeRef.current?.(false);
@@ -132,6 +137,21 @@ export function useLiveKitBroadcast({
         // Clean up audio elements
         audioElementsRef.current.forEach((el) => el.remove());
         audioElementsRef.current.clear();
+        
+        // Only show error for unexpected disconnects
+        if (!intentionalDisconnectRef.current && reason !== DisconnectReason.CLIENT_INITIATED) {
+          const reasonText = reason === DisconnectReason.SERVER_SHUTDOWN 
+            ? "Server closed the connection"
+            : reason === DisconnectReason.PARTICIPANT_REMOVED
+            ? "You were removed from the session"
+            : reason === DisconnectReason.ROOM_DELETED
+            ? "The session has ended"
+            : reason === DisconnectReason.DUPLICATE_IDENTITY
+            ? "Connected from another device"
+            : "Connection lost";
+          setDisconnectReason(reasonText);
+        }
+        intentionalDisconnectRef.current = false;
       });
 
       room.on(RoomEvent.ParticipantConnected, () => {
@@ -193,6 +213,7 @@ export function useLiveKitBroadcast({
 
   // Disconnect from the room
   const disconnect = useCallback(async () => {
+    intentionalDisconnectRef.current = true;
     if (audioTrackRef.current) {
       audioTrackRef.current.stop();
       audioTrackRef.current = null;
@@ -203,6 +224,7 @@ export function useLiveKitBroadcast({
     }
     setIsConnected(false);
     setIsAudioEnabled(false);
+    setDisconnectReason(null);
   }, []);
 
   // Enable/disable audio publishing (for broadcaster)
@@ -265,6 +287,11 @@ export function useLiveKitBroadcast({
     };
   }, [disconnect]);
 
+  // Clear disconnect reason
+  const clearDisconnectReason = useCallback(() => {
+    setDisconnectReason(null);
+  }, []);
+
   return {
     connect,
     disconnect,
@@ -275,5 +302,7 @@ export function useLiveKitBroadcast({
     participantCount,
     hasRemoteAudio,
     error,
+    disconnectReason,
+    clearDisconnectReason,
   };
 }

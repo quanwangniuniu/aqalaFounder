@@ -37,6 +37,8 @@ export type Room = {
   partnerId: string | null;
   partnerName: string | null;
   broadcastStartedAt: Date | null;
+  // Activity tracking
+  lastBroadcastAt: Date | null;
   // Chat settings
   chatEnabled?: boolean;
   donationsEnabled?: boolean;
@@ -145,6 +147,7 @@ export async function createRoom(options: CreateRoomOptions): Promise<Room> {
     partnerId: isPartner ? ownerId : null,
     partnerName: isPartner ? (ownerName || name) : null,
     broadcastStartedAt: null,
+    lastBroadcastAt: null,
     chatEnabled,
     donationsEnabled,
   };
@@ -191,6 +194,7 @@ function mapRoomData(id: string, data: any): Room {
     partnerId: data.partnerId || null,
     partnerName: data.partnerName || null,
     broadcastStartedAt: data.broadcastStartedAt?.toDate?.() ?? null,
+    lastBroadcastAt: data.lastBroadcastAt?.toDate?.() ?? null,
     chatEnabled: data.chatEnabled ?? true,
     donationsEnabled: data.donationsEnabled ?? true,
   };
@@ -339,6 +343,48 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
     console.error(`[JOIN MOSQUE] Error joining - roomId: ${roomId}, userId: ${userId}, errorCode: ${error?.code}, error:`, error);
     // Re-throw other errors
     throw error;
+  }
+}
+
+/**
+ * Leave a room - removes user from members and decrements memberCount
+ */
+export async function leaveRoom(roomId: string, userId: string): Promise<void> {
+  const firestore = ensureDb();
+  try {
+    await runTransaction(firestore, async (tx) => {
+      const roomRef = doc(firestore, COLLECTION, roomId);
+      const memberRef = doc(firestore, COLLECTION, roomId, "members", userId);
+      
+      const [roomSnap, memberSnap] = await Promise.all([
+        tx.get(roomRef),
+        tx.get(memberRef),
+      ]);
+      
+      if (!roomSnap.exists()) return;
+      if (!memberSnap.exists()) return; // Not a member, nothing to do
+      
+      const roomData = roomSnap.data() as any;
+      const memberData = memberSnap.data() as any;
+      const currentCount = roomData.memberCount || 0;
+      
+      // Delete the member document
+      tx.delete(memberRef);
+      
+      // Update room: decrement count and clear translator if this user was the translator
+      const updates: any = {
+        memberCount: Math.max(0, currentCount - 1),
+      };
+      
+      if (roomData.activeTranslatorId === userId) {
+        updates.activeTranslatorId = null;
+      }
+      
+      tx.update(roomRef, updates);
+    });
+  } catch (error: any) {
+    // Silently handle errors - leaving room is not critical
+    console.error(`[LEAVE ROOM] Error - roomId: ${roomId}, userId: ${userId}:`, error);
   }
 }
 
@@ -567,6 +613,7 @@ export async function getOrCreatePartnerRoom(
     partnerId,
     partnerName,
     broadcastStartedAt: null,
+    lastBroadcastAt: null,
     chatEnabled: true,
     donationsEnabled: true,
   };
@@ -786,5 +833,38 @@ export async function updateViewerCount(roomId: string, incrementValue: number):
     });
   } catch {
     // Silently fail - viewer count from members collection is the source of truth
+  }
+}
+
+/**
+ * Update broadcast activity timestamp (called during active broadcasting)
+ * Used to detect inactive rooms that should be removed from live list
+ */
+export async function updateBroadcastActivity(roomId: string): Promise<void> {
+  try {
+    const firestore = ensureDb();
+    const roomRef = doc(firestore, COLLECTION, roomId);
+    await updateDoc(roomRef, {
+      lastBroadcastAt: serverTimestamp(),
+    });
+  } catch {
+    // Silently fail - not critical
+  }
+}
+
+/**
+ * Clear active translator for inactive rooms
+ * Called when a room has been inactive for too long
+ */
+export async function clearInactiveRoom(roomId: string): Promise<void> {
+  try {
+    const firestore = ensureDb();
+    const roomRef = doc(firestore, COLLECTION, roomId);
+    await updateDoc(roomRef, {
+      activeTranslatorId: null,
+      lastBroadcastAt: null,
+    });
+  } catch {
+    // Silently fail
   }
 }

@@ -137,6 +137,8 @@ export default function LiveKitListener({
     isConnected,
     hasRemoteAudio,
     error,
+    disconnectReason,
+    clearDisconnectReason,
   } = useLiveKitBroadcast({
     roomName,
     participantName: listenerName,
@@ -232,6 +234,38 @@ export default function LiveKitListener({
             className="px-4 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/15 transition-colors"
           >
             Try Again
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  // Disconnected state (unexpected disconnect)
+  if (disconnectReason) {
+    return (
+      <div className="flex flex-col h-full w-full overflow-hidden">
+        <style jsx global>{`
+          @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+        `}</style>
+        
+        <main className="flex-1 flex flex-col items-center justify-center text-center px-6">
+          <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+              <line x1="12" y1="2" x2="12" y2="12" />
+            </svg>
+          </div>
+          <p className="text-amber-400 text-sm mb-2">{disconnectReason}</p>
+          <p className="text-white/40 text-xs mb-4">The connection was interrupted</p>
+          <button
+            onClick={() => { 
+              clearDisconnectReason();
+              hasConnectedRef.current = false; 
+              connect(); 
+            }}
+            className="px-4 py-2 bg-[#D4AF37]/20 text-[#D4AF37] rounded-lg text-sm hover:bg-[#D4AF37]/30 transition-colors"
+          >
+            Reconnect
           </button>
         </main>
       </div>
