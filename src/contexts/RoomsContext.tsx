@@ -4,13 +4,16 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   Room,
   clearTranslator,
-  createRoom,
-  deleteRoom,
+  createRoom as createRoomApi,
+  deleteRoom as deleteRoomApi,
   joinRoom,
   setTranslator,
   subscribeRooms,
   claimLeadReciter,
   validateAndCleanTranslator,
+  getOrCreatePartnerRoom,
+  startPartnerBroadcast,
+  stopPartnerBroadcast,
 } from "@/lib/firebase/rooms";
 import { useAuth } from "./AuthContext";
 
@@ -25,6 +28,10 @@ type RoomsContextType = {
   claimLeadReciter: (roomId: string) => Promise<void>;
   validateAndCleanTranslator: (roomId: string) => Promise<boolean>;
   releaseTranslator: (roomId: string) => Promise<void>;
+  // Partner broadcast functions
+  getOrCreatePartnerRoom: (partnerName: string, mosqueId: string) => Promise<Room>;
+  startPartnerBroadcast: (roomId: string) => Promise<void>;
+  stopPartnerBroadcast: (roomId: string) => Promise<void>;
 };
 
 const RoomsContext = createContext<RoomsContextType | undefined>(undefined);
@@ -82,12 +89,16 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
       async createRoom(name: string) {
         const u = requireUser();
         setError(null);
-        await createRoom(name, u.uid);
+        await createRoomApi({
+          name,
+          ownerId: u.uid,
+          ownerName: u.displayName || u.email || "Anonymous",
+        });
       },
       async deleteRoom(roomId: string) {
         const u = requireUser();
         setError(null);
-        await deleteRoom(roomId, u.uid);
+        await deleteRoomApi(roomId, u.uid);
       },
       async joinRoom(roomId: string, asTranslator = false) {
         const u = requireUser();
@@ -114,6 +125,22 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
         const u = requireUser();
         setError(null);
         await clearTranslator(roomId, u.uid);
+      },
+      // Partner broadcast functions
+      async getOrCreatePartnerRoom(partnerName: string, mosqueId: string) {
+        const u = requireUser();
+        setError(null);
+        return await getOrCreatePartnerRoom(u.uid, partnerName, mosqueId);
+      },
+      async startPartnerBroadcast(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await startPartnerBroadcast(roomId, u.uid);
+      },
+      async stopPartnerBroadcast(roomId: string) {
+        const u = requireUser();
+        setError(null);
+        await stopPartnerBroadcast(roomId, u.uid);
       },
     }),
     [rooms, loading, error, user]

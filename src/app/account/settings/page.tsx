@@ -7,12 +7,14 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { usePreferences, WALLPAPERS, WallpaperId } from "@/contexts/PreferencesContext";
+import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
 import { getUserInitials } from "@/utils/userDisplay";
 
 export default function AccountSettingsPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isPremium } = useSubscription();
   const { wallpaper, setWallpaper, getWallpaperStyle } = usePreferences();
+  const { language, setLanguage } = useLanguage();
   const router = useRouter();
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#032117] text-white">
+    <div className="min-h-screen text-white">
       {/* Header */}
       <div className="px-5 py-6 border-b border-white/5">
         <div className="max-w-lg mx-auto flex items-center gap-3">
@@ -100,6 +102,31 @@ export default function AccountSettingsPage() {
                   )}
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Language Section */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
+            Language
+          </h2>
+          <div className="relative">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 pr-12 text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:border-[#D4AF37]/50 transition-all cursor-pointer"
+            >
+              {LANGUAGE_OPTIONS.map((lang) => (
+                <option key={lang.code} value={lang.code} className="bg-[#0a1f16] text-white">
+                  {lang.flag} {lang.label} ({lang.nativeLabel})
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
             </div>
           </div>
         </section>

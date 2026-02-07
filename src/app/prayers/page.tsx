@@ -5,6 +5,7 @@ import { formatPrayerTime, getMethodName } from "@/lib/prayer/calculations";
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
+import AdBanner from "@/components/AdBanner";
 
 export default function PrayersPage() {
   const { isRTL } = useLanguage();
@@ -33,7 +34,7 @@ export default function PrayersPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-[#032117] text-white" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="min-h-screen text-white" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="px-5 py-6 border-b border-white/5">
         <div className="max-w-lg mx-auto">
@@ -222,6 +223,11 @@ export default function PrayersPage() {
               })}
             </div>
           </section>
+        )}
+
+        {/* Ad Banner */}
+        {!loading && !error && prayerTimes && (
+          <AdBanner className="rounded-xl overflow-hidden" />
         )}
 
         {/* Calculation Method Info */}

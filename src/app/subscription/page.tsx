@@ -40,6 +40,7 @@ export default function SubscriptionPage() {
         body: JSON.stringify({
           userId: user.uid,
           userEmail: user.email,
+          userName: user.displayName,
         }),
       });
 

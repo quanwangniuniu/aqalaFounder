@@ -1,51 +1,63 @@
 import { initializeApp, getApps, cert, App } from "firebase-admin/app";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getAuth, Auth } from "firebase-admin/auth";
 
 let adminApp: App | null = null;
 let adminDb: Firestore | null = null;
+let adminAuth: Auth | null = null;
 
-if (typeof window === "undefined") {
-  // Only initialize on server side
+function getAdminApp(): App {
+  if (adminApp) return adminApp;
+
   if (getApps().length === 0) {
-    // Try to initialize with service account credentials from env vars
-    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    // Use individual environment variables (common pattern)
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-    if (projectId && clientEmail && privateKey) {
-      // Use service account credentials from environment variables
-      try {
-        // Remove quotes if present and replace escaped newlines
-        const cleanPrivateKey = privateKey.trim().replace(/^["']|["']$/g, '').replace(/\\n/g, "\n");
-        
+    if (privateKey && clientEmail && projectId) {
         adminApp = initializeApp({
           credential: cert({
             projectId,
             clientEmail,
-            privateKey: cleanPrivateKey,
+          // Replace escaped newlines with actual newlines
+          privateKey: privateKey.replace(/\\n/g, "\n"),
           }),
           projectId,
         });
-      } catch (error: any) {
-        console.error("Firebase Admin initialization error:", error.message);
-        throw new Error(`Failed to initialize Firebase Admin: ${error.message}`);
-      }
     } else {
-      // Fallback: Initialize with just project ID (requires GOOGLE_APPLICATION_CREDENTIALS or gcloud auth)
-      // This is useful for local development with Firebase CLI or Google Cloud environments
-      if (!projectId) {
-        throw new Error(
-          "Firebase Admin credentials not found. Please set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables, or use GOOGLE_APPLICATION_CREDENTIALS."
-        );
+      // Fallback: Try full JSON service account key
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      if (serviceAccount) {
+        try {
+          const parsedServiceAccount = JSON.parse(serviceAccount);
+          adminApp = initializeApp({
+            credential: cert(parsedServiceAccount),
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          });
+        } catch (e) {
+          console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e);
+          throw new Error("Missing Firebase Admin credentials. Set FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and FIREBASE_PROJECT_ID");
+        }
+      } else {
+        throw new Error("Missing Firebase Admin credentials. Set FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and FIREBASE_PROJECT_ID");
       }
-      adminApp = initializeApp({
-        projectId,
-      });
     }
   } else {
     adminApp = getApps()[0];
   }
-  adminDb = getFirestore(adminApp);
+
+  return adminApp;
 }
 
-export { adminDb };
+export function getAdminFirestore(): Firestore {
+  if (adminDb) return adminDb;
+  adminDb = getFirestore(getAdminApp());
+  return adminDb;
+}
+
+export function getAdminAuth(): Auth {
+  if (adminAuth) return adminAuth;
+  adminAuth = getAuth(getAdminApp());
+  return adminAuth;
+}

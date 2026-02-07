@@ -17,16 +17,20 @@ export default function UserAvatar({ className = "" }: UserAvatarProps) {
     return null;
   }
 
+  const displayName = user.username 
+    ? `@${user.username}` 
+    : user.displayName || user.email?.split("@")[0] || "User";
+
   return (
     <Link
-      href="/account/settings"
+      href={`/user/${user.uid}`}
       className={`relative flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white font-medium text-sm hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 focus:ring-offset-[#032117] ${className}`}
-      aria-label="Account settings"
+      aria-label="View profile"
     >
       {user.photoURL ? (
         <img
           src={user.photoURL}
-          alt={user.displayName || user.email || "User"}
+          alt={displayName}
           className="w-full h-full rounded-full object-cover"
         />
       ) : (

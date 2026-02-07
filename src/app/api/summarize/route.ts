@@ -66,6 +66,12 @@ export async function POST(req: Request) {
       "- Start with a brief overview of what was discussed",
       "- List key points or themes",
       "- End with the main takeaway or message",
+      "",
+      "VERSE REFERENCES (IMPORTANT):",
+      "When mentioning Quranic verses, ALWAYS use this exact format: [Surah Name chapter:verse]",
+      "Examples: [Al-Imran 3:18], [Al-Baqarah 2:255], [Al-Kahf 18:1-10]",
+      "This format allows users to click and read the full context.",
+      "If a verse range is discussed, use: [Surah Name chapter:startVerse-endVerse]",
     ].join("\n");
 
     const parts: string[] = [];
