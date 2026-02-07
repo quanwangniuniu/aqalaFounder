@@ -2,6 +2,7 @@ import { getAdminFirestore } from "./admin";
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from "@/types/subscription";
 
 const COLLECTION = "subscriptions";
+const USERS_COLLECTION = "users";
 
 export async function getSubscriptionServer(userId: string): Promise<Subscription | null> {
   const firestore = getAdminFirestore();
@@ -58,5 +59,13 @@ export async function createOrUpdateSubscriptionServer(
     await subscriptionRef.set(updateData);
   } else {
     await subscriptionRef.update(updateData);
+  }
+
+  // Sync isPremium status to public user profile
+  const isPremium = subscriptionData.plan === "premium" && subscriptionData.status === "active";
+  const userRef = firestore.collection(USERS_COLLECTION).doc(userId);
+  const userDoc = await userRef.get();
+  if (userDoc.exists) {
+    await userRef.update({ isPremium, updatedAt: now });
   }
 }

@@ -50,6 +50,7 @@ export type ChatMessage = {
   userPhoto?: string;
   isAdmin?: boolean;
   isPartner?: boolean;
+  isPremium?: boolean;
   isDonation?: boolean;
   donationAmount?: number;
   createdAt: Date | null;
@@ -693,6 +694,7 @@ export async function sendChatMessage(
     userPhoto?: string;
     isAdmin?: boolean;
     isPartner?: boolean;
+    isPremium?: boolean;
     isDonation?: boolean;
     donationAmount?: number;
   }
@@ -707,6 +709,7 @@ export async function sendChatMessage(
     userPhoto: options?.userPhoto || null,
     isAdmin: options?.isAdmin || false,
     isPartner: options?.isPartner || false,
+    isPremium: options?.isPremium || false,
     isDonation: options?.isDonation || false,
     donationAmount: options?.donationAmount || null,
     createdAt: serverTimestamp(),
@@ -754,6 +757,7 @@ export function subscribeChatMessages(
           userPhoto: data.userPhoto || undefined,
           isAdmin: data.isAdmin || false,
           isPartner: data.isPartner || false,
+          isPremium: data.isPremium || false,
           isDonation: data.isDonation || false,
           donationAmount: data.donationAmount || undefined,
           createdAt: data.createdAt?.toDate?.() ?? null,

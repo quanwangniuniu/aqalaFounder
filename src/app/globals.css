@@ -34,6 +34,27 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* Prevent mobile zoom on input focus - set minimum 16px font size */
+@media screen and (max-width: 768px) {
+  input,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area padding for notched devices (iPhone X+) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Hero animations */
 @keyframes fadeInUp {
   from {

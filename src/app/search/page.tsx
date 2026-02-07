@@ -250,6 +250,14 @@ function UserSearchItem({
               Partner
             </span>
           )}
+          {user.isPremium && (
+            <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 flex items-center gap-0.5 border border-amber-500/20">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+              </svg>
+              Pro
+            </span>
+          )}
         </div>
         {user.username && (
           <p className="text-xs text-white/50 truncate">@{user.username}</p>

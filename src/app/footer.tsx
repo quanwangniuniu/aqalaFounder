@@ -26,8 +26,8 @@ export default function Footer() {
     }
   }, [showLangMenu]);
 
-  // Hide footer on listen page - it has its own controls
-  if (pathname === "/listen") {
+  // Hide footer on listen page and messages pages - they have their own controls
+  if (pathname === "/listen" || pathname?.startsWith("/messages")) {
     return null;
   }
 

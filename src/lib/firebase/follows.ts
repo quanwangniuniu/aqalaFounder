@@ -22,6 +22,7 @@ export interface FollowUser {
   displayName: string | null;
   photoURL: string | null;
   followedAt?: Date;
+  mutualCount?: number; // Number of mutual connections
 }
 
 function ensureDb() {
@@ -229,9 +230,9 @@ export async function getSuggestedUsers(
     }
   }
   
-  // Sort by score and return top suggestions
+  // Sort by score and return top suggestions with mutual count
   return Array.from(suggestions.values())
     .sort((a, b) => b.score - a.score)
     .slice(0, limitCount)
-    .map(({ score, ...user }) => user);
+    .map(({ score, ...user }) => ({ ...user, mutualCount: score }));
 }

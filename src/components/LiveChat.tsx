@@ -7,6 +7,7 @@ import {
   sendChatMessage, 
   subscribeChatMessages 
 } from "@/lib/firebase/rooms";
+import { subscribeToSubscription } from "@/lib/firebase/subscriptions";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -31,6 +32,7 @@ export default function LiveChat({
   const [isSending, setIsSending] = useState(false);
   const [showDonation, setShowDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState<number | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
@@ -48,6 +50,20 @@ export default function LiveChat({
     );
     return () => unsubscribe();
   }, [roomId]);
+
+  // Subscribe to user's subscription status
+  useEffect(() => {
+    if (!user) {
+      setIsPremium(false);
+      return;
+    }
+
+    const unsubscribe = subscribeToSubscription(user.uid, (sub) => {
+      setIsPremium(sub?.plan === "premium" && sub?.status === "active");
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Auto-scroll to bottom when new messages arrive (if user is near bottom)
   useEffect(() => {
@@ -84,6 +100,7 @@ export default function LiveChat({
           userPhoto: user.photoURL || undefined,
           isAdmin: user.admin || false,
           isPartner: user.uid === ownerId && isPartnerRoom,
+          isPremium,
         }
       );
       setNewMessage("");
@@ -263,9 +280,11 @@ export default function LiveChat({
                           ? "text-rose-400"
                           : msg.isPartner 
                             ? "text-[#D4AF37]" 
-                            : msg.isDonation 
-                              ? "text-emerald-400"
-                              : "text-white/70"
+                            : msg.isPremium
+                              ? "text-amber-400"
+                              : msg.isDonation 
+                                ? "text-emerald-400"
+                                : "text-white/70"
                       }`}
                     >
                       {msg.userName}
@@ -281,6 +300,14 @@ export default function LiveChat({
                     {msg.isPartner && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#D4AF37]/20 text-[#D4AF37]">
                         HOST
+                      </span>
+                    )}
+                    {msg.isPremium && !msg.isAdmin && !msg.isPartner && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 flex items-center gap-0.5 border border-amber-500/20">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                        </svg>
+                        PRO
                       </span>
                     )}
                     {msg.isDonation && (
