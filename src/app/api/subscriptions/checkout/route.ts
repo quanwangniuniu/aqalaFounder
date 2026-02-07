@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { userId, userEmail, userName } = await req.json();
+    const { userId, userEmail, userName, priceId, referrerId } = await req.json();
 
     if (!userId || typeof userId !== "string") {
       return NextResponse.json(
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     // Get or create Stripe customer
     let customerId: string;
     const existingSubscription = await getSubscriptionServer(userId);
-    
+
     if (existingSubscription?.stripeCustomerId && existingSubscription.stripeCustomerId !== userId) {
       customerId = existingSubscription.stripeCustomerId;
     } else {
