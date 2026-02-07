@@ -1596,9 +1596,47 @@ ${translatedText || "(No translation recorded)"}
           </div>
         )}
 
+        {/* Language selector bar */}
+        <div className="flex-shrink-0 px-5 py-3 border-b border-white/5 bg-black/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-medium text-white/40 uppercase tracking-[0.15em]">Translate to</span>
+              <div className="relative">
+                <select
+                  value={targetLang}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="appearance-none bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#E8D5A3] rounded-full px-4 py-1.5 pr-8 text-sm font-semibold cursor-pointer hover:bg-[#D4AF37]/25 hover:border-[#D4AF37]/60 transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+                  style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                >
+                  {LANG_OPTIONS.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="bg-[#032117] text-white">
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#D4AF37]">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            {isListening && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D4AF37]"></span>
+                </span>
+                <span className="text-[9px] text-[#D4AF37] font-semibold uppercase tracking-wider">
+                  {t("listen.live")}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Source text section */}
         <div className="flex-shrink-0 border-b border-white/5">
-          
           <div className="relative px-5 py-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -1607,17 +1645,6 @@ ${translatedText || "(No translation recorded)"}
                   {detectedLang ? labelFor(detectedLang) : t("listen.reference")}
                 </span>
               </div>
-              {isListening && (
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#D4AF37]/10">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D4AF37]"></span>
-                  </span>
-                  <span className="text-[9px] text-[#D4AF37] font-semibold uppercase tracking-wider">
-                    {t("listen.live")}
-                  </span>
-                </div>
-              )}
             </div>
             <div
               ref={refScrollRef}
