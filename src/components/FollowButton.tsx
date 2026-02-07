@@ -87,7 +87,7 @@ export default function FollowButton({ targetUserId, size = "md", className = ""
 
   if (loading) {
     return (
-      <div className={`rounded-lg bg-white/10 animate-pulse ${sizeClasses[size]} ${className}`}>
+      <div className={`rounded-lg bg-white/10 h-full animate-pulse ${sizeClasses[size]} ${className}`}>
         <span className="opacity-0">Follow</span>
       </div>
     );
@@ -103,7 +103,7 @@ export default function FollowButton({ targetUserId, size = "md", className = ""
       onClick={handleClick}
       disabled={actionLoading}
       className={`
-        rounded-lg font-medium transition-all
+        rounded-lg font-medium transition-all h-full
         ${sizeClasses[size]}
         ${isFollowing
           ? "bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400"

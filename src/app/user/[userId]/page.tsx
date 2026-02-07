@@ -73,8 +73,11 @@ export default function UserProfilePage() {
     loadProfile();
 
     // Subscribe to count updates
-    const unsubscribe = subscribeToUserCounts(userId, setCounts);
-    return () => unsubscribe();
+    const unsubscribeCount = subscribeToUserCounts(userId, setCounts);
+    
+    return () => {
+      unsubscribeCount();
+    };
   }, [userId]);
 
   // Load tab data when tab changes
@@ -359,6 +362,14 @@ export default function UserProfilePage() {
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-xs font-medium text-[#D4AF37]">Official Partner</span>
+              </div>
+            )}
+            {profile?.isPremium && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b">
+                  <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                </svg>
+                <span className="text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">Pro Member</span>
               </div>
             )}
           </div>
@@ -648,6 +659,11 @@ function UserListItem({ user, currentUserId }: { user: FollowUser; currentUserId
         </p>
         {user.username && (
           <p className="text-xs text-white/50 truncate">@{user.username}</p>
+        )}
+        {user.mutualCount && user.mutualCount > 0 && (
+          <p className="text-xs text-[#D4AF37]/70 mt-0.5">
+            {user.mutualCount} mutual{user.mutualCount > 1 ? "s" : ""}
+          </p>
         )}
       </div>
       {currentUserId && currentUserId !== user.id && (

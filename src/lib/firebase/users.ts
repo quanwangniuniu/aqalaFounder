@@ -32,6 +32,8 @@ export interface UserProfile {
   // Privacy settings
   privateHistory: boolean; // Hide room history from others
   privateFollowers: boolean; // Hide followers list from others
+  // Subscription status (public)
+  isPremium: boolean;
 }
 
 function ensureDb() {
@@ -69,6 +71,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
     followingCount: data.followingCount || 0,
     privateHistory: data.privateHistory || false,
     privateFollowers: data.privateFollowers || false,
+    isPremium: data.isPremium || false,
   };
 }
 
@@ -281,6 +284,7 @@ export interface SearchedUser {
   bio: string | null;
   admin: boolean;
   partner: boolean;
+  isPremium?: boolean;
 }
 
 /**

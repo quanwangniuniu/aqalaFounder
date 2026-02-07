@@ -1,8 +1,3 @@
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "./config";
-
-const COLLECTION = "reviews";
-
 export type Review = {
   id: string;
   name?: string;
@@ -12,22 +7,13 @@ export type Review = {
   createdAt: Date | null;
 };
 
-function ensureDb() {
-  if (!db) {
-    throw new Error("Firestore is not initialized on the server side.");
-  }
-  return db;
-}
-
 export async function submitReview(reviewData: {
   name?: string;
   email?: string;
   rating: number;
   comment: string;
 }): Promise<void> {
-  const firestore = ensureDb();
-  
-  // Validate required fields
+  // Validate required fields client-side
   if (!reviewData.comment || reviewData.comment.trim() === "") {
     throw new Error("Comment is required");
   }
@@ -35,12 +21,20 @@ export async function submitReview(reviewData: {
     throw new Error("Rating must be between 1 and 5");
   }
 
-  await addDoc(collection(firestore, COLLECTION), {
-    name: reviewData.name?.trim() || null,
-    email: reviewData.email?.trim() || null,
-    rating: reviewData.rating,
-    comment: reviewData.comment.trim(),
-    createdAt: serverTimestamp(),
+  const response = await fetch("/api/reviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: reviewData.name,
+      email: reviewData.email,
+      rating: reviewData.rating,
+      comment: reviewData.comment,
+    }),
   });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to submit review");
+  }
 }
 

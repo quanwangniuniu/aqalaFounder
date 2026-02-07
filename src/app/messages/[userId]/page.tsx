@@ -134,9 +134,9 @@ export default function ConversationPage() {
   const displayName = otherUser.displayName || otherUser.username || "User";
 
   return (
-    <div className="min-h-screen text-white flex flex-col">
+    <div className="fixed inset-0 top-[68px] text-white flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/5">
+      <div className="flex-shrink-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-lg mx-auto px-4 py-2 flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -179,8 +179,8 @@ export default function ConversationPage() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full">
+      {/* Messages - scrollable area */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full min-h-0">
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#D4AF37]/30 to-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
@@ -249,8 +249,8 @@ export default function ConversationPage() {
         )}
       </div>
 
-      {/* Input */}
-      <div className="sticky bottom-0 bg-black/20 backdrop-blur-xl border-t border-white/5">
+      {/* Input - fixed at bottom */}
+      <div className="flex-shrink-0 bg-black/20 backdrop-blur-xl border-t border-white/5 pb-safe">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <input
             ref={inputRef}
