@@ -17,6 +17,7 @@ import {
   subscribeTranslations,
   TranslationEntry,
 } from "@/lib/firebase/translationHistory";
+import { updateBroadcastActivity } from "@/lib/firebase/rooms";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -199,6 +200,10 @@ export default function ClientApp({
   // Track last sent message to avoid duplicate sends
   const lastSentTextRef = useRef<string>("");
   
+  // Track broadcast activity updates (don't spam Firestore)
+  const lastActivityUpdateRef = useRef<number>(0);
+  const ACTIVITY_UPDATE_INTERVAL_MS = 5000; // Update activity every 5 seconds
+  
   // Start live stream broadcasting via LiveKit WebSocket (real-time, no Firestore writes)
   function startLiveStreamBroadcast() {
     if (!mosqueId || !translatorId) return;
@@ -213,6 +218,10 @@ export default function ClientApp({
 
     // Reset accumulated text
     liveAccumulatedRef.current = "";
+    lastActivityUpdateRef.current = 0;
+    
+    // Update activity immediately on start
+    updateBroadcastActivity(mosqueId);
 
     // Broadcast every 500ms via LiveKit WebSocket (no Firestore writes!)
     liveStreamIntervalRef.current = window.setInterval(() => {
@@ -243,6 +252,13 @@ export default function ClientApp({
           lang: detectedLangRef.current || "unknown",
           timestamp: Date.now(),
         });
+      }
+      
+      // Update broadcast activity every 5 seconds (to mark room as live)
+      const now = Date.now();
+      if (now - lastActivityUpdateRef.current > ACTIVITY_UPDATE_INTERVAL_MS) {
+        lastActivityUpdateRef.current = now;
+        updateBroadcastActivity(mosqueId);
       }
     }, 500);
   }

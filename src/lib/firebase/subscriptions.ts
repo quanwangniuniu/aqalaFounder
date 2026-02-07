@@ -22,7 +22,7 @@ function ensureDb() {
 export async function getSubscription(userId: string): Promise<Subscription | null> {
   const firestore = ensureDb();
   const subscriptionDoc = await getDoc(doc(firestore, COLLECTION, userId));
-  
+
   if (!subscriptionDoc.exists()) {
     return null;
   }
@@ -56,7 +56,7 @@ export async function createOrUpdateSubscription(
 ): Promise<void> {
   const firestore = ensureDb();
   const subscriptionRef = doc(firestore, COLLECTION, userId);
-  
+
   const existingDoc = await getDoc(subscriptionRef);
   const now = serverTimestamp();
 
@@ -110,7 +110,12 @@ export function subscribeToSubscription(
       });
     },
     (err) => {
-      console.error("Error subscribing to subscription:", err);
+      // Silently handle permission errors - users may not have subscription documents
+      const isPermissionError = err?.code === "permission-denied" ||
+        err?.message?.includes("permission");
+      if (!isPermissionError) {
+        console.error("Error subscribing to subscription:", err);
+      }
       if (onError) {
         onError(err);
       }
