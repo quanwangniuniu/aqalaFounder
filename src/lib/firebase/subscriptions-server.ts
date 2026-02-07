@@ -1,17 +1,10 @@
-import { adminDb } from "./admin";
+import { getAdminFirestore } from "./admin";
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from "@/types/subscription";
 
 const COLLECTION = "subscriptions";
 
-function ensureAdminDb() {
-  if (!adminDb) {
-    throw new Error("Firebase Admin is not initialized.");
-  }
-  return adminDb;
-}
-
 export async function getSubscriptionServer(userId: string): Promise<Subscription | null> {
-  const firestore = ensureAdminDb();
+  const firestore = getAdminFirestore();
   const subscriptionDoc = await firestore.collection(COLLECTION).doc(userId).get();
   
   if (!subscriptionDoc.exists) {
@@ -21,6 +14,8 @@ export async function getSubscriptionServer(userId: string): Promise<Subscriptio
   const data = subscriptionDoc.data()!;
   return {
     userId: data.userId,
+    email: data.email || null,
+    displayName: data.displayName || null,
     stripeCustomerId: data.stripeCustomerId,
     stripePaymentId: data.stripePaymentId || null,
     plan: data.plan || "free",
@@ -34,6 +29,8 @@ export async function getSubscriptionServer(userId: string): Promise<Subscriptio
 export async function createOrUpdateSubscriptionServer(
   userId: string,
   subscriptionData: {
+    email?: string | null;
+    displayName?: string | null;
     stripeCustomerId: string;
     stripePaymentId?: string | null;
     plan: SubscriptionPlan;
@@ -41,7 +38,7 @@ export async function createOrUpdateSubscriptionServer(
     purchasedAt?: Date | null;
   }
 ): Promise<void> {
-  const firestore = ensureAdminDb();
+  const firestore = getAdminFirestore();
   const subscriptionRef = firestore.collection(COLLECTION).doc(userId);
   
   const existingDoc = await subscriptionRef.get();
@@ -49,6 +46,8 @@ export async function createOrUpdateSubscriptionServer(
 
   const updateData: any = {
     userId,
+    email: subscriptionData.email || null,
+    displayName: subscriptionData.displayName || null,
     ...subscriptionData,
     purchasedAt: subscriptionData.purchasedAt || null,
     updatedAt: now,

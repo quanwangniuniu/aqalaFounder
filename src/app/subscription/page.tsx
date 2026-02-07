@@ -78,8 +78,8 @@ function SubscriptionPageContent() {
         },
         body: JSON.stringify({
           userId: user.uid,
-          priceId: planConfig.priceId,
-          ...(referrerId && { referrerId }),
+          userEmail: user.email,
+          userName: user.displayName,
         }),
       });
 

@@ -7,9 +7,9 @@ type PaymentMethod = "apple" | "card";
 export type CharityModalProps = {
     open: boolean;
     onClose: () => void;
-    baseAmount?: number; // total before tip (for "You pay"). Optional.
-    currency?: string; // currency symbol, defaults to "$"
-    presetAmounts?: number[]; // dollar presets
+    baseAmount?: number;
+    currency?: string;
+    presetAmounts?: number[];
     onConfirm?: (tipAmount: number, method: PaymentMethod) => void;
 };
 
@@ -29,8 +29,8 @@ function Money({
 }) {
     return (
         <span className={className}>
-            <span style={{ fontSize: "calc(100% - 2px)" }}>{currency}</span>
-            <span className="ml-1">{amount.toFixed(2)}</span>
+            <span className="text-[0.9em] opacity-70">{currency}</span>
+            <span className="ml-0.5">{amount.toFixed(2)}</span>
         </span>
     );
 }
@@ -46,7 +46,7 @@ export default function CharityModal({
     const [selectedPreset, setSelectedPreset] = useState<number | null>(presetAmounts[0] ?? null);
     const [customMode, setCustomMode] = useState(false);
     const [customValue, setCustomValue] = useState<string>("");
-    const [method, setMethod] = useState<PaymentMethod>("apple");
+    const [method, setMethod] = useState<PaymentMethod>("card");
     const [isLoading, setIsLoading] = useState(false);
 
     // ESC to close
@@ -59,12 +59,13 @@ export default function CharityModal({
         return () => window.removeEventListener("keydown", onKey);
     }, [open, onClose]);
 
-    // Reset custom input mode when the modal is opened
+    // Reset when modal opens
     useEffect(() => {
         if (open) {
             setCustomMode(false);
+            setSelectedPreset(presetAmounts[0] ?? null);
         }
-    }, [open]);
+    }, [open, presetAmounts]);
 
     // Calculate tip amount
     const tipAmount = useMemo(() => {
@@ -76,242 +77,166 @@ export default function CharityModal({
     }, [customMode, customValue, selectedPreset]);
 
     const total = useMemo(() => baseAmount + tipAmount, [baseAmount, tipAmount]);
-    const firstSelected = useMemo(
-        () => !customMode && typeof selectedPreset === "number" && selectedPreset === (presetAmounts[0] ?? null),
-        [customMode, selectedPreset, presetAmounts]
-    );
-    const headerEmoji = firstSelected ? "😎" : "🥰";
-    const headerEmojiClass = "text-4xl";
 
     if (!open) return null;
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-end"
-            aria-hidden={false}
+            className="fixed inset-0 z-[100] flex items-end md:items-center md:justify-center"
             role="dialog"
             aria-modal="true"
             onClick={onClose}
         >
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/40" />
-            {/* Sheet */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            
+            {/* Modal */}
             <div
-                className="relative w-full bg-white rounded-t-2xl shadow-lg p-4 pt-6 min-h-[88vh] md:min-h-0 md:max-w-[800px] md:mx-auto"
+                className="relative w-full md:max-w-md bg-[#0a1a14] border border-white/10 rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Close */}
+                {/* Header */}
+                <div className="relative px-5 pt-5 pb-4 border-b border-white/5">
                 <button
                     aria-label="Close"
-                    className="absolute top-3 right-3 h-8 w-8 rounded-full flex items-center justify-center text-zinc-600 hover:bg-zinc-100"
+                        className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
                     onClick={onClose}
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-5 w-5"
-                    >
-                        <path d="M6 6l12 12M18 6L6 18" />
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
                 </button>
 
-                {/* Header */}
-                <div className="space-y-1 mb-4">
-                    <h2 className="text-xl font-semibold">Your donation matters!</h2>
-                    <p className="text-sm text-zinc-500">All proceeds go directly to charity!</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#D4AF37">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-semibold text-white">Support Aqala</h2>
+                            <p className="text-sm text-white/50">All proceeds go directly to charity</p>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Tip amount line with emoji */}
-                <div className="flex items-center gap-3 mb-3">
-                    <span className={headerEmojiClass} aria-hidden>
-                        {headerEmoji}
-                    </span>
-                    <span className="text-lg">
-                        Donation amount:{" "}
-                        <Money amount={tipAmount} currency={currency} className="font-medium" />
-                    </span>
+                {/* Amount Display */}
+                <div className="px-5 py-4 bg-white/[0.02]">
+                    <p className="text-xs text-white/40 uppercase tracking-wider mb-1">Donation Amount</p>
+                    <p className="text-3xl font-bold text-[#D4AF37]">
+                        <Money amount={tipAmount} currency={currency} />
+                    </p>
                 </div>
 
-                {/* Presets */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
+                {/* Preset Amounts */}
+                <div className="px-5 py-4">
+                    <div className="grid grid-cols-3 gap-3 mb-4">
                     {presetAmounts.map((amt, idx) => {
                         const active = !customMode && selectedPreset === amt;
-                        const buttonEl = (
+                            return (
                             <button
                                 key={amt}
                                 onClick={() => {
                                     setCustomMode(false);
                                     setSelectedPreset(amt);
                                 }}
-                                className={`w-full h-16 rounded-xl border text-lg font-medium ${active
-                                        ? "bg-[#d4eede] border-[#06402B] text-[#06402B]"
-                                        : "bg-white border-zinc-200 text-zinc-800"
+                                    className={`relative h-14 rounded-xl font-semibold text-lg transition-all ${
+                                        active
+                                            ? "bg-[#D4AF37]/15 border-2 border-[#D4AF37] text-[#D4AF37]"
+                                            : "bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20"
                                     }`}
                             >
                                 <Money amount={amt} currency={currency} />
+                                    {idx === 0 && (
+                                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#D4AF37] text-[#0a1a14] text-[10px] font-semibold whitespace-nowrap">
+                                            Most Popular
+                                        </span>
+                                    )}
                             </button>
                         );
-                        if (idx === 0) {
-                            return (
-                                <div key={amt} className="relative pb-5 flex justify-center w-full">
-                                    {buttonEl}
-                                    <span className="absolute left-1/2 -translate-x-1/2 top-[72px] rounded-full bg-zinc-900 text-white text-xs min-w-[100px] text-center h-6 p-1">
-                                        Most Common
-                                    </span>
-                                </div>
-                            );
-                        }
-                        return buttonEl;
                     })}
                 </div>
 
-                {/* Custom donation row (turns into inline input when active) */}
+                    {/* Custom Amount */}
                 {!customMode ? (
                     <button
-                        className="flex items-center gap-3 text-zinc-700 mb-3 py-4"
                         onClick={() => setCustomMode(true)}
-                        aria-pressed={false}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className="h-5 w-5 translate-y-[1px]"
+                            className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors py-2"
                         >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                         </svg>
-                        <span className="font-medium">Enter custom amount</span>
+                            Enter custom amount
                     </button>
                 ) : (
-                    <div className="mb-4 flex items-center gap-3 pb-3">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className="h-5 w-5 text-zinc-700 translate-y-[1px]"
-                            aria-hidden
-                        >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                        </svg>
-                        <span className="text-zinc-500" style={{ fontSize: "22px" }}>
-                            {currency}
-                        </span>
+                        <div className="flex items-center gap-2 py-2">
+                            <span className="text-xl text-white/50">{currency}</span>
                         <input
                             autoFocus
+                                type="text"
                             inputMode="decimal"
-                            placeholder="0"
+                                placeholder="0.00"
                             value={customValue}
                             onChange={(e) => setCustomValue(e.target.value)}
-                            className="flex-1 border-0 border-b border-zinc-300 focus:border-[#06402B] outline-none px-1 py-2 text-2xl leading-7"
-                        />
+                                className="flex-1 bg-transparent border-b-2 border-[#D4AF37]/50 focus:border-[#D4AF37] text-2xl text-white placeholder-white/30 outline-none py-2"
+                            />
+                            <button
+                                onClick={() => {
+                                    setCustomMode(false);
+                                    setCustomValue("");
+                                }}
+                                className="text-white/40 hover:text-white p-1"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </button>
                     </div>
                 )}
-
-                {/* Summary */}
-                <div className="border-t border-zinc-200 pt-4 mt-2 mb-3">
-                    <div className="text-sm text-zinc-500 mb-1">You donate:</div>
-                    <div className="text-lg font-semibold">
-                        <Money amount={total} currency={currency} />
-                    </div>
-                    <div className="text-xs text-zinc-500 mb-6">Your full donation goes to charity</div>
                 </div>
 
-                {/* Payment method */}
-                <div className="mb-3">
-                    <div className="text-base font-medium mb-4">Payment method</div>
-                    <div className="space-y-0">
+                {/* Payment Method */}
+                <div className="px-5 py-4 border-t border-white/5">
+                    <p className="text-sm font-medium text-white/70 mb-3">Payment Method</p>
+                    <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => setMethod("apple")}
-                            className={`mb-4 w-full flex items-center justify-between rounded-xl px-3 py-4 border ${method === "apple" ? "bg-[#d4eede] border-[#06402B]" : "bg-white border-zinc-200"
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className={`h-6 w-6 rounded-full flex items-center justify-center border ${method === "apple"
-                                            ? "bg-[#06402B] border-[#06402B] text-white"
-                                            : "border-zinc-300 text-transparent"
+                            className={`flex items-center justify-center gap-2 h-12 rounded-xl font-medium transition-all ${
+                                method === "apple"
+                                    ? "bg-[#D4AF37]/15 border-2 border-[#D4AF37] text-[#D4AF37]"
+                                    : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
                                         }`}
                                 >
-                                    {/* white checkmark when selected */}
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        className="h-3.5 w-3.5"
-                                    >
-                                        <path d="M20 6L9 17l-5-5" />
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
                                     </svg>
-                                </span>
-                                <span className="font-medium">Apple Pay</span>
-                            </div>
-                            <span className="text-2xl" aria-hidden></span>
+                            Pay
                         </button>
                         <button
                             onClick={() => setMethod("card")}
-                            className={`w-full flex items-center justify-between rounded-xl px-3 py-4 border ${method === "card" ? "bg-[#d4eede] border-[#06402B]" : "bg-white border-zinc-200"
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className={`h-6 w-6 rounded-full flex items-center justify-center border ${method === "card"
-                                            ? "bg-[#06402B] border-[#06402B] text-white"
-                                            : "border-zinc-300 text-transparent"
+                            className={`flex items-center justify-center gap-2 h-12 rounded-xl font-medium transition-all ${
+                                method === "card"
+                                    ? "bg-[#D4AF37]/15 border-2 border-[#D4AF37] text-[#D4AF37]"
+                                    : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
                                         }`}
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        className="h-3.5 w-3.5"
-                                    >
-                                        <path d="M20 6L9 17l-5-5" />
-                                    </svg>
-                                </span>
-                                <span className="font-medium">Card</span>
-                            </div>
-                            {/* card icon */}
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                className="h-6 w-6 text-black"
-                                aria-hidden
-                            >
-                                <rect x="3" y="5" width="18" height="14" rx="2" ry="2" />
-                                <path d="M3 10h18" />
-                                <path d="M7 15h4" />
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="2" y="5" width="20" height="14" rx="2" />
+                                <path d="M2 10h20" />
                             </svg>
+                            Card
                         </button>
                     </div>
                 </div>
 
-                {/* Pay button */}
-                <div className="mt-4 pt-0">
-                    <p className="text-sm text-zinc-500 mb-3">
-                        By clicking on pay you agree with Aqala’s{" "}
-                        <a href="#" className="text-zinc-500">
+                {/* Footer */}
+                <div className="px-5 py-4 border-t border-white/5">
+                    <p className="text-xs text-white/40 mb-4 text-center">
+                        By donating, you agree to Aqala's{" "}
+                        <a href="/terms" className="text-[#D4AF37]/70 hover:text-[#D4AF37]">
                             terms of use
                         </a>
-                        .
                     </p>
-                    <div className="h-px bg-zinc-200 mb-4" />
-                </div>
-                <div className="mt-2">
                     <button
                         onClick={async () => {
                             if (tipAmount <= 0) {
@@ -323,9 +248,7 @@ export default function CharityModal({
                             try {
                                 const response = await fetch("/api/checkout", {
                                     method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
+                                    headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({
                                         amount: tipAmount,
                                         currency: "aud",
@@ -339,7 +262,6 @@ export default function CharityModal({
                                 }
 
                                 if (data.url) {
-                                    // Redirect to Stripe Checkout
                                     window.location.href = data.url;
                                 } else {
                                     throw new Error("No checkout URL received");
@@ -350,20 +272,18 @@ export default function CharityModal({
                             }
                         }}
                         disabled={isLoading || tipAmount <= 0}
-                        className="w-full h-14 rounded-full bg-black text-white text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full h-14 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#c9a431] hover:from-[#E8D5A3] hover:to-[#D4AF37] text-[#0a1a14] font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#D4AF37]/20"
                     >
                         {isLoading ? (
-                            "Processing..."
-                        ) : method === "apple" ? (
-                            <span className="inline-flex items-center gap-2">
-                                <span>Pay with</span>
-                                <span className="inline-flex items-center text-2xl leading-none">
-                                    <span aria-hidden></span>
-                                    <span className="ml-1">Pay</span>
-                                </span>
+                            <span className="flex items-center justify-center gap-2">
+                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                Processing...
                             </span>
                         ) : (
-                            "Pay with Card"
+                            `Donate ${formatMoney(tipAmount, currency)}`
                         )}
                     </button>
                 </div>
@@ -371,5 +291,3 @@ export default function CharityModal({
         </div>
     );
 }
-
-

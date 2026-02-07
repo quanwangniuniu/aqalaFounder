@@ -30,6 +30,8 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
   const data = subscriptionDoc.data();
   return {
     userId: data.userId,
+    email: data.email || null,
+    displayName: data.displayName || null,
     stripeCustomerId: data.stripeCustomerId,
     stripePaymentId: data.stripePaymentId || null,
     plan: data.plan || "free",
@@ -43,6 +45,8 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
 export async function createOrUpdateSubscription(
   userId: string,
   subscriptionData: {
+    email?: string | null;
+    displayName?: string | null;
     stripeCustomerId: string;
     stripePaymentId?: string | null;
     plan: SubscriptionPlan;
@@ -65,6 +69,8 @@ export async function createOrUpdateSubscription(
   } else {
     await setDoc(subscriptionRef, {
       userId,
+      email: subscriptionData.email || null,
+      displayName: subscriptionData.displayName || null,
       ...subscriptionData,
       purchasedAt: subscriptionData.purchasedAt || null,
       createdAt: now,
@@ -92,6 +98,8 @@ export function subscribeToSubscription(
       const data = docSnapshot.data();
       onSubscription({
         userId: data.userId,
+        email: data.email || null,
+        displayName: data.displayName || null,
         stripeCustomerId: data.stripeCustomerId,
         stripePaymentId: data.stripePaymentId || null,
         plan: data.plan || "free",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,14 +10,16 @@ import {
   RoomMember,
   getRoom,
   Room,
+  updateViewerCount,
 } from "@/lib/firebase/rooms";
 import ClientApp from "@/app/client-app";
 import LiveTranslationView from "@/components/LiveTranslationView";
-import { getUserDisplayName } from "@/utils/userDisplay";
+import LiveKitListener from "@/components/LiveKitListener";
+import LiveChat from "@/components/LiveChat";
 
 export default function RoomDetailPage() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { user } = useAuth();
+  const { user, partnerInfo } = useAuth();
   const router = useRouter();
   const {
     rooms,
@@ -27,7 +29,6 @@ export default function RoomDetailPage() {
     releaseTranslator,
   } = useRooms();
 
-  // For authenticated users, get room from rooms context; for unauthenticated, fetch directly
   const roomFromContext = useMemo(
     () => rooms.find((r) => r.id === roomId),
     [rooms, roomId]
@@ -42,6 +43,30 @@ export default function RoomDetailPage() {
   const [role, setRole] = useState<"translator" | "listener" | null>(null);
   const [joined, setJoined] = useState(false);
   const [members, setMembers] = useState<RoomMember[]>([]);
+  const [showChat, setShowChat] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  // Track viewer count for ALL users (logged in or not)
+  // Uses atomic increment to avoid Firestore internal state issues
+  useEffect(() => {
+    if (!roomId) return;
+    
+    // Increment on mount
+    updateViewerCount(roomId, 1);
+    
+    // Decrement on unmount
+    return () => {
+      updateViewerCount(roomId, -1);
+    };
+  }, [roomId]);
+
+  // Check for mobile view
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Reset state when roomId changes
   useEffect(() => {
@@ -52,7 +77,7 @@ export default function RoomDetailPage() {
     setDirectRoom(null);
   }, [roomId]);
 
-  // Fetch room directly if user is not authenticated and room is not in context
+  // Fetch room directly if user is not authenticated
   useEffect(() => {
     if (!user && !roomFromContext && roomId && !roomLoading) {
       setRoomLoading(true);
@@ -66,22 +91,15 @@ export default function RoomDetailPage() {
           setRoomLoading(false);
         });
     } else if (user || roomFromContext) {
-      // Clear direct room if user becomes authenticated or room appears in context
       setDirectRoom(null);
       setRoomLoading(false);
     }
   }, [user, roomFromContext, roomId]);
 
   // Check if activeTranslatorId is valid
-  // For authenticated users, validate against members list
-  // For unauthenticated users, just use the room's activeTranslatorId directly
   const validTranslatorId = useMemo(() => {
     if (!room?.activeTranslatorId) return null;
-    if (!user) {
-      // Unauthenticated: just use the activeTranslatorId from room
-      return room.activeTranslatorId;
-    }
-    // Authenticated: validate it exists in members
+    if (!user) return room.activeTranslatorId;
     const translatorMember = members.find(
       (m) => m.userId === room.activeTranslatorId
     );
@@ -92,9 +110,15 @@ export default function RoomDetailPage() {
     user && (validTranslatorId === user.uid || role === "translator");
   const canTranslate = !!user && !!isTranslator;
 
-  // Subscribe to members and validate translator (only when user is signed in)
+  const isBroadcastRoom = room?.isBroadcast === true;
+  const isPartnerRoom = room?.roomType === "partner" || isBroadcastRoom;
+  const isPartnerOfRoom = user && room?.partnerId === user.uid;
+  const canClaimReciter = !isBroadcastRoom || isPartnerOfRoom;
+  const isLive = !!validTranslatorId;
+
+  // Subscribe to members (works for all users, Firebase rules handle permissions)
   useEffect(() => {
-    if (!roomId || !user) {
+    if (!roomId) {
       setMembers([]);
       return;
     }
@@ -102,17 +126,13 @@ export default function RoomDetailPage() {
       roomId,
       (incoming) => {
         setMembers(incoming);
-        // Validate translator when members change
-        validateAndCleanTranslator(roomId).catch((err) => {
-          console.error("Error validating translator:", err);
-        });
+        if (user) {
+          validateAndCleanTranslator(roomId).catch(() => {});
+        }
       },
       (err) => {
-        // Ignore permission errors when user signs out (expected behavior)
-        if (
-          err?.code === "permission-denied" ||
-          err?.message?.includes("permission")
-        ) {
+        // Silently handle permission errors - viewer count will fall back to room.viewerCount
+        if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
           setMembers([]);
           return;
         }
@@ -122,243 +142,209 @@ export default function RoomDetailPage() {
     return () => unsubscribe();
   }, [roomId, user, validateAndCleanTranslator]);
 
-  // Validate translator when room data changes (only for authenticated users)
-  useEffect(() => {
-    if (user && roomId && room?.activeTranslatorId) {
-      validateAndCleanTranslator(roomId).catch((err) => {
-        console.error("Error validating translator:", err);
-      });
-    }
-  }, [user, roomId, room?.activeTranslatorId, validateAndCleanTranslator]);
-
-  // Auto-join on load: always join as listener (no automatic translator assignment)
+  // Auto-join on load
   const joinInProgressRef = useRef(false);
   useEffect(() => {
     let isMounted = true;
 
     const join = async () => {
-      if (!user || !room || joined || joinInProgressRef.current) {
-        console.log(
-          `[JOIN MOSQUE UI] Skipping join - user: ${user?.uid}, room: ${room?.id}, joined: ${joined}, joinInProgress: ${joinInProgressRef.current}`
-        );
-        return;
-      }
-      console.log(
-        `[JOIN MOSQUE UI] Initiating join - roomId: ${roomId}, userId: ${user.uid}`
-      );
+      if (!user || !room || joined || joinInProgressRef.current) return;
+      
       joinInProgressRef.current = true;
       setBusy(true);
       try {
-        await joinRoom(roomId, false); // Always join as listener
-        console.log(
-          `[JOIN MOSQUE UI] Join successful - roomId: ${roomId}, userId: ${user.uid}`
-        );
+        await joinRoom(roomId, false);
         if (isMounted) {
           setRole("listener");
-          setMessage(
-            "You joined as listener. Click record to become lead reciter."
-          );
           setJoined(true);
         }
       } catch (err: any) {
-        console.error(
-          `[JOIN MOSQUE UI] Join error - roomId: ${roomId}, userId: ${user.uid}, errorCode: ${err?.code}, error:`,
-          err
-        );
-        // Ignore "already-exists" errors - user is already a member
-        if (
-          err?.code === "already-exists" ||
-          err?.code === 409 ||
-          err?.message?.includes("already-exists")
-        ) {
-          console.log(
-            `[JOIN MOSQUE UI] Already exists (treated as success) - roomId: ${roomId}, userId: ${user.uid}`
-          );
+        if (err?.code === "already-exists" || err?.message?.includes("already-exists")) {
           if (isMounted) {
             setRole("listener");
             setJoined(true);
           }
-        } else if (
-          err?.code === "failed-precondition" ||
-          err?.code === 9 ||
-          err?.code === "ABORTED" ||
-          err?.message?.includes("concurrent modification")
-        ) {
-          // Transaction conflict - check if user is actually a member now
-          console.log(
-            `[JOIN MOSQUE UI] Transaction conflict - roomId: ${roomId}, userId: ${user.uid}, checking membership status`
-          );
-          // The backend already checked, so if we get here, the join likely failed
-          if (isMounted) {
-            setMessage(
-              "Failed to join due to concurrent changes. Please refresh and try again."
-            );
-          }
         } else if (isMounted) {
-          setMessage(err?.message || "Failed to join this mosque.");
+          setMessage(err?.message || "Failed to join this room.");
         }
       } finally {
-        if (isMounted) {
-          setBusy(false);
-        }
+        if (isMounted) setBusy(false);
         joinInProgressRef.current = false;
       }
     };
 
     void join();
-
     return () => {
       isMounted = false;
       joinInProgressRef.current = false;
     };
   }, [user, room, roomId, joinRoom, joined]);
 
+  // Handle become lead reciter
+  const handleClaimReciter = useCallback(async () => {
+    try {
+      await claimLeadReciter(roomId);
+      setRole("translator");
+    } catch (err: any) {
+      setMessage(err?.message || "Failed to become lead reciter");
+    }
+  }, [roomId, claimLeadReciter]);
+
+  // Loading state
   if (roomLoading) {
     return (
-      <div className="min-h-screen bg-[#0f1318] px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-white">Room</h1>
-            <Link
-              href="/rooms"
-              className="text-[#0a5c3e] text-sm font-medium hover:text-[#06402B] transition-colors"
-            >
-              ← Back
-            </Link>
+      <div className="min-h-screen bg-[#0a0c0f] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-12 h-12 border-2 border-white/5 rounded-full" />
+            <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-[#D4AF37] rounded-full animate-spin" />
           </div>
-          <div className="flex items-center gap-2 text-zinc-500">
-            <div className="w-4 h-4 border-2 border-zinc-600 border-t-[#0a5c3e] rounded-full animate-spin"></div>
-            Loading room...
-          </div>
+          <p className="text-white/30 text-sm">Loading...</p>
         </div>
       </div>
     );
   }
 
+  // Not found state
   if (!room) {
     return (
-      <div className="min-h-screen bg-[#0f1318] px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-white">Room</h1>
+      <div className="min-h-screen bg-[#0a0c0f] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-white mb-2">Room not found</h2>
+          <p className="text-white/40 text-sm mb-6">This room doesn't exist or has been deleted.</p>
             <Link
               href="/rooms"
-              className="text-[#0a5c3e] text-sm font-medium hover:text-[#06402B] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 rounded-xl text-white text-sm font-medium transition-colors"
             >
-              ← Back
+            ← Back to rooms
             </Link>
-          </div>
-          <p className="text-zinc-500">Room not found.</p>
         </div>
       </div>
     );
   }
 
+  // Use room.viewerCount as it's updated for all users (auth or not)
+  // Falls back to members.length if viewerCount is somehow missing
+  const viewerCount = room?.viewerCount || members.length || 0;
+
   return (
-    <div className="min-h-screen bg-[#0f1318]">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-white">{room.name}</h1>
-              <p className="text-sm text-zinc-500">
-                {user ? (
-                  <>
-                    {room.memberCount} members •{" "}
-                    {validTranslatorId
-                      ? (() => {
-                          const translatorMember = members.find(
-                            (m) => m.userId === validTranslatorId
-                          );
-                          return `Lead: ${getUserDisplayName(
-                            null,
-                            validTranslatorId,
-                            translatorMember?.email
-                          )}`;
-                        })()
-                      : "No lead reciter"}
-                  </>
-                ) : (
-                  <>
-                    {validTranslatorId
-                      ? "Live translation in progress"
-                      : "Waiting for lead reciter"}
-                  </>
-                )}
-              </p>
-            </div>
+    <div className="min-h-screen bg-[#0a0c0f] text-white flex flex-col">
+      {/* Compact Header */}
+      <header className="flex-shrink-0 px-4 py-3 border-b border-white/5 bg-[#0a0c0f]/95 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+          {/* Left side - Back + Room info */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <Link
               href="/rooms"
-              className="text-[#0a5c3e] text-sm font-medium hover:text-[#06402B] transition-colors"
+              className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
             >
-              ← Back
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
             </Link>
+            
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="font-semibold text-white truncate">
+                  {room.partnerName || room.name}
+                </h1>
+                {isPartnerRoom && (
+                  <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/20">
+                    OFFICIAL
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-white/40">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+                {viewerCount} watching
+              </div>
+            </div>
           </div>
 
-          {message && user && (
-            <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm">
-              {message}
+          {/* Right side - Status + Chat toggle */}
+          <div className="flex items-center gap-2">
+            {isLive && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/20">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                </span>
+                <span className="text-[10px] font-bold text-red-400 tracking-wide">LIVE</span>
             </div>
           )}
-        </div>
 
-        {/* Main content area - stacked rows */}
-        <div className="space-y-6">
-          {/* Translation card - first row */}
+            {room.chatEnabled && (
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${
+                  showChat 
+                    ? "bg-[#D4AF37]/20 text-[#D4AF37]" 
+                    : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <span className="text-xs font-medium">Chat</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Translation View */}
+        <div className={`flex-1 flex flex-col min-h-0 transition-all ${
+          showChat && !isMobileView ? "lg:mr-[360px]" : ""
+        }`}>
+          {/* Content wrapper */}
+          <div className="flex-1 flex flex-col overflow-hidden">
           {!user ? (
-            /* Unauthenticated view: translations only, no buttons */
-            <div className="bg-[#1a1f2e] rounded-2xl shadow-2xl overflow-hidden h-[calc(100vh-150px)] flex flex-col ring-1 ring-[#2a3142]">
-              {validTranslatorId ? (
-                <LiveTranslationView
-                  mosqueId={roomId}
-                  activeTranslatorId={validTranslatorId}
-                />
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                  <div className="w-16 h-16 rounded-full bg-[#2a3142] flex items-center justify-center mb-4">
-                    <svg
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#6b7280"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
-                      <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
-                    </svg>
-                  </div>
-                  <p className="text-zinc-400 text-lg mb-2">
-                    Waiting for lead reciter
-                  </p>
-                  <p className="text-zinc-600 text-sm">
-                    Sign in to become the lead reciter
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : canTranslate ? (
-            <div className="bg-[#1a1f2e] rounded-2xl shadow-2xl overflow-hidden ring-1 ring-[#2a3142]">
-              <div className="px-6 py-3 border-b border-[#2a3142]">
-                <div className="flex items-center gap-3">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0a5c3e] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#06402B]"></span>
-                  </span>
-                  <span className="text-sm text-zinc-400 font-medium">
-                    Lead Reciter
-                  </span>
-                </div>
+              // Unauthenticated view - full height wrapper
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {isBroadcastRoom ? (
+                  <LiveKitListener
+                    roomName={roomId}
+                    listenerName={`guest-${Date.now()}`}
+                    mosqueName={room?.name || room?.partnerName || undefined}
+                    hideHeader
+                  />
+                ) : validTranslatorId ? (
+                  <LiveTranslationView
+                    mosqueId={roomId}
+                    activeTranslatorId={validTranslatorId}
+                  />
+                ) : (
+                  <WaitingState 
+                    message="Waiting for session to start"
+                    subMessage="Sign in to become the lead reciter"
+                  />
+                )}
               </div>
-              <div className="h-[calc(100vh-200px)]">
+          ) : canTranslate ? (
+              // Translator view
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-shrink-0 px-4 py-2 border-b border-emerald-500/20 bg-emerald-500/5 flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-sm text-emerald-400 font-medium">Broadcasting as Lead Reciter</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
                 <ClientApp
                   mosqueId={roomId}
                   translatorId={user?.uid}
-                  onClaimReciter={async () => {
-                    await claimLeadReciter(roomId);
-                    setRole("translator");
-                  }}
+                    onClaimReciter={handleClaimReciter}
                   onReleaseReciter={async () => {
                     await releaseTranslator(roomId);
                     setRole("listener");
@@ -367,78 +353,160 @@ export default function RoomDetailPage() {
               </div>
             </div>
           ) : (
-            <>
-              {/* Translation card */}
-              <div className="bg-[#1a1f2e] rounded-2xl shadow-2xl overflow-hidden h-[calc(100vh-280px)] flex flex-col ring-1 ring-[#2a3142]">
-                {validTranslatorId ? (
+              // Listener view - full height wrapper
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {isBroadcastRoom ? (
+                  <LiveKitListener
+                    roomName={roomId}
+                    listenerName={user?.uid || `listener-${Date.now()}`}
+                    mosqueName={room?.name || room?.partnerName || undefined}
+                    hideHeader
+                  />
+                ) : validTranslatorId ? (
                   <LiveTranslationView
                     mosqueId={roomId}
                     activeTranslatorId={validTranslatorId}
                   />
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                    <p className="text-zinc-500 text-sm">
-                      No lead reciter yet. Tap to start translating.
-                    </p>
-                  </div>
+                  <WaitingState
+                    message="Waiting for session to start"
+                    subMessage={canClaimReciter ? "Tap below to start translating" : undefined}
+                    action={
+                      canClaimReciter && user ? (
+                        <button
+                          onClick={handleClaimReciter}
+                          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#D4AF37] to-[#B8963A] hover:from-[#E5C04C] hover:to-[#D4AF37] text-black font-semibold rounded-xl shadow-lg shadow-[#D4AF37]/20 transition-all hover:scale-105"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
+                            <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
+                          </svg>
+                          Start Session
+                        </button>
+                      ) : undefined
+                    }
+                  />
+                )}
+              </div>
                 )}
               </div>
 
-              {/* Mic button - always visible below the card */}
-              {user && (
-                <div className="mt-6 flex flex-col items-center">
-                  <p className="text-sm text-zinc-500 mb-4 text-center">
-                    {validTranslatorId ? (
-                      <>
-                        Listening to{" "}
-                        {(() => {
-                          const translatorMember = members.find(
-                            (m) => m.userId === validTranslatorId
-                          );
-                          return getUserDisplayName(
-                            null,
-                            validTranslatorId,
-                            translatorMember?.email
-                          );
-                        })()}{" "}
-                        • Tap to become lead reciter
-                      </>
-                    ) : (
-                      "Tap to become lead reciter"
-                    )}
-                  </p>
+          {/* Message banner */}
+          {message && (
+            <div className="flex-shrink-0 p-3 bg-amber-500/10 border-t border-amber-500/20">
+              <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-amber-400 text-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4M12 16h.01" />
+                  </svg>
+                  {message}
+                </div>
                   <button
-                    onClick={async () => {
-                      try {
-                        await claimLeadReciter(roomId);
-                        setRole("translator");
-                      } catch (err: any) {
-                        setMessage(
-                          err?.message ||
-                            "Failed to become lead reciter. Please try again."
-                        );
-                      }
-                    }}
-                    aria-label="Start recording to become lead reciter"
-                    className="relative h-16 w-16 rounded-full flex items-center justify-center transition-all outline-none focus:outline-none ring-0 focus:ring-0 no-tap-highlight bg-[#0A84FF] hover:bg-[#0066CC] hover:scale-105 shadow-lg shadow-blue-500/25"
+                  onClick={() => setMessage(null)}
+                  className="p-1 hover:bg-amber-500/20 rounded transition-colors"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
-                        fill="white"
-                      />
-                      <path
-                        d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H10a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z"
-                        fill="white"
-                      />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6 6 18M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-              )}
-            </>
+            </div>
           )}
         </div>
+
+        {/* Chat Panel - Desktop sidebar */}
+        {room.chatEnabled && showChat && !isMobileView && (
+          <aside className="fixed right-0 top-[57px] bottom-0 w-[360px] border-l border-white/5 bg-[#0d0f12] z-40">
+            <LiveChat
+              roomId={roomId}
+              isPartnerRoom={isPartnerRoom}
+              ownerId={room.ownerId}
+              donationsEnabled={room.donationsEnabled}
+              className="h-full"
+            />
+          </aside>
+        )}
+
+        {/* Chat Panel - Mobile overlay */}
+        {room.chatEnabled && showChat && isMobileView && (
+          <div className="fixed inset-0 z-50 bg-[#0a0c0f] flex flex-col animate-in slide-in-from-bottom duration-200">
+            <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 flex items-center justify-between bg-[#0a0c0f]">
+              <span className="font-semibold text-white">Live Chat</span>
+              <button
+                onClick={() => setShowChat(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <LiveChat
+              roomId={roomId}
+              isPartnerRoom={isPartnerRoom}
+              ownerId={room.ownerId}
+              donationsEnabled={room.donationsEnabled}
+              className="flex-1"
+            />
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Waiting state component
+function WaitingState({ 
+  message, 
+  subMessage, 
+  action 
+}: { 
+  message: string; 
+  subMessage?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+      {/* Elegant waiting animation */}
+      <div className="relative mb-8">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white/[0.08] to-white/[0.02] flex items-center justify-center">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-white/20">
+            <path
+              d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+          </svg>
+        </div>
+        {/* Animated rings */}
+        <div 
+          className="absolute inset-0 w-24 h-24 rounded-full border border-white/5"
+          style={{ animation: "ping 3s cubic-bezier(0, 0, 0.2, 1) infinite" }}
+        />
+        <div 
+          className="absolute -inset-4 w-32 h-32 rounded-full border border-white/[0.03]"
+          style={{ animation: "ping 3s cubic-bezier(0, 0, 0.2, 1) infinite", animationDelay: "0.5s" }}
+        />
+      </div>
+      
+      <h3 className="text-lg font-medium text-white/60 mb-2">{message}</h3>
+      {subMessage && (
+        <p className="text-sm text-white/30 mb-6">{subMessage}</p>
+      )}
+      {action}
+
+      <style jsx>{`
+        @keyframes ping {
+          0% { transform: scale(1); opacity: 0.5; }
+          75%, 100% { transform: scale(1.5); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

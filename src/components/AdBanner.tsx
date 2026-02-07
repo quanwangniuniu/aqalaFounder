@@ -1,53 +1,112 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { useAuth } from "@/contexts/AuthContext";
-import Link from "next/link";
+
+type AdFormat = "auto" | "rectangle" | "horizontal" | "vertical";
 
 interface AdBannerProps {
-  variant?: "small" | "medium" | "large";
+  adSlot?: string;
+  adFormat?: AdFormat;
   className?: string;
+  style?: React.CSSProperties;
+  forceShow?: boolean; // Bypass showAds check
 }
 
-export default function AdBanner({ variant = "medium", className = "" }: AdBannerProps) {
+declare global {
+  interface Window {
+    adsbygoogle: object[];
+  }
+}
+
+export default function AdBanner({
+  adSlot = "8479808861", // Default Aqala Interstitial slot
+  adFormat = "auto",
+  className = "",
+  style,
+  forceShow = false,
+}: AdBannerProps) {
+  const adRef = useRef<HTMLDivElement>(null);
+  const isAdLoaded = useRef(false);
   const { showAds } = useSubscription();
-  const { user } = useAuth();
 
-  // Don't show if user has premium
-  if (!showAds) return null;
+  useEffect(() => {
+    // Only push ad once per component mount
+    if (isAdLoaded.current) return;
+    if (!showAds && !forceShow) return;
 
-  const sizes = {
-    small: "h-[50px]",
-    medium: "h-[90px]",
-    large: "h-[250px]",
-  };
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      try {
+        // Check if adsbygoogle is available
+        if (typeof window !== "undefined" && window.adsbygoogle) {
+          window.adsbygoogle.push({});
+          isAdLoaded.current = true;
+        }
+      } catch (err) {
+        console.error("AdSense error:", err);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [showAds, forceShow]);
+
+  // Don't render for premium users
+  if (!showAds && !forceShow) {
+    return null;
+  }
 
   return (
-    <div className={`relative ${sizes[variant]} ${className}`}>
-      {/* Ad placeholder - replace with actual ad network code */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden">
-        {/* Subtle pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px)`
-          }} />
-        </div>
-        
-        {/* Ad content placeholder */}
-        <div className="relative z-10 text-center px-4">
-          <p className="text-white/30 text-xs uppercase tracking-wider mb-1">Advertisement</p>
-          
-          {/* Upgrade prompt within ad space */}
-          <Link 
-            href={user ? "/subscription" : "/auth/login?returnUrl=/subscription"}
-            className="inline-flex items-center gap-1.5 text-[#D4AF37]/70 hover:text-[#D4AF37] text-xs transition-colors"
-          >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
-            Remove ads for $15
-          </Link>
-        </div>
+    <div className={`ad-container overflow-hidden ${className}`} ref={adRef}>
+      <ins
+        className="adsbygoogle"
+        style={{
+          display: "block",
+          ...style,
+        }}
+        data-ad-client="ca-pub-3882364799598893"
+        data-ad-slot={adSlot}
+        data-ad-format={adFormat}
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
+}
+
+// Smaller inline ad for content areas
+export function InlineAd({ className = "" }: { className?: string }) {
+  return (
+    <AdBanner
+      adFormat="rectangle"
+      className={`my-6 ${className}`}
+    />
+  );
+}
+
+// Horizontal banner ad for between sections
+export function BannerAd({ className = "" }: { className?: string }) {
+  return (
+    <AdBanner
+      adFormat="horizontal"
+      className={`my-4 ${className}`}
+    />
+  );
+}
+
+// Sticky bottom ad banner
+export function StickyBottomAd({ className = "" }: { className?: string }) {
+  const { showAds } = useSubscription();
+
+  if (!showAds) return null;
+
+  return (
+    <div className={`fixed bottom-0 left-0 right-0 z-40 bg-[#0a1f16]/95 backdrop-blur-sm border-t border-white/5 safe-area-inset-bottom ${className}`}>
+      <div className="max-w-[554px] mx-auto">
+        <AdBanner
+          adFormat="horizontal"
+          className="py-2"
+          style={{ minHeight: "50px" }}
+        />
       </div>
     </div>
   );

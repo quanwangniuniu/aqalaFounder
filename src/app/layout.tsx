@@ -7,6 +7,7 @@ import Header from "./header";
 import Footer from "./footer";
 import MainWrapper from "./main-wrapper";
 import { Providers } from "./providers";
+import GlobalBackground from "@/components/GlobalBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -81,6 +82,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <GlobalBackground />
           <Header />
           <MainWrapper>{children}</MainWrapper>
           <Footer />

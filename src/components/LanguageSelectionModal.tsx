@@ -15,7 +15,7 @@ export default function LanguageSelectionModal() {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
-  // Get translations for selected language (use centralized translations)
+  // Get translations for selected language
   const t = useMemo(() => {
     const translations = TRANSLATIONS[selectedLang] || TRANSLATIONS["en"];
     return {
@@ -32,7 +32,6 @@ export default function LanguageSelectionModal() {
   // Animate in when first visit is detected
   useEffect(() => {
     if (isFirstVisit) {
-      // Small delay to ensure smooth animation
       const timer = setTimeout(() => setIsVisible(true), 100);
       return () => clearTimeout(timer);
     }
@@ -42,154 +41,106 @@ export default function LanguageSelectionModal() {
     setLanguage(selectedLang);
     setIsAnimatingOut(true);
 
-    // Wait for animation to complete before hiding
     setTimeout(() => {
       completeFirstVisit();
       setIsVisible(false);
-    }, 400);
+    }, 300);
   };
 
   if (!isFirstVisit || !isVisible) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-500 ${
-        isAnimatingOut ? "lang-modal-backdrop-out" : "lang-modal-backdrop-in"
+      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-opacity duration-300 ${
+        isAnimatingOut ? "opacity-0" : "opacity-100"
       }`}
     >
-      {/* Animated background */}
-      <div className="absolute inset-0 lang-modal-bg" />
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
 
-      {/* Floating geometric shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="lang-modal-shape lang-modal-shape-1" />
-        <div className="lang-modal-shape lang-modal-shape-2" />
-        <div className="lang-modal-shape lang-modal-shape-3" />
-      </div>
-
-      {/* Modal content */}
+      {/* Modal */}
       <div
-        className={`relative w-full max-w-lg mx-4 transition-all duration-500 ${
-          isAnimatingOut ? "lang-modal-content-out" : "lang-modal-content-in"
+        className={`relative w-full max-w-md transition-all duration-300 ${
+          isAnimatingOut ? "scale-95 opacity-0" : "scale-100 opacity-100"
         }`}
-        dir={isRTL ? "rtl" : "ltr"}
       >
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
-          {/* Header */}
-          <div className="relative px-8 pt-10 pb-6 text-center">
-            {/* Decorative top accent */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
-
-            {/* Arabic-styled icon with crescent and globe */}
-            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[#032117] to-[#06402B] flex items-center justify-center shadow-lg lang-modal-icon">
+        {/* Glow effect */}
+        <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-[#D4AF37]/30 via-[#D4AF37]/10 to-[#D4AF37]/30 opacity-50" />
+        
+        <div className="relative bg-[#032117] rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+          {/* Header - RTL aware */}
+          <div className="px-6 pt-8 pb-4 text-center" dir={isRTL ? "rtl" : "ltr"}>
+            {/* Icon */}
+            <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center">
               <svg
-                width="36"
-                height="36"
-                viewBox="0 0 48 48"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
                 fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
                 className="text-[#D4AF37]"
               >
-                {/* Globe outline */}
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="18"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  fill="none"
-                />
-                {/* Globe meridian lines */}
-                <ellipse
-                  cx="24"
-                  cy="24"
-                  rx="8"
-                  ry="18"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  fill="none"
-                />
-                <path d="M6 24h36" stroke="currentColor" strokeWidth="1.5" />
-                <path
-                  d="M9 14h30"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  opacity="0.6"
-                />
-                <path
-                  d="M9 34h30"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  opacity="0.6"
-                />
-                {/* Arabic letter ع (Ayn) - stylized */}
-                <path
-                  d="M20 20c2 0 3.5 1 4 2.5s0 3-1.5 4c-1.5 1-3 1.5-4.5 1.5-2.5 0-4-1.5-4-3.5 0-1.5 1-2.5 2-3"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Crescent moon */}
-                <path
-                  d="M32 16c-2.5 2-4 5-4 8.5 0 3.5 1.5 6.5 4 8.5 4-1.5 7-5.5 7-10s-3-8-7-7z"
-                  fill="currentColor"
-                  opacity="0.9"
-                />
-                {/* Star */}
-                <path
-                  d="M36 20l0.8 1.6 1.7 0.2-1.2 1.2 0.3 1.7-1.6-0.8-1.6 0.8 0.3-1.7-1.2-1.2 1.7-0.2z"
-                  fill="currentColor"
-                />
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12h20" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
               </svg>
             </div>
 
-            <h2 className="text-2xl font-semibold text-[#032117] mb-2 transition-all duration-300">
+            <h2
+              className="text-xl font-medium text-white mb-1"
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+            >
               {t.title}
             </h2>
-            <p className="text-gray-600 text-sm transition-all duration-300">
-              {t.subtitle}
-            </p>
+            <p className="text-white/50 text-sm">{t.subtitle}</p>
           </div>
 
-          {/* Language grid */}
-          <div className="px-6 pb-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[320px] overflow-y-auto pr-1 lang-modal-grid">
-              {LANGUAGE_OPTIONS.map((lang, index) => (
+          {/* Language grid - always LTR to prevent jumping */}
+          <div className="px-4 pb-4" dir="ltr">
+            <div className="grid grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-1">
+              {LANGUAGE_OPTIONS.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => setSelectedLang(lang.code)}
-                  className={`group relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-300 lang-modal-item ${
+                  className={`relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
                     selectedLang === lang.code
-                      ? "bg-gradient-to-br from-[#032117] to-[#06402B] text-white shadow-lg scale-[1.02]"
-                      : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                      ? "bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/50"
+                      : "bg-white/5 hover:bg-white/10"
                   }`}
-                  style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  {/* Selection indicator */}
+                  {/* Checkmark */}
                   {selectedLang === lang.code && (
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute top-1.5 right-1.5">
                       <svg
-                        width="16"
-                        height="16"
+                        width="12"
+                        height="12"
                         viewBox="0 0 24 24"
                         fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
                         className="text-[#D4AF37]"
                       >
-                        <path
-                          d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-                          fill="currentColor"
-                        />
+                        <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </div>
                   )}
 
-                  <span className="text-2xl mb-1.5">{lang.flag}</span>
-                  <span className="font-medium text-sm">{lang.label}</span>
+                  <span className="text-xl mb-1">{lang.flag}</span>
                   <span
-                    className={`text-xs ${
+                    className={`text-xs font-medium ${
                       selectedLang === lang.code
-                        ? "text-white/70"
-                        : "text-gray-400"
+                        ? "text-[#E8D5A3]"
+                        : "text-white/80"
+                    }`}
+                  >
+                    {lang.label}
+                  </span>
+                  <span
+                    className={`text-[10px] ${
+                      selectedLang === lang.code
+                        ? "text-[#D4AF37]/70"
+                        : "text-white/40"
                     }`}
                   >
                     {lang.nativeLabel}
@@ -199,11 +150,11 @@ export default function LanguageSelectionModal() {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-8 pb-8 pt-2">
+          {/* Footer - RTL aware */}
+          <div className="px-6 pb-6 pt-2" dir={isRTL ? "rtl" : "ltr"}>
             <button
               onClick={handleConfirm}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#032117] font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] lang-modal-btn"
+              className="w-full py-3 px-6 rounded-xl bg-[#D4AF37] text-[#032117] font-semibold text-sm hover:bg-[#E8D5A3] transition-all duration-200 active:scale-[0.98]"
             >
               <span
                 className={`flex items-center justify-center gap-2 ${
@@ -212,23 +163,20 @@ export default function LanguageSelectionModal() {
               >
                 {t.continueBtn}
                 <svg
-                  width="20"
-                  height="20"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  className={`transition-transform ${
-                    isRTL ? "rotate-180" : ""
-                  }`}
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className={isRTL ? "rotate-180" : ""}
                 >
-                  <path
-                    d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"
-                    fill="currentColor"
-                  />
+                  <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </span>
             </button>
 
-            <p className="text-center text-xs text-gray-400 mt-4 transition-all duration-300">
+            <p className="text-center text-[11px] text-white/30 mt-3">
               {t.settingsNote}
             </p>
           </div>

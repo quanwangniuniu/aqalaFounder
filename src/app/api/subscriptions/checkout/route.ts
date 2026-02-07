@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { userId, priceId, referrerId } = await req.json();
+    const { userId, userEmail, userName } = await req.json();
 
     if (!userId || typeof userId !== "string") {
       return NextResponse.json(
@@ -95,8 +95,10 @@ export async function POST(req: Request) {
       });
       customerId = customer.id;
 
-      // Store customer ID in Firestore
+      // Store customer ID in Firestore with user info
       await createOrUpdateSubscriptionServer(userId, {
+        email: userEmail || null,
+        displayName: userName || null,
         stripeCustomerId: customerId,
         plan: "free",
         status: "active",
@@ -133,6 +135,9 @@ export async function POST(req: Request) {
       cancel_url: `${origin}/subscription`,
       metadata: {
         userId: userId,
+        userEmail: userEmail || "",
+        userName: userName || "",
+        type: "premium_one_time",
       },
       ...(applyCoupon && {
         discounts: [{ coupon: process.env.STRIPE_COUPON_INVITE_10! }],

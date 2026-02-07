@@ -16,12 +16,12 @@ import {
   saveTranslation,
   subscribeTranslations,
   TranslationEntry,
-  updateLiveStream,
-  clearLiveStream,
 } from "@/lib/firebase/translationHistory";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLiveKitBroadcast, BroadcastMessage } from "@/hooks/useLiveKitBroadcast";
 
 // Client-side API key - must be prefixed with NEXT_PUBLIC_ to be available in browser
 const SONIOX_API_KEY = process.env.NEXT_PUBLIC_SONIOX_API_KEY || "";
@@ -54,6 +54,23 @@ export default function ClientApp({
   const { rooms } = useRooms();
   const { user } = useAuth();
   const { language: preferredLanguage, t, isRTL } = useLanguage();
+  const { getAccentColor } = usePreferences();
+  const accentColor = getAccentColor();
+  
+  // LiveKit for real-time translation + audio broadcast
+  const {
+    connect: connectLiveKit,
+    disconnect: disconnectLiveKit,
+    sendMessage: sendLiveKitMessage,
+    toggleAudio: toggleLiveKitAudio,
+    isConnected: liveKitConnected,
+    isAudioEnabled: liveKitAudioEnabled,
+  } = useLiveKitBroadcast({
+    roomName: mosqueId || "default",
+    participantName: translatorId || "broadcaster",
+    isPublisher: true,
+  });
+  
   const clientRef = useRef<any | null>(null);
   const startedRef = useRef<boolean>(false);
   const enFinalSeen = useRef<Set<string>>(new Set());
@@ -95,13 +112,17 @@ export default function ClientApp({
   const labelFor = (code: string) =>
     LANG_OPTIONS.find((l) => l.code === code)?.label ?? code;
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
+  const detectedLangRef = useRef<string | null>(null);
   const [enParagraphs, setEnParagraphs] = useState<string[]>([]);
   const [refinedParagraphs, setRefinedParagraphs] = useState<string[]>([]);
+  // Ref to track refinedParagraphs for live broadcast (avoids stale closure)
+  const refinedParagraphsRef = useRef<string[]>([]);
   // Verse references corresponding to each refined paragraph (e.g., "Al-Fatiha 1:2")
   const [verseReferences, setVerseReferences] = useState<(string | null)[]>([]);
   // Currently selected verse key for the modal (e.g., "18:38" or "18:38-42")
   const [selectedVerseKey, setSelectedVerseKey] = useState<string | null>(null);
   const [enPartial, setEnPartial] = useState("");
+  const enPartialRef = useRef("");
   const [enCurrent, setEnCurrent] = useState("");
   const enCurrentRef = useRef("");
   // Track last displayed live text to avoid flashing "Listening..." between words
@@ -112,7 +133,9 @@ export default function ClientApp({
   const FOOTER_OFFSET_PX = 160;
   // Reference source text (original language) to show it's listening
   const [srcStable, setSrcStable] = useState("");
+  const srcStableRef = useRef("");
   const [srcPartial, setSrcPartial] = useState("");
+  const srcPartialRef = useRef("");
   const refScrollRef = useRef<HTMLDivElement | null>(null);
   const refAtBottomRef = useRef<boolean>(true);
   // Sequential refinement queue: refine one batch (EN+AR) at a time for steady flow
@@ -142,6 +165,14 @@ export default function ClientApp({
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryText, setSummaryText] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
+  // Q&A chat states for summary follow-up questions
+  const [summaryConversation, setSummaryConversation] = useState<
+    Array<{ role: "user" | "assistant"; content: string }>
+  >([]);
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const summaryScrollRef = useRef<HTMLDivElement>(null);
+  const qaEndRef = useRef<HTMLDivElement>(null);
   // Track loaded translation IDs to avoid duplicates
   const loadedTranslationIdsRef = useRef<Set<string>>(new Set());
   // Track translations by targetLang to handle language switching
@@ -165,9 +196,15 @@ export default function ClientApp({
     }, 3000);
   }
 
-  // Start live stream broadcasting for real-time translation (<1 second latency)
+  // Track last sent message to avoid duplicate sends
+  const lastSentTextRef = useRef<string>("");
+  
+  // Start live stream broadcasting via LiveKit WebSocket (real-time, no Firestore writes)
   function startLiveStreamBroadcast() {
     if (!mosqueId || !translatorId) return;
+
+    // Connect to LiveKit room for broadcasting (audio can be toggled separately)
+    connectLiveKit();
 
     // Clear any existing interval
     if (liveStreamIntervalRef.current) {
@@ -177,28 +214,37 @@ export default function ClientApp({
     // Reset accumulated text
     liveAccumulatedRef.current = "";
 
-    // Broadcast every 300ms for near real-time updates
+    // Broadcast every 500ms via LiveKit WebSocket (no Firestore writes!)
     liveStreamIntervalRef.current = window.setInterval(() => {
       // Combine all finalized refined paragraphs + current accumulator + partial
-      const refinedText = refinedParagraphs.join("\n\n");
-      const currentRaw = concatReadable(enCurrentRef.current, enPartial);
+      const refinedText = refinedParagraphsRef.current.join("\n\n");
+      const currentRaw = concatReadable(enCurrentRef.current, enPartialRef.current);
       const fullText = concatReadable(refinedText, currentRaw);
 
-      updateLiveStream(mosqueId!, {
-        currentText: fullText,
-        partialText: enPartial,
-        sourceText: srcStable,
-        sourcePartial: srcPartial,
-        sourceLang: detectedLang || "unknown",
-        targetLang: targetLangRef.current,
-        translatorId: translatorId!,
-        sessionId: sessionIdRef.current,
-        isActive: true,
-      }).catch((err) => {
-        // Silently fail - don't interrupt translation flow
-        console.error("Failed to update live stream:", err);
+      // Only send if content changed
+      if (fullText === lastSentTextRef.current && !enPartialRef.current) return;
+      lastSentTextRef.current = fullText;
+
+      // Send via LiveKit data channel (WebSocket - instant, no write limits)
+      sendLiveKitMessage({
+        type: "translation",
+        text: fullText,
+        partial: enPartialRef.current,
+        lang: targetLangRef.current,
+        timestamp: Date.now(),
       });
-    }, 300);
+
+      // Also send source text if available
+      if (srcStableRef.current || srcPartialRef.current) {
+        sendLiveKitMessage({
+          type: "source",
+          text: srcStableRef.current,
+          partial: srcPartialRef.current,
+          lang: detectedLangRef.current || "unknown",
+          timestamp: Date.now(),
+        });
+      }
+    }, 500);
   }
 
   // Stop live stream broadcasting
@@ -208,12 +254,8 @@ export default function ClientApp({
       liveStreamIntervalRef.current = null;
     }
 
-    // Clear the live stream
-    if (mosqueId) {
-      clearLiveStream(mosqueId).catch((err) => {
-        console.error("Failed to clear live stream:", err);
-      });
-    }
+    // Disconnect from LiveKit (audio stops automatically)
+    disconnectLiveKit();
   }
 
   function flushPendingNow() {
@@ -258,11 +300,31 @@ export default function ClientApp({
       if (liveStreamIntervalRef.current) {
         window.clearInterval(liveStreamIntervalRef.current);
       }
-      if (mosqueId) {
-        clearLiveStream(mosqueId).catch(() => {});
-      }
+      // Disconnect from LiveKit
+      disconnectLiveKit();
     };
-  }, [mosqueId]);
+  }, [mosqueId, disconnectLiveKit]);
+
+  // Sync refs with state for live stream broadcast (avoids stale closures in setInterval)
+  useEffect(() => {
+    refinedParagraphsRef.current = refinedParagraphs;
+  }, [refinedParagraphs]);
+
+  useEffect(() => {
+    enPartialRef.current = enPartial;
+  }, [enPartial]);
+
+  useEffect(() => {
+    srcStableRef.current = srcStable;
+  }, [srcStable]);
+
+  useEffect(() => {
+    srcPartialRef.current = srcPartial;
+  }, [srcPartial]);
+
+  useEffect(() => {
+    detectedLangRef.current = detectedLang;
+  }, [detectedLang]);
 
   // Optionally open the donation modal on mount (from landing page secondary button)
   useEffect(() => {
@@ -1383,6 +1445,8 @@ ${translatedText || "(No translation recorded)"}
     setIsSummarizing(true);
     setShowSummaryModal(true);
     setSummaryText("");
+    setSummaryConversation([]);
+    setCurrentQuestion("");
 
     try {
       const res = await fetch("/api/summarize", {
@@ -1412,6 +1476,60 @@ ${translatedText || "(No translation recorded)"}
       setIsSummarizing(false);
     }
   }, [refinedParagraphs, srcStable, targetLang, t]);
+
+  // Handle asking follow-up questions about the summary
+  const handleAskQuestion = useCallback(async () => {
+    if (!currentQuestion.trim() || !summaryText || isAskingQuestion) return;
+
+    const question = currentQuestion.trim();
+    setCurrentQuestion("");
+    setIsAskingQuestion(true);
+
+    // Add user question to conversation immediately
+    setSummaryConversation((prev) => [...prev, { role: "user", content: question }]);
+
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          summary: summaryText,
+          originalText: refinedParagraphs.join("\n\n"),
+          conversationHistory: summaryConversation,
+          targetLang,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error || "Failed to get answer");
+      }
+
+      const data = await res.json();
+      setSummaryConversation((prev) => [
+        ...prev,
+        { role: "assistant", content: data.answer || "I couldn't generate an answer." },
+      ]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to get answer";
+      setToast({ message, type: "error" });
+      // Remove the user question on error
+      setSummaryConversation((prev) => prev.slice(0, -1));
+    } finally {
+      setIsAskingQuestion(false);
+    }
+  }, [currentQuestion, summaryText, refinedParagraphs, summaryConversation, targetLang, isAskingQuestion]);
+
+  // Auto-scroll to show new Q&A messages
+  useEffect(() => {
+    if (summaryConversation.length > 0 && qaEndRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        qaEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }, 100);
+    }
+  }, [summaryConversation]);
 
   // Track whether the reader is near the bottom of the translation container; if scrolled up, disable auto-scroll.
   useEffect(() => {
@@ -1460,7 +1578,7 @@ ${translatedText || "(No translation recorded)"}
   }, [refinedParagraphs.length, enCurrent, enPartial, userAtBottom]);
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden bg-[#032117]">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Google Fonts */}
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap");
@@ -1479,7 +1597,7 @@ ${translatedText || "(No translation recorded)"}
         )}
 
         {/* Source text section */}
-        <div className="flex-shrink-0 bg-[#032117] border-b border-white/5">
+        <div className="flex-shrink-0 border-b border-white/5">
           
           <div className="relative px-5 py-3">
             <div className="flex items-center justify-between mb-2">
@@ -1530,40 +1648,10 @@ ${translatedText || "(No translation recorded)"}
           </div>
         </div>
 
-        {/* Language selector */}
-        <div className="flex-shrink-0 px-5 py-3 bg-[#032117] border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-white/40">
-              {t("listen.translateTo")}
-            </span>
-            <div className="relative">
-              <select
-                id="translation-language"
-                className="appearance-none bg-white/5 text-white text-sm pl-3 pr-8 py-1.5 rounded-lg border border-white/10 cursor-pointer focus:outline-none focus:border-[#D4AF37]/50 transition-all"
-                value={targetLang}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-              >
-                {LANG_OPTIONS.map((opt) => (
-                  <option key={opt.code} value={opt.code} className="bg-[#032117] text-white">
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#D4AF37]/60"
-              >
-                <path d="M6 8l4 4 4-4" fill="currentColor" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
         {/* Translation output */}
         <div
           ref={translationScrollRef}
-          className="flex-1 min-h-0 overflow-y-auto px-5 py-4 bg-[#032117]"
+          className="flex-1 min-h-0 overflow-y-auto px-5 py-4"
         >
           {/* Content wrapper */}
           <div className={`max-w-2xl mx-auto w-full ${renderList.length === 0 ? 'flex-1 flex flex-col justify-center' : 'py-4'}`}>
@@ -1629,7 +1717,7 @@ ${translatedText || "(No translation recorded)"}
 
         {/* Live preview */}
         {isListening && (
-          <div className="flex-shrink-0 bg-[#032117] border-t border-white/5 px-5 py-4">
+          <div className="flex-shrink-0 border-t border-white/5 px-5 py-4">
             {(() => {
               const currentLiveText = concatReadable(enCurrent, enPartial);
               if (currentLiveText) {
@@ -1709,17 +1797,17 @@ ${translatedText || "(No translation recorded)"}
             className="absolute inset-0 bg-black/70 backdrop-blur-md summary-backdrop-in"
             onClick={() => !isSummarizing && setShowSummaryModal(false)}
           />
-          <div className="relative w-full max-w-2xl max-h-[85vh] summary-modal-content">
+          <div className="relative w-full max-w-lg max-h-[75vh] summary-modal-content flex flex-col">
             {/* Glowing border effect */}
-            <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-br from-[#D4AF37]/30 via-[#D4AF37]/10 to-[#D4AF37]/30 opacity-50" />
-            <div className="relative bg-[#032117] rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
+            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-[#D4AF37]/30 via-[#D4AF37]/10 to-[#D4AF37]/30 opacity-50" />
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50 flex flex-col max-h-[75vh]">
               {/* Header */}
-              <div className="flex items-center justify-between px-8 py-5 border-b border-white/[0.06]">
-                <h2 className="text-lg font-medium text-white flex items-center gap-3" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                  <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
+              <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+                <h2 className="text-base font-medium text-white flex items-center gap-2" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                  <div className="w-7 h-7 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
                     <svg
-                      width="16"
-                      height="16"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -1732,22 +1820,22 @@ ${translatedText || "(No translation recorded)"}
                       <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
                   </div>
-                  Summary
+                  Khutba Summary
                 </h2>
                 <button
                   onClick={() => setShowSummaryModal(false)}
                   disabled={isSummarizing}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors disabled:opacity-50"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors disabled:opacity-50"
                   aria-label="Close"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/50">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
-              {/* Content */}
-              <div className="px-8 py-6 overflow-y-auto max-h-[60vh] summary-scroll-area">
+              {/* Content - single continuous scrollable area */}
+              <div ref={summaryScrollRef} className="flex-1 overflow-y-auto min-h-0 px-5 py-4 summary-scroll-area">
                 {isSummarizing ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-5">
                     <div className="relative w-14 h-14">
@@ -1762,60 +1850,150 @@ ${translatedText || "(No translation recorded)"}
                 ) : (
                   <div style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     {summaryText.split("\n").map((line, i) => {
+                      // Parse verse references in format [Surah Name chapter:verse] or [Surah Name chapter:start-end]
+                      const parseVerseRefs = (text: string): React.ReactNode[] => {
+                        const verseRefPattern = /\[([^\]]+)\s+(\d+):(\d+)(?:-(\d+))?\]/g;
+                        const parts: React.ReactNode[] = [];
+                        let lastIndex = 0;
+                        let match;
+
+                        while ((match = verseRefPattern.exec(text)) !== null) {
+                          // Add text before the match
+                          if (match.index > lastIndex) {
+                            parts.push(text.slice(lastIndex, match.index));
+                          }
+                          
+                          const surahName = match[1];
+                          const chapter = match[2];
+                          const startVerse = match[3];
+                          const endVerse = match[4];
+                          const verseKey = endVerse ? `${chapter}:${startVerse}-${endVerse}` : `${chapter}:${startVerse}`;
+                          const displayText = endVerse 
+                            ? `${surahName} ${chapter}:${startVerse}-${endVerse}`
+                            : `${surahName} ${chapter}:${startVerse}`;
+
+                          parts.push(
+                            <button
+                              key={`verse-${match.index}`}
+                              onClick={() => setSelectedVerseKey(verseKey)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 mx-0.5 rounded-lg bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#E8D5A3] text-sm font-medium transition-all border border-[#D4AF37]/30 hover:border-[#D4AF37]/50 group"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-70 group-hover:opacity-100">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                              </svg>
+                              {displayText}
+                            </button>
+                          );
+                          
+                          lastIndex = match.index + match[0].length;
+                        }
+
+                        // Add remaining text
+                        if (lastIndex < text.length) {
+                          parts.push(text.slice(lastIndex));
+                        }
+
+                        return parts.length > 0 ? parts : [text];
+                      };
+
                       const formatBold = (text: string) =>
                         text.replace(
                           /\*\*(.+?)\*\*/g,
                           '<strong class="text-[#D4AF37] font-semibold">$1</strong>'
                         );
 
+                      // Check if line has verse references
+                      const hasVerseRefs = /\[[^\]]+\s+\d+:\d+/.test(line);
+
                       if (!line.trim()) {
                         return <div key={i} className="h-4" />;
                       }
 
                       if (line.startsWith("### ")) {
+                        const content = line.replace("### ", "");
                         return (
                           <h3
                             key={i}
                             className="text-[#E8D5A3] text-base font-medium mt-5 mb-2"
-                            dangerouslySetInnerHTML={{ __html: formatBold(line.replace("### ", "")) }}
+                            dangerouslySetInnerHTML={{ __html: formatBold(content) }}
                           />
                         );
                       }
                       if (line.startsWith("## ")) {
+                        const content = line.replace("## ", "");
                         return (
                           <h2
                             key={i}
                             className="text-[#E8D5A3] text-lg font-medium mt-6 mb-3"
-                            dangerouslySetInnerHTML={{ __html: formatBold(line.replace("## ", "")) }}
+                            dangerouslySetInnerHTML={{ __html: formatBold(content) }}
                           />
                         );
                       }
                       if (line.startsWith("# ")) {
+                        const content = line.replace("# ", "");
                         return (
                           <h1
                             key={i}
                             className="text-[#E8D5A3] text-xl font-semibold mt-6 mb-3"
-                            dangerouslySetInnerHTML={{ __html: formatBold(line.replace("# ", "")) }}
+                            dangerouslySetInnerHTML={{ __html: formatBold(content) }}
                           />
                         );
                       }
                       if (line.startsWith("- ") || line.startsWith("* ")) {
+                        const content = line.slice(2);
+                        if (hasVerseRefs) {
+                          return (
+                            <p
+                              key={i}
+                              className="text-white/80 leading-relaxed pl-5 my-1.5 relative before:content-['•'] before:absolute before:left-0 before:text-[#D4AF37]/60"
+                            >
+                              {parseVerseRefs(content).map((part, j) => 
+                                typeof part === 'string' ? (
+                                  <span key={j} dangerouslySetInnerHTML={{ __html: formatBold(part) }} />
+                                ) : part
+                              )}
+                            </p>
+                          );
+                        }
                         return (
                           <p
                             key={i}
                             className="text-white/80 leading-relaxed pl-5 my-1.5 relative before:content-['•'] before:absolute before:left-0 before:text-[#D4AF37]/60"
-                            dangerouslySetInnerHTML={{ __html: formatBold(line.slice(2)) }}
+                            dangerouslySetInnerHTML={{ __html: formatBold(content) }}
                           />
                         );
                       }
                       const numberedMatch = line.match(/^(\d+)\.\s/);
                       if (numberedMatch) {
+                        if (hasVerseRefs) {
+                          return (
+                            <p key={i} className="text-white/80 leading-relaxed pl-5 my-1.5">
+                              {parseVerseRefs(line).map((part, j) => 
+                                typeof part === 'string' ? (
+                                  <span key={j} dangerouslySetInnerHTML={{ __html: formatBold(part) }} />
+                                ) : part
+                              )}
+                            </p>
+                          );
+                        }
                         return (
                           <p
                             key={i}
                             className="text-white/80 leading-relaxed pl-5 my-1.5"
                             dangerouslySetInnerHTML={{ __html: formatBold(line) }}
                           />
+                        );
+                      }
+                      if (hasVerseRefs) {
+                        return (
+                          <p key={i} className="text-white/80 text-[17px] leading-[1.9] my-2.5">
+                            {parseVerseRefs(line).map((part, j) => 
+                              typeof part === 'string' ? (
+                                <span key={j} dangerouslySetInnerHTML={{ __html: formatBold(part) }} />
+                              ) : part
+                            )}
+                          </p>
                         );
                       }
                       return (
@@ -1828,33 +2006,213 @@ ${translatedText || "(No translation recorded)"}
                     })}
                   </div>
                 )}
+                
+                {/* Q&A Conversation - inside the same scroll area */}
+                {!isSummarizing && summaryText && summaryConversation.length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-white/[0.08] space-y-3">
+                    <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Questions & Answers</p>
+                    {summaryConversation.map((msg, i) => {
+                      // Parse verse references in Q&A responses too
+                      const parseQAVerseRefs = (text: string): React.ReactNode[] => {
+                        const verseRefPattern = /\[([^\]]+)\s+(\d+):(\d+)(?:-(\d+))?\]/g;
+                        const parts: React.ReactNode[] = [];
+                        let lastIndex = 0;
+                        let match;
+
+                        while ((match = verseRefPattern.exec(text)) !== null) {
+                          if (match.index > lastIndex) {
+                            parts.push(text.slice(lastIndex, match.index));
+                          }
+                          
+                          const surahName = match[1];
+                          const chapter = match[2];
+                          const startVerse = match[3];
+                          const endVerse = match[4];
+                          const verseKey = endVerse ? `${chapter}:${startVerse}-${endVerse}` : `${chapter}:${startVerse}`;
+                          const displayText = endVerse 
+                            ? `${surahName} ${chapter}:${startVerse}-${endVerse}`
+                            : `${surahName} ${chapter}:${startVerse}`;
+
+                          parts.push(
+                            <button
+                              key={`qa-verse-${i}-${match.index}`}
+                              onClick={() => setSelectedVerseKey(verseKey)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-md bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#E8D5A3] text-xs font-medium transition-all border border-[#D4AF37]/30"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-70">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                              </svg>
+                              {displayText}
+                            </button>
+                          );
+                          
+                          lastIndex = match.index + match[0].length;
+                        }
+
+                        if (lastIndex < text.length) {
+                          parts.push(text.slice(lastIndex));
+                        }
+
+                        return parts.length > 0 ? parts : [text];
+                      };
+
+                      return (
+                        <div
+                          key={i}
+                          className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[90%] rounded-xl px-3 py-2 ${
+                              msg.role === "user"
+                                ? "bg-[#D4AF37]/20 text-white/90"
+                                : "bg-white/5 text-white/80"
+                            }`}
+                            style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                          >
+                            {msg.role === "assistant" ? (
+                              <div className="text-sm leading-relaxed">
+                                {msg.content.split("\n").map((line, j) => {
+                                  const formatBold = (text: string) =>
+                                    text.replace(
+                                      /\*\*(.+?)\*\*/g,
+                                      '<strong class="text-[#D4AF37] font-semibold">$1</strong>'
+                                    );
+                                  const hasVerseRefs = /\[[^\]]+\s+\d+:\d+/.test(line);
+                                  
+                                  if (!line.trim()) return <div key={j} className="h-2" />;
+                                  if (line.startsWith("- ") || line.startsWith("* ")) {
+                                    const content = line.slice(2);
+                                    if (hasVerseRefs) {
+                                      return (
+                                        <p
+                                          key={j}
+                                          className="pl-3 my-0.5 relative before:content-['•'] before:absolute before:left-0 before:text-[#D4AF37]/60"
+                                        >
+                                          {parseQAVerseRefs(content).map((part, k) => 
+                                            typeof part === 'string' ? (
+                                              <span key={k} dangerouslySetInnerHTML={{ __html: formatBold(part) }} />
+                                            ) : part
+                                          )}
+                                        </p>
+                                      );
+                                    }
+                                    return (
+                                      <p
+                                        key={j}
+                                        className="pl-3 my-0.5 relative before:content-['•'] before:absolute before:left-0 before:text-[#D4AF37]/60"
+                                        dangerouslySetInnerHTML={{ __html: formatBold(content) }}
+                                      />
+                                    );
+                                  }
+                                  if (hasVerseRefs) {
+                                    return (
+                                      <p key={j} className="my-0.5">
+                                        {parseQAVerseRefs(line).map((part, k) => 
+                                          typeof part === 'string' ? (
+                                            <span key={k} dangerouslySetInnerHTML={{ __html: formatBold(part) }} />
+                                          ) : part
+                                        )}
+                                      </p>
+                                    );
+                                  }
+                                  return (
+                                    <p
+                                      key={j}
+                                      className="my-0.5"
+                                      dangerouslySetInnerHTML={{ __html: formatBold(line) }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-sm">{msg.content}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {isAskingQuestion && (
+                      <div className="flex justify-start">
+                        <div className="bg-white/5 rounded-xl px-3 py-2">
+                          <div className="flex items-center gap-1.5 text-white/40 text-sm">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" style={{ animationDelay: "0.2s" }} />
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" style={{ animationDelay: "0.4s" }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Scroll anchor */}
+                    <div ref={qaEndRef} />
+                  </div>
+                )}
               </div>
-              {/* Footer */}
+              {/* Footer with input and actions */}
               {!isSummarizing && summaryText && (
-                <div className="px-8 py-5 border-t border-white/[0.06] flex justify-end gap-3">
-                  <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(summaryText);
-                        setToast({ message: t("share.copied"), type: "success" });
-                      } catch {
-                        setToast({ message: "Failed to copy", type: "error" });
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-white/80 text-sm font-medium hover:bg-white/10 transition-all border border-white/[0.08]"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                    Copy
-                  </button>
-                  <button
-                    onClick={() => setShowSummaryModal(false)}
-                    className="px-5 py-2 rounded-xl bg-[#D4AF37] text-[#032117] text-sm font-semibold hover:bg-[#E8D5A3] transition-all"
-                  >
-                    Done
-                  </button>
+                <div className="flex-shrink-0 px-5 py-3 border-t border-white/[0.06] bg-[#021912] space-y-3">
+                  {/* Question input */}
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={currentQuestion}
+                      onChange={(e) => setCurrentQuestion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAskQuestion();
+                        }
+                      }}
+                      placeholder="Ask about this khutba..."
+                      disabled={isAskingQuestion}
+                      className="flex-1 bg-white/5 border border-white/[0.08] rounded-lg px-3 py-2 text-white/90 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50 disabled:opacity-50 transition-all"
+                      style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                    />
+                    <button
+                      onClick={handleAskQuestion}
+                      disabled={isAskingQuestion || !currentQuestion.trim()}
+                      className="w-9 h-9 rounded-lg bg-[#D4AF37] flex-shrink-0 flex items-center justify-center hover:bg-[#E8D5A3] disabled:opacity-40 disabled:hover:bg-[#D4AF37] transition-all"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="text-[#032117]"
+                      >
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex justify-between items-center">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(summaryText);
+                          setToast({ message: t("share.copied"), type: "success" });
+                        } catch {
+                          setToast({ message: "Failed to copy", type: "error" });
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 text-white/70 text-xs font-medium hover:bg-white/10 transition-all"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => setShowSummaryModal(false)}
+                      className="px-4 py-1.5 rounded-lg bg-[#D4AF37] text-[#032117] text-xs font-semibold hover:bg-[#E8D5A3] transition-all"
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1871,7 +2229,7 @@ ${translatedText || "(No translation recorded)"}
       )}
 
       {/* Footer */}
-      <footer className="flex-shrink-0 bg-[#032117] px-5 py-6 border-t border-white/5">
+      <footer className="flex-shrink-0 px-5 py-6 border-t border-white/5">
         {/* Session ended actions */}
         {hasStopped && !isListening && refinedParagraphs.length > 0 && (
           <div className="mb-6 space-y-4">
@@ -1936,16 +2294,49 @@ ${translatedText || "(No translation recorded)"}
           </div>
         )}
 
-        {/* Mic button */}
-        <div className="flex items-center justify-center">
+        {/* Controls row - Audio share + Mic button */}
+        <div className="flex items-center justify-center gap-4">
+          {/* Audio share toggle - only show when connected to LiveKit */}
+          {liveKitConnected && (
+            <button
+              onClick={toggleLiveKitAudio}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full transition-all ${
+                liveKitAudioEnabled
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : "bg-white/5 text-white/50 border border-white/10 hover:bg-white/10"
+              }`}
+            >
+              {liveKitAudioEnabled ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              )}
+              <span className="text-sm font-medium">
+                {liveKitAudioEnabled ? "Audio On" : "Share Audio"}
+              </span>
+            </button>
+          )}
+
+          {/* Mic button */}
           <button
             onClick={isListening ? handleStop : handleStart}
             aria-label={isListening ? "Stop" : "Start listening"}
             className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 ${
               isListening 
                 ? "bg-red-500 text-white shadow-lg shadow-red-500/30" 
-                : "bg-[#0a5c3e] text-white hover:bg-[#0d6b47] shadow-lg shadow-black/20"
+                : "text-white shadow-lg shadow-black/20"
             }`}
+            style={!isListening ? { backgroundColor: accentColor.base } : undefined}
+            onMouseEnter={(e) => !isListening && (e.currentTarget.style.backgroundColor = accentColor.hover)}
+            onMouseLeave={(e) => !isListening && (e.currentTarget.style.backgroundColor = accentColor.base)}
           >
             {isListening && (
               <>

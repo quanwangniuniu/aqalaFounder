@@ -4,6 +4,8 @@ export type SubscriptionStatus = "active" | "inactive";
 
 export interface Subscription {
   userId: string;
+  email: string | null; // User's email for identification
+  displayName: string | null; // User's display name
   stripeCustomerId: string;
   stripePaymentId: string | null; // One-time payment ID
   plan: SubscriptionPlan;

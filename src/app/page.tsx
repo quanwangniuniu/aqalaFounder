@@ -5,7 +5,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { usePreferences } from "@/contexts/PreferencesContext";
 import { formatPrayerTime } from "@/lib/prayer/calculations";
 import AdLink from "@/components/AdLink";
 
@@ -14,28 +13,9 @@ export default function Page() {
   const { nextPrayer, loading: prayerLoading } = usePrayer();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, showAds } = useSubscription();
-  const { getWallpaperStyle } = usePreferences();
-
-  const wallpaperStyle = getWallpaperStyle();
 
   return (
     <div className="relative min-h-screen overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
-      {/* Background layers - using user's wallpaper preference */}
-      <div 
-        className="absolute inset-0" 
-        style={{
-          ...wallpaperStyle,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
-      <div className="absolute inset-0 hero-geometric-overlay" />
-      <div className="absolute inset-0 translation-geometric-pattern opacity-[0.015]" />
-      
-      {/* Floating accent orbs */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] hero-orb hero-orb-1" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] hero-orb hero-orb-2" />
-
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Top bar */}
@@ -53,34 +33,59 @@ export default function Page() {
               />
             </Link>
 
-            {/* Account button */}
-            {!authLoading && (
-              user ? (
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              {/* Search */}
+              {user && (
                 <Link
-                  href="/account/settings"
-                  className="hero-fade-in flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all"
+                  href="/search"
+                  className="hero-fade-in p-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all"
+                  aria-label="Search users"
                 >
-                  <div className="w-7 h-7 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] text-xs font-semibold">
-                    {user.displayName?.[0] || user.email?.[0]?.toUpperCase() || "U"}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                </Link>
+              )}
+
+              {/* Profile / Sign In */}
+              {!authLoading && (
+                user ? (
+                  <Link
+                    href={`/user/${user.uid}`}
+                    className="hero-fade-in flex items-center gap-2 px-2 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all"
+                >
+                    {user.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37]/30 to-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] text-sm font-semibold">
+                        {(user.username || user.displayName || user.email || "U")[0].toUpperCase()}
                   </div>
-                  {isPremium ? (
-                    <span className="text-xs text-[#D4AF37] font-medium">Premium ✨</span>
-                  ) : (
-                    <span className="text-xs text-white/60">Account</span>
+                    )}
+                    <div className="pr-1">
+                      <p className="text-xs font-medium text-white leading-tight">
+                        {user.username ? `@${user.username}` : user.displayName?.split(" ")[0] || "Profile"}
+                      </p>
+                      {isPremium && (
+                        <p className="text-[10px] text-[#D4AF37]">Premium ✨</p>
                   )}
+                    </div>
                 </Link>
               ) : (
                 <Link
                   href="/auth/login"
-                  className="hero-fade-in flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all"
+                    className="hero-fade-in flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#021a12] font-medium text-sm hover:shadow-lg hover:shadow-[#D4AF37]/20 transition-all"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/70">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                  </svg>
-                  <span className="text-xs text-white/70">Sign In</span>
+                    Sign In
                 </Link>
               )
             )}
+            </div>
           </div>
         </header>
 
@@ -90,7 +95,7 @@ export default function Page() {
             
             {/* Hero Section - Primary CTA */}
             <section className="hero-fade-in hero-fade-in-delay-1 mt-4 sm:mt-8">
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a5c3e]/80 to-[#032117]/90 backdrop-blur-xl border border-white/10 p-6 sm:p-8">
+              <div className="relative overflow-hidden rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 p-6 sm:p-8">
                 {/* Decorative glow */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-[40px] translate-y-1/2 -translate-x-1/2" />
@@ -241,7 +246,7 @@ export default function Page() {
             </section>
 
             {/* Bottom Section */}
-            <section className="hero-fade-in hero-fade-in-delay-3 mt-auto pt-6">
+            <section className="hero-fade-in hero-fade-in-delay-3 pt-8">
               {/* Quranic verse */}
               <div className="text-center mb-4">
                 <p className="quran-verse text-sm text-white/50 max-w-xs mx-auto">

@@ -2,11 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useState, useRef, useEffect } from "react";
+import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
 
 export default function Footer() {
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language, setLanguage, getLanguageOption } = useLanguage();
   const pathname = usePathname();
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  const currentLang = getLanguageOption(language);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setShowLangMenu(false);
+      }
+    }
+    if (showLangMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showLangMenu]);
 
   // Hide footer on listen page - it has its own controls
   if (pathname === "/listen") {
@@ -14,7 +32,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#032117] mt-auto relative overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
+    <footer className="mt-auto relative z-50 bg-black/20 backdrop-blur-md border-t border-white/5" dir={isRTL ? "rtl" : "ltr"}>
       
       <div className="relative mx-auto max-w-[600px] px-6 py-5">
         <div className="flex items-center justify-center gap-3 sm:gap-5">
@@ -102,6 +120,55 @@ export default function Footer() {
             </svg>
             <span className="text-sm font-medium hidden sm:inline">Get Premium</span>
           </Link>
+
+          {/* Language Selector */}
+          <div ref={langMenuRef} className="relative z-[9999]">
+            <button
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="group flex items-center gap-2 px-3 py-2 rounded-xl text-white/60 hover:text-[#D4AF37] hover:bg-white/5 transition-all duration-200"
+              aria-label="Change language"
+            >
+              <span className="text-base">{currentLang?.flag}</span>
+              <svg
+                className={`w-3 h-3 transition-transform ${showLangMenu ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Language dropdown */}
+            {showLangMenu && (
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-56 max-h-64 overflow-y-auto bg-[#0a1f17] border border-white/10 rounded-xl shadow-2xl shadow-black/50 z-[9999] py-1">
+                <div className="grid grid-cols-2 gap-1 p-2">
+                  {LANGUAGE_OPTIONS.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setShowLangMenu(false);
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                        language === lang.code
+                          ? "bg-[#D4AF37]/15 text-[#E8D5A3]"
+                          : "text-white/70 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <span>{lang.flag}</span>
+                      <span className="truncate">{lang.label}</span>
+                      {language === lang.code && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-[#D4AF37] ml-auto flex-shrink-0">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </footer>

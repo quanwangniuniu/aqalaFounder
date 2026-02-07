@@ -52,8 +52,14 @@ export async function POST(req: Request) {
           const userId = session.metadata.userId;
           const paymentIntentId = session.payment_intent as string;
 
+          // Get email from session or metadata
+          const email = session.customer_email || session.metadata?.userEmail || null;
+          const displayName = session.metadata?.userName || null;
+
           // Upgrade user to premium
           await createOrUpdateSubscriptionServer(userId, {
+            email,
+            displayName,
             stripeCustomerId: session.customer as string,
             stripePaymentId: paymentIntentId,
             plan: "premium",
@@ -61,7 +67,7 @@ export async function POST(req: Request) {
             purchasedAt: new Date(),
           });
 
-          console.log(`✅ User ${userId} upgraded to Premium!`);
+          console.log(`✅ User ${userId} (${email}) upgraded to Premium!`);
         }
         break;
       }

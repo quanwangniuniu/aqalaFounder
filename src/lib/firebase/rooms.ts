@@ -17,14 +17,42 @@ import { db } from "./config";
 
 const COLLECTION = "mosques";
 
+export type RoomType = "partner" | "community";
+
 export type Room = {
   id: string;
   name: string;
+  description?: string;
   ownerId: string;
+  ownerName?: string;
+  ownerPhoto?: string;
   activeTranslatorId: string | null;
   createdAt: Date | null;
   memberCount: number;
+  viewerCount?: number;
   isActive: boolean;
+  roomType: RoomType;
+  // Partner broadcast fields
+  isBroadcast: boolean;
+  partnerId: string | null;
+  partnerName: string | null;
+  broadcastStartedAt: Date | null;
+  // Chat settings
+  chatEnabled?: boolean;
+  donationsEnabled?: boolean;
+};
+
+export type ChatMessage = {
+  id: string;
+  text: string;
+  userId: string;
+  userName: string;
+  userPhoto?: string;
+  isAdmin?: boolean;
+  isPartner?: boolean;
+  isDonation?: boolean;
+  donationAmount?: number;
+  createdAt: Date | null;
 };
 
 export type RoomMemberRole = "translator" | "listener";
@@ -43,21 +71,57 @@ function ensureDb() {
   return db;
 }
 
-export async function createRoom(name: string, ownerId: string): Promise<Room> {
+export interface CreateRoomOptions {
+  name: string;
+  description?: string;
+  ownerId: string;
+  ownerName?: string;
+  ownerPhoto?: string;
+  isPartner?: boolean;
+  chatEnabled?: boolean;
+  donationsEnabled?: boolean;
+}
+
+export async function createRoom(options: CreateRoomOptions): Promise<Room> {
   const firestore = ensureDb();
+  const { 
+    name, 
+    description, 
+    ownerId, 
+    ownerName, 
+    ownerPhoto, 
+    isPartner = false,
+    chatEnabled = true,
+    donationsEnabled = true,
+  } = options;
+  
+  const roomType: RoomType = isPartner ? "partner" : "community";
+  
   const roomRef = await addDoc(collection(firestore, COLLECTION), {
     name: name.trim() || "Untitled Room",
+    description: description?.trim() || null,
     ownerId,
+    ownerName: ownerName || null,
+    ownerPhoto: ownerPhoto || null,
     activeTranslatorId: null,
     createdAt: serverTimestamp(),
     memberCount: 1,
+    viewerCount: 0,
     isActive: true,
+    roomType,
+    isBroadcast: isPartner,
+    partnerId: isPartner ? ownerId : null,
+    partnerName: isPartner ? (ownerName || name) : null,
+    broadcastStartedAt: null,
+    chatEnabled,
+    donationsEnabled,
   });
 
       // Add owner as listener member (not translator by default)
-      // Note: email not available at room creation, will be updated when user joins
       await setDoc(doc(firestore, COLLECTION, roomRef.id, "members", ownerId), {
         userId: ownerId,
+    userName: ownerName || null,
+    userPhoto: ownerPhoto || null,
         role: "listener",
         joinedAt: serverTimestamp(),
         email: null,
@@ -66,11 +130,22 @@ export async function createRoom(name: string, ownerId: string): Promise<Room> {
   return {
     id: roomRef.id,
     name,
+    description,
     ownerId,
+    ownerName,
+    ownerPhoto,
     activeTranslatorId: null,
     createdAt: new Date(),
     memberCount: 1,
+    viewerCount: 0,
     isActive: true,
+    roomType,
+    isBroadcast: isPartner,
+    partnerId: isPartner ? ownerId : null,
+    partnerName: isPartner ? (ownerName || name) : null,
+    broadcastStartedAt: null,
+    chatEnabled,
+    donationsEnabled,
   };
 }
 
@@ -94,14 +169,29 @@ export async function getRoom(roomId: string): Promise<Room | null> {
     return null;
   }
   const data = roomDoc.data() as any;
+  return mapRoomData(roomDoc.id, data);
+}
+
+function mapRoomData(id: string, data: any): Room {
   return {
-    id: roomDoc.id,
+    id,
     name: data.name,
+    description: data.description || undefined,
     ownerId: data.ownerId,
+    ownerName: data.ownerName || undefined,
+    ownerPhoto: data.ownerPhoto || undefined,
     activeTranslatorId: data.activeTranslatorId || null,
     createdAt: data.createdAt?.toDate?.() ?? null,
     memberCount: data.memberCount ?? 0,
+    viewerCount: data.viewerCount ?? 0,
     isActive: data.isActive ?? true,
+    roomType: data.roomType || (data.isBroadcast ? "partner" : "community"),
+    isBroadcast: data.isBroadcast ?? false,
+    partnerId: data.partnerId || null,
+    partnerName: data.partnerName || null,
+    broadcastStartedAt: data.broadcastStartedAt?.toDate?.() ?? null,
+    chatEnabled: data.chatEnabled ?? true,
+    donationsEnabled: data.donationsEnabled ?? true,
   };
 }
 
@@ -111,18 +201,7 @@ export function subscribeRooms(onRooms: (rooms: Room[]) => void, onError?: (err:
   return onSnapshot(
     roomsQuery,
     (snapshot) => {
-      const rooms: Room[] = snapshot.docs.map((d) => {
-        const data = d.data() as any;
-        return {
-          id: d.id,
-          name: data.name,
-          ownerId: data.ownerId,
-          activeTranslatorId: data.activeTranslatorId || null,
-          createdAt: data.createdAt?.toDate?.() ?? null,
-          memberCount: data.memberCount ?? 0,
-          isActive: data.isActive ?? true,
-        };
-      });
+      const rooms: Room[] = snapshot.docs.map((d) => mapRoomData(d.id, d.data()));
       onRooms(rooms);
     },
     (err) => onError?.(err)
@@ -385,6 +464,12 @@ export async function claimLeadReciter(roomId: string, userId: string): Promise<
     }
     
     const roomData = roomSnap.data() as any;
+    
+    // Don't allow claiming lead reciter on broadcast rooms (only partner can control)
+    if (roomData.isBroadcast && roomData.partnerId !== userId) {
+      throw new Error("This is a partner broadcast room. Only the partner can control the broadcast.");
+    }
+    
     const currentTranslatorId = roomData.activeTranslatorId;
     
     // Validate current translator if one exists
@@ -420,3 +505,282 @@ export async function claimLeadReciter(roomId: string, userId: string): Promise<
   });
 }
 
+// ============================================================================
+// PARTNER BROADCAST FUNCTIONS
+// ============================================================================
+
+/**
+ * Create or get the partner's dedicated broadcast room
+ * Partners have one persistent room tied to their mosque
+ */
+export async function getOrCreatePartnerRoom(
+  partnerId: string,
+  partnerName: string,
+  mosqueId: string
+): Promise<Room> {
+  const firestore = ensureDb();
+  
+  // Check if partner already has a room (use mosqueId as the room ID for consistency)
+  const roomRef = doc(firestore, COLLECTION, mosqueId);
+  const roomSnap = await getDoc(roomRef);
+  
+  if (roomSnap.exists()) {
+    return mapRoomData(roomSnap.id, roomSnap.data());
+  }
+  
+  // Create a new partner room
+  const roomData = {
+    name: partnerName,
+    description: null,
+    ownerId: partnerId,
+    ownerName: partnerName,
+    ownerPhoto: null,
+    activeTranslatorId: null,
+    createdAt: serverTimestamp(),
+    memberCount: 0,
+    viewerCount: 0,
+    isActive: true,
+    roomType: "partner" as RoomType,
+    isBroadcast: true,
+    partnerId,
+    partnerName,
+    broadcastStartedAt: null,
+    chatEnabled: true,
+    donationsEnabled: true,
+  };
+  
+  await setDoc(roomRef, roomData);
+  
+  return {
+    id: mosqueId,
+    name: partnerName,
+    ownerId: partnerId,
+    ownerName: partnerName,
+    activeTranslatorId: null,
+    createdAt: new Date(),
+    memberCount: 0,
+    viewerCount: 0,
+    isActive: true,
+    roomType: "partner",
+    isBroadcast: true,
+    partnerId,
+    partnerName,
+    broadcastStartedAt: null,
+    chatEnabled: true,
+    donationsEnabled: true,
+  };
+}
+
+/**
+ * Start a partner broadcast session
+ * Sets the partner as the active translator and marks broadcast as started
+ */
+export async function startPartnerBroadcast(
+  roomId: string,
+  partnerId: string
+): Promise<void> {
+  const firestore = ensureDb();
+  
+  await runTransaction(firestore, async (tx) => {
+    const roomRef = doc(firestore, COLLECTION, roomId);
+    const roomSnap = await tx.get(roomRef);
+    
+    if (!roomSnap.exists()) {
+      throw new Error("Room not found");
+    }
+    
+    const roomData = roomSnap.data() as any;
+    
+    // Verify this is the partner's room
+    if (roomData.partnerId !== partnerId) {
+      throw new Error("You are not authorized to broadcast in this room");
+    }
+    
+    // Add partner as member if not already
+    const memberRef = doc(firestore, COLLECTION, roomId, "members", partnerId);
+    tx.set(memberRef, {
+      userId: partnerId,
+      role: "translator",
+      joinedAt: serverTimestamp(),
+    }, { merge: true });
+    
+    // Start broadcast
+    tx.update(roomRef, {
+      activeTranslatorId: partnerId,
+      broadcastStartedAt: serverTimestamp(),
+      isActive: true,
+    });
+  });
+}
+
+/**
+ * Stop a partner broadcast session
+ * Clears the active translator and broadcast time
+ */
+export async function stopPartnerBroadcast(
+  roomId: string,
+  partnerId: string
+): Promise<void> {
+  const firestore = ensureDb();
+  
+  await runTransaction(firestore, async (tx) => {
+    const roomRef = doc(firestore, COLLECTION, roomId);
+    const roomSnap = await tx.get(roomRef);
+    
+    if (!roomSnap.exists()) {
+      throw new Error("Room not found");
+    }
+    
+    const roomData = roomSnap.data() as any;
+    
+    // Verify this is the partner's room
+    if (roomData.partnerId !== partnerId) {
+      throw new Error("You are not authorized to stop this broadcast");
+    }
+    
+    // Update member role back to listener
+    const memberRef = doc(firestore, COLLECTION, roomId, "members", partnerId);
+    tx.set(memberRef, {
+      role: "listener",
+    }, { merge: true });
+    
+    // Stop broadcast
+    tx.update(roomRef, {
+      activeTranslatorId: null,
+      broadcastStartedAt: null,
+    });
+  });
+}
+
+/**
+ * Subscribe to a specific room for real-time updates
+ */
+export function subscribeRoom(
+  roomId: string,
+  onRoom: (room: Room | null) => void,
+  onError?: (err: any) => void
+) {
+  const firestore = ensureDb();
+  const roomRef = doc(firestore, COLLECTION, roomId);
+  
+  return onSnapshot(
+    roomRef,
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        onRoom(null);
+        return;
+      }
+      
+      onRoom(mapRoomData(snapshot.id, snapshot.data()));
+    },
+    (err) => onError?.(err)
+  );
+}
+
+// ============================================================================
+// CHAT FUNCTIONS
+// ============================================================================
+
+/**
+ * Send a chat message to a room
+ */
+export async function sendChatMessage(
+  roomId: string,
+  userId: string,
+  userName: string,
+  text: string,
+  options?: {
+    userPhoto?: string;
+    isAdmin?: boolean;
+    isPartner?: boolean;
+    isDonation?: boolean;
+    donationAmount?: number;
+  }
+): Promise<ChatMessage> {
+  const firestore = ensureDb();
+  const chatRef = collection(firestore, COLLECTION, roomId, "chat");
+  
+  const messageData = {
+    text: text.trim(),
+    userId,
+    userName,
+    userPhoto: options?.userPhoto || null,
+    isAdmin: options?.isAdmin || false,
+    isPartner: options?.isPartner || false,
+    isDonation: options?.isDonation || false,
+    donationAmount: options?.donationAmount || null,
+    createdAt: serverTimestamp(),
+  };
+  
+  const docRef = await addDoc(chatRef, messageData);
+  
+  return {
+    id: docRef.id,
+    text: text.trim(),
+    userId,
+    userName,
+    userPhoto: options?.userPhoto,
+    isAdmin: options?.isAdmin,
+    isPartner: options?.isPartner,
+    isDonation: options?.isDonation,
+    donationAmount: options?.donationAmount,
+    createdAt: new Date(),
+  };
+}
+
+/**
+ * Subscribe to chat messages for a room
+ */
+export function subscribeChatMessages(
+  roomId: string,
+  onMessages: (messages: ChatMessage[]) => void,
+  onError?: (err: any) => void,
+  limit: number = 100
+) {
+  const firestore = ensureDb();
+  const chatRef = collection(firestore, COLLECTION, roomId, "chat");
+  const chatQuery = query(chatRef, orderBy("createdAt", "asc"));
+  
+  return onSnapshot(
+    chatQuery,
+    (snapshot) => {
+      const messages: ChatMessage[] = snapshot.docs.slice(-limit).map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          text: data.text,
+          userId: data.userId,
+          userName: data.userName,
+          userPhoto: data.userPhoto || undefined,
+          isAdmin: data.isAdmin || false,
+          isPartner: data.isPartner || false,
+          isDonation: data.isDonation || false,
+          donationAmount: data.donationAmount || undefined,
+          createdAt: data.createdAt?.toDate?.() ?? null,
+        };
+      });
+      onMessages(messages);
+    },
+    (err) => onError?.(err)
+  );
+}
+
+/**
+ * Update viewer count for a room (fails silently - not critical)
+ * Note: Real-time member counts are now used for accurate display,
+ * this is just for reference/analytics purposes.
+ */
+export async function updateViewerCount(roomId: string, incrementValue: number): Promise<void> {
+  try {
+    const firestore = ensureDb();
+    const roomRef = doc(firestore, COLLECTION, roomId);
+    
+    // Use atomic increment instead of transactions to avoid Firestore internal state issues
+    const { increment } = await import("firebase/firestore");
+    await updateDoc(roomRef, {
+      viewerCount: increment(incrementValue),
+    });
+  } catch {
+    // Silently fail - viewer count from members collection is the source of truth
+  }
+}
