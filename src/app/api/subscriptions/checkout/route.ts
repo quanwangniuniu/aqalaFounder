@@ -8,6 +8,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-02-24.acacia",
 });
 
+// Map price IDs to plan IDs (use server-side env vars)
+const PRICE_ID_TO_PLAN: Record<string, "free" | "premium"> = {
+  [process.env.STRIPE_PRICE_ID_FREE || ""]: "free",
+  [process.env.STRIPE_PRICE_ID_PREMIUM || ""]: "premium",
+};
+
 export async function POST(req: Request) {
   try {
     if (!process.env.STRIPE_SECRET_KEY) {
@@ -26,24 +32,63 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if user already has premium
-    const existingSubscription = await getSubscriptionServer(userId);
-    if (existingSubscription?.plan === "premium" && existingSubscription?.status === "active") {
+    if (!priceId || typeof priceId !== "string") {
       return NextResponse.json(
-        { error: "You already have premium access!" },
+        { error: "Price ID is required" },
         { status: 400 }
       );
     }
 
+    // Validate priceId matches one of our plans
+    const planId = PRICE_ID_TO_PLAN[priceId];
+    if (!planId) {
+      return NextResponse.json(
+        { error: "Invalid price ID" },
+        { status: 400 }
+      );
+    }
+
+    // Free plan doesn't need Stripe checkout
+    if (planId === "free") {
+      await createOrUpdateSubscriptionServer(userId, {
+        stripeCustomerId: userId, // Use userId as placeholder for free plan
+        plan: "free",
+        status: "active",
+      });
+      return NextResponse.json({ success: true, plan: "free" });
+    }
+
+    // Validate referrer and determine if invite coupon applies
+    let applyCoupon = false;
+    if (
+      referrerId &&
+      typeof referrerId === "string" &&
+      planId === "premium" &&
+      referrerId !== userId
+    ) {
+      const [referrerSub, inviteeSub] = await Promise.all([
+        getSubscriptionServer(referrerId),
+        getSubscriptionServer(userId),
+      ]);
+      if (
+        referrerSub?.plan === "premium" &&
+        (inviteeSub?.plan === "free" || !inviteeSub) &&
+        !inviteeSub?.purchasedAt &&
+        process.env.STRIPE_COUPON_INVITE_10
+      ) {
+        applyCoupon = true;
+      }
+    }
+
     // Get or create Stripe customer
     let customerId: string;
+    const existingSubscription = await getSubscriptionServer(userId);
     
     if (existingSubscription?.stripeCustomerId && existingSubscription.stripeCustomerId !== userId) {
       customerId = existingSubscription.stripeCustomerId;
     } else {
       // Create new Stripe customer
       const customer = await stripe.customers.create({
-        email: userEmail || undefined,
         metadata: {
           userId: userId,
         },
@@ -55,7 +100,6 @@ export async function POST(req: Request) {
         email: userEmail || null,
         displayName: userName || null,
         stripeCustomerId: customerId,
-        stripePaymentId: null,
         plan: "free",
         status: "active",
       });
@@ -76,21 +120,14 @@ export async function POST(req: Request) {
     }
     origin = origin || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-    // Create ONE-TIME payment checkout session with inline price
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment", // One-time payment, not subscription
+    // Create checkout session
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+      mode: "payment",
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Aqala Premium - Ad-Free Forever",
-              description: "One-time payment to remove all ads forever",
-            },
-            unit_amount: 1500, // $15.00 in cents
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -102,11 +139,16 @@ export async function POST(req: Request) {
         userName: userName || "",
         type: "premium_one_time",
       },
-    });
+      ...(applyCoupon && {
+        discounts: [{ coupon: process.env.STRIPE_COUPON_INVITE_10! }],
+      }),
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error("Stripe checkout error:", error);
+    console.error("Stripe subscription checkout error:", error);
     return NextResponse.json(
       { error: "Failed to create checkout session", detail: error?.message },
       { status: 500 }

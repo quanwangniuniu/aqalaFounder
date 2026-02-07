@@ -38,7 +38,7 @@ export default function Footer() {
         <div className="flex items-center justify-center gap-3 sm:gap-5">
           {/* Instagram Link */}
           <a
-            href="https://www.instagram.com/aqala.foundation?igsh=MXJ6cGNvcXdoazJ3aw=="
+            href="https://www.instagram.com/aqala.io/"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-2 px-3 py-2 rounded-xl text-white/60 hover:text-[#D4AF37] hover:bg-white/5 transition-all duration-200"
@@ -118,7 +118,7 @@ export default function Footer() {
                 d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
               />
             </svg>
-            <span className="text-sm font-medium hidden sm:inline">Subscribe</span>
+            <span className="text-sm font-medium hidden sm:inline">Get Premium</span>
           </Link>
 
           {/* Language Selector */}
