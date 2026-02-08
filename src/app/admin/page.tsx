@@ -213,11 +213,7 @@ export default function AdminPortalPage() {
 
   // Forward Firebase liveStream updates to LiveKit
   useEffect(() => {
-    console.log("[Admin] LiveStream forward check:", { isBroadcasting, isLiveKitConnected, mosqueId: partnerInfo?.mosqueId });
     if (!isBroadcasting || !isLiveKitConnected || !partnerInfo?.mosqueId) return;
-
-    console.log("[Admin] Setting up LiveStream forwarding to LiveKit");
-    
     // Import and subscribe to live stream
     const setupLiveStreamForward = async () => {
       const { subscribeLiveStream } = await import("@/lib/firebase/translationHistory");
@@ -225,7 +221,6 @@ export default function AdminPortalPage() {
       const unsubscribe = subscribeLiveStream(
         partnerInfo.mosqueId!,
         (stream) => {
-          console.log("[Admin] LiveStream update:", stream?.isActive ? "active" : "inactive", stream);
           if (stream?.isActive) {
             // Forward translation to LiveKit
             const translationMsg = {
@@ -235,7 +230,6 @@ export default function AdminPortalPage() {
               lang: stream.targetLang || "",
               timestamp: Date.now(),
             };
-            console.log("[Admin] Sending translation to LiveKit:", translationMsg);
             sendMessageRef.current(translationMsg);
             
             // Forward source to LiveKit
@@ -247,7 +241,6 @@ export default function AdminPortalPage() {
                 lang: stream.sourceLang || "",
                 timestamp: Date.now(),
               };
-              console.log("[Admin] Sending source to LiveKit:", sourceMsg);
               sendMessageRef.current(sourceMsg);
             }
           }

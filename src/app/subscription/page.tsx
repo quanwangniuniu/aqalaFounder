@@ -80,6 +80,8 @@ function SubscriptionPageContent() {
           userId: user.uid,
           userEmail: user.email,
           userName: user.displayName,
+          priceId: planConfig.priceId,
+          ...(referrerId && { referrerId }),
         }),
       });
 

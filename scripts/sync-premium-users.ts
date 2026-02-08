@@ -42,8 +42,6 @@ if (getApps().length === 0) {
 const db = getFirestore();
 
 async function syncPremiumUsers() {
-  console.log("🔄 Starting premium user sync...\n");
-
   // Get all subscriptions
   const subscriptionsSnapshot = await db.collection("subscriptions").get();
   
@@ -60,7 +58,6 @@ async function syncPremiumUsers() {
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
-      console.log(`⚠️  User ${userId} - No user document found, skipping`);
       skipped++;
       continue;
     }
@@ -73,15 +70,11 @@ async function syncPremiumUsers() {
         isPremium,
         updatedAt: new Date(),
       });
-      console.log(`✅ User ${userId} - Set isPremium: ${isPremium}`);
       updated++;
     } else {
-      console.log(`⏭️  User ${userId} - Already synced (isPremium: ${isPremium})`);
       skipped++;
     }
   }
-
-  console.log(`\n✨ Done! Updated: ${updated}, Skipped: ${skipped}`);
 }
 
 syncPremiumUsers()

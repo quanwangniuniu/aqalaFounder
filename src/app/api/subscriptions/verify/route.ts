@@ -56,8 +56,6 @@ export async function POST(req: Request) {
       purchasedAt: new Date(),
     });
 
-    console.log(`✅ Manually verified and upgraded user ${userId} to Premium!`);
-
     return NextResponse.json({
       success: true,
       message: "Subscription verified and activated",
