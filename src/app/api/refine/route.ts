@@ -137,7 +137,6 @@ export async function POST(req: Request) {
         // It only returns results when confidence is high
         if (verseResult) {
           verseReference = verseResult.reference;
-          console.log(`[Quran] Matched: "${verseResult.reference}" (confidence: ${verseResult.confidence.toFixed(2)}, consecutive: ${verseResult.longestConsecutive})`);
         }
       } catch (err) {
         // Silently fail - verse reference is optional enhancement

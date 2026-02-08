@@ -66,26 +66,19 @@ export async function POST(req: Request) {
             status: "active",
             purchasedAt: new Date(),
           });
-
-          console.log(`✅ User ${userId} (${email}) upgraded to Premium!`);
         }
         break;
       }
 
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(`💰 Payment succeeded: ${paymentIntent.id}`);
         break;
       }
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(`❌ Payment failed: ${paymentIntent.id}`);
         break;
       }
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });

@@ -214,24 +214,20 @@ export function subscribeRooms(onRooms: (rooms: Room[]) => void, onError?: (err:
 }
 
 export async function joinRoom(roomId: string, userId: string, asTranslator = false, email?: string | null): Promise<void> {
-  console.log(`[JOIN MOSQUE] Starting join process - roomId: ${roomId}, userId: ${userId}, asTranslator: ${asTranslator}`);
   const firestore = ensureDb();
   
   // First, check if user is already a member (outside transaction to avoid conflicts)
   const memberRef = doc(firestore, COLLECTION, roomId, "members", userId);
   const memberSnap = await getDoc(memberRef);
   const alreadyMember = memberSnap.exists();
-  console.log(`[JOIN MOSQUE] Member check - roomId: ${roomId}, userId: ${userId}, alreadyMember: ${alreadyMember}`);
   
   // If already a member and not trying to change role, just return success
   if (alreadyMember && !asTranslator) {
-    console.log(`[JOIN MOSQUE] User already a member - roomId: ${roomId}, userId: ${userId}, skipping join`);
     return; // Already a member, no need to do anything
   }
   
   try {
     await runTransaction(firestore, async (tx) => {
-      console.log(`[JOIN MOSQUE] Starting transaction - roomId: ${roomId}, userId: ${userId}`);
       const roomRef = doc(firestore, COLLECTION, roomId);
       const roomSnap = await tx.get(roomRef);
       if (!roomSnap.exists()) {
@@ -247,11 +243,9 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
       const memberRefInTx = doc(firestore, COLLECTION, roomId, "members", userId);
       const memberSnapInTx = await tx.get(memberRefInTx);
       const alreadyMemberInTx = memberSnapInTx.exists();
-      console.log(`[JOIN MOSQUE] Transaction member check - roomId: ${roomId}, userId: ${userId}, alreadyMemberInTx: ${alreadyMemberInTx}`);
 
       // Only increment member count if not already a member
       const nextMemberCount = alreadyMemberInTx ? roomData.memberCount ?? 1 : (roomData.memberCount ?? 0) + 1;
-      console.log(`[JOIN MOSQUE] Member count update - roomId: ${roomId}, currentCount: ${roomData.memberCount ?? 0}, nextCount: ${nextMemberCount}`);
 
       let nextActiveTranslator = roomData.activeTranslatorId || null;
       if (asTranslator) {
@@ -260,7 +254,6 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
           throw new Error("Translator already active in this room");
         }
         nextActiveTranslator = userId;
-        console.log(`[JOIN MOSQUE] Setting as translator - roomId: ${roomId}, userId: ${userId}`);
       }
 
       // Handle member document creation/update
@@ -273,11 +266,9 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
             updateData.email = email;
           }
           tx.update(memberRefInTx, updateData);
-          console.log(`[JOIN MOSQUE] Member role updated to translator - roomId: ${roomId}, userId: ${userId}`);
         } else if (email !== undefined) {
           // Update email even if not changing role
           tx.update(memberRefInTx, { email });
-          console.log(`[JOIN MOSQUE] Member email updated - roomId: ${roomId}, userId: ${userId}`);
         } else {
           console.log(`[JOIN MOSQUE] Member already exists, no update needed - roomId: ${roomId}, userId: ${userId}`);
         }
@@ -292,7 +283,6 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
           joinedAt: serverTimestamp(),
           email: email || null,
         });
-        console.log(`[JOIN MOSQUE] Member document will be created - roomId: ${roomId}, userId: ${userId}, role: ${asTranslator ? "translator" : "listener"}`);
       }
 
       // Only update room if member count changed or translator status changed
@@ -312,7 +302,6 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
       console.error(`[JOIN MOSQUE] Transaction promise rejected - roomId: ${roomId}, userId: ${userId}, errorCode: ${error?.code}, errorName: ${error?.name}, error:`, error);
       throw error; // Re-throw to be caught by outer catch
     });
-    console.log(`[JOIN MOSQUE] Successfully joined - roomId: ${roomId}, userId: ${userId}, asTranslator: ${asTranslator}`);
   } catch (error: any) {
     console.error(`[JOIN MOSQUE] Transaction error - roomId: ${roomId}, userId: ${userId}, errorCode: ${error?.code}, errorName: ${error?.name}, error:`, error);
     
@@ -324,7 +313,6 @@ export async function joinRoom(roomId: string, userId: string, asTranslator = fa
     
     if (isNowMember) {
       // User is a member (another transaction succeeded), treat as success
-      console.log(`[JOIN MOSQUE] User is a member after error (treated as success) - roomId: ${roomId}, userId: ${userId}, originalErrorCode: ${error?.code}`);
       return;
     }
     

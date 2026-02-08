@@ -166,7 +166,6 @@ export function useLiveKitBroadcast({
         try {
           const decoder = new TextDecoder();
           const message = JSON.parse(decoder.decode(payload)) as BroadcastMessage;
-          console.log("[LiveKit] Data received from", participant?.identity, ":", message);
           onMessageRef.current?.(message);
         } catch (e) {
           console.error("[LiveKit] Failed to parse message:", e);
@@ -259,7 +258,6 @@ export function useLiveKitBroadcast({
   // Send a data message (for broadcaster)
   const sendMessage = useCallback(
     async (message: BroadcastMessage) => {
-      console.log("[LiveKit] sendMessage called:", { hasRoom: !!roomRef.current, isPublisher, message });
       if (!roomRef.current || !isPublisher) {
         console.warn("[LiveKit] Cannot send - room:", !!roomRef.current, "isPublisher:", isPublisher);
         return;
@@ -272,7 +270,6 @@ export function useLiveKitBroadcast({
           data,
           { reliable: true }
         );
-        console.log("[LiveKit] Message published successfully");
       } catch (e: any) {
         console.error("[LiveKit] Failed to send message:", e);
       }
