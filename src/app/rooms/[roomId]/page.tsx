@@ -28,6 +28,7 @@ export default function RoomDetailPage() {
   const router = useRouter();
   const {
     rooms,
+    loading: roomsLoading,
     joinRoom,
     claimLeadReciter,
     validateAndCleanTranslator,
@@ -57,6 +58,7 @@ export default function RoomDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const sessionStartRef = useRef<{ startedAt: number; roomName: string } | null>(null);
   const roomMenuRef = useRef<HTMLDivElement>(null);
+  const hasAttemptedDirectFetch = useRef(false);
 
   const handleDeleteRoom = useCallback(async () => {
     if (!roomId || !user) return;
@@ -116,11 +118,13 @@ export default function RoomDetailPage() {
     setMembers([]);
     setDirectRoom(null);
     sessionStartRef.current = null;
+    hasAttemptedDirectFetch.current = false;
   }, [roomId]);
 
   // Fetch room directly if user is not authenticated
   useEffect(() => {
     if (!user && !roomFromContext && roomId && !roomLoading) {
+      hasAttemptedDirectFetch.current = true;
       setRoomLoading(true);
       getRoom(roomId)
         .then((fetchedRoom) => {
@@ -136,6 +140,19 @@ export default function RoomDetailPage() {
       setRoomLoading(false);
     }
   }, [user, roomFromContext, roomId]);
+
+  // Redirect to list when room was deleted (not found after load)
+  useEffect(() => {
+    if (!roomId) return;
+    const loadingDone = user
+      ? !roomsLoading
+      : hasAttemptedDirectFetch.current
+        ? !roomLoading
+        : !roomsLoading;
+    if (loadingDone && !room) {
+      router.replace("/rooms");
+    }
+  }, [roomId, room, user, roomsLoading, roomLoading, router]);
 
   // Check if activeTranslatorId is valid
   const validTranslatorId = useMemo(() => {

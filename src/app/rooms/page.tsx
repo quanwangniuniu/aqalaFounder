@@ -15,14 +15,17 @@ export default function RoomsPage() {
 
   const isPartner = partnerInfo?.isPartner ?? false;
 
-  // Show ALL rooms; mark which are live (activeTranslatorId + recent lastBroadcastAt)
+  // Show rooms that are live: have active translator (with recent broadcast for partner) OR have at least one member
   const { partnerRooms, communityRooms, liveCount } = useMemo(() => {
     const now = Date.now();
     const INACTIVE_THRESHOLD_MS = 30000; // 30 seconds of no broadcast = inactive
 
-    const isLive = (r: { activeTranslatorId: string | null; lastBroadcastAt: Date | null }) =>
+    const hasActiveTranslator = (r: { activeTranslatorId: string | null; lastBroadcastAt: Date | null }) =>
       !!r.activeTranslatorId &&
       (!r.lastBroadcastAt || now - r.lastBroadcastAt.getTime() <= INACTIVE_THRESHOLD_MS);
+
+    const isLive = (r: { activeTranslatorId: string | null; lastBroadcastAt: Date | null; memberCount?: number }) =>
+      hasActiveTranslator(r) || (r.memberCount ?? 0) >= 1;
 
     const partner = rooms.filter(r => r.isBroadcast === true || r.roomType === "partner");
     const community = rooms.filter(r => r.isBroadcast !== true && r.roomType !== "partner");
@@ -30,13 +33,13 @@ export default function RoomsPage() {
     const sortByRecency = (a: { lastBroadcastAt?: Date | null; createdAt?: Date | null }, b: { lastBroadcastAt?: Date | null; createdAt?: Date | null }) =>
       (b.lastBroadcastAt?.getTime() || b.createdAt?.getTime() || 0) - (a.lastBroadcastAt?.getTime() || a.createdAt?.getTime() || 0);
 
-    const partnerWithLive = partner.sort(sortByRecency).map(r => ({ ...r, _isLive: isLive(r) }));
-    const communityWithLive = community.sort(sortByRecency).map(r => ({ ...r, _isLive: isLive(r) }));
+    const livePartner = partner.filter(isLive).sort(sortByRecency);
+    const liveCommunity = community.filter(isLive).sort(sortByRecency);
 
     return {
-      partnerRooms: partnerWithLive,
-      communityRooms: communityWithLive,
-      liveCount: partnerWithLive.filter(r => r._isLive).length + communityWithLive.filter(r => r._isLive).length,
+      partnerRooms: livePartner,
+      communityRooms: liveCommunity,
+      liveCount: livePartner.length + liveCommunity.length,
     };
   }, [rooms]);
 
@@ -291,12 +294,6 @@ function RoomCard({ room }: { room: any }) {
                 <p className="text-xs text-white/40 line-clamp-1 mt-0.5">{room.description}</p>
               )}
             </div>
-            {room._isLive && (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-semibold shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                LIVE
-              </span>
-            )}
           </div>
           
           <div className="flex items-center gap-4 mt-2">
@@ -343,12 +340,6 @@ function CommunityRoomCard({ room }: { room: any }) {
             <p className="font-medium text-sm truncate transition-colors text-white group-hover:text-emerald-400">
               {room.name}
             </p>
-            {room._isLive && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold shrink-0">
-                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                LIVE
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-xs text-white/40">

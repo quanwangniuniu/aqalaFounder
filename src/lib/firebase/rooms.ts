@@ -89,9 +89,6 @@ export interface CreateRoomOptions {
 
 export async function createRoom(options: CreateRoomOptions): Promise<Room> {
   const firestore = ensureDb();
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rooms.ts:createRoom',message:'createRoom called',data:{name:options.name,ownerId:options.ownerId,isPartner:options.isPartner},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
-  // #endregion
   const {
     name, 
     description, 
@@ -135,9 +132,6 @@ export async function createRoom(options: CreateRoomOptions): Promise<Room> {
         email: null,
       });
 
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rooms.ts:createRoom',message:'createRoom succeeded',data:{roomId:roomRef.id,name},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
-  // #endregion
   return {
     id: roomRef.id,
     name,
@@ -172,6 +166,26 @@ export async function deleteRoom(roomId: string, requesterId: string): Promise<v
     throw new Error("Only the room owner can delete this room");
   }
   await deleteDoc(doc(firestore, COLLECTION, roomId));
+}
+
+/**
+ * Delete room document only when it is empty and has no active translator.
+ * Used after clearTranslator or leaveRoom. Keeps rooms with at least one member.
+ * Firestore rule must allow delete when activeTranslatorId == null.
+ */
+export async function deleteRoomIfNotLive(roomId: string): Promise<void> {
+  const firestore = ensureDb();
+  const roomRef = doc(firestore, COLLECTION, roomId);
+  try {
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data() as any;
+    if (data.activeTranslatorId != null) return;
+    if ((data.memberCount ?? 0) > 0) return; // keep room while anyone is in it
+    await deleteDoc(roomRef);
+  } catch {
+    // Ignore (e.g. permission-denied, already deleted)
+  }
 }
 
 export interface UpdateRoomOptions {
@@ -406,13 +420,11 @@ export async function leaveRoom(roomId: string, userId: string): Promise<void> {
       
       if (roomData.activeTranslatorId === userId) {
         updates.activeTranslatorId = null;
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rooms.ts:leaveRoom',message:'leaveRoom cleared activeTranslatorId',data:{roomId,userId},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
-        // #endregion
       }
 
       tx.update(roomRef, updates);
     });
+    await deleteRoomIfNotLive(roomId);
   } catch (error: any) {
     // Silently handle errors - leaving room is not critical
     console.error(`[LEAVE ROOM] Error - roomId: ${roomId}, userId: ${userId}:`, error);
@@ -459,6 +471,7 @@ export async function clearTranslator(roomId: string, userId: string): Promise<v
       { merge: true }
     );
   });
+  await deleteRoomIfNotLive(roomId);
 }
 
 export function subscribeRoomMembers(

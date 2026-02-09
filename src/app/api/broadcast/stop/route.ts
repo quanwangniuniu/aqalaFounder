@@ -78,11 +78,14 @@ export async function POST(req: Request) {
       broadcastStartedAt: null,
     });
 
-    // Update member role back to listener
+    // Update member role back to listener before deleting room
     const memberRef = db.collection("mosques").doc(roomId).collection("members").doc(userId);
     await memberRef.set({
       role: "listener",
     }, { merge: true });
+
+    // Delete room when not live (subcollections remain; no cascade in Firestore)
+    await roomRef.delete();
 
     return NextResponse.json({ 
       success: true, 

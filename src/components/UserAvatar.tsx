@@ -27,7 +27,8 @@ export default function UserAvatar({ className = "" }: UserAvatarProps) {
   const displayName = user.username 
     ? `@${user.username}` 
     : user.displayName || user.email?.split("@")[0] || "User";
-  const showImage = user.photoURL && !imageError;
+  const photoURL = user.photoURL ?? undefined;
+  const showImage = Boolean(photoURL && !imageError);
 
   return (
     <Link
@@ -35,9 +36,9 @@ export default function UserAvatar({ className = "" }: UserAvatarProps) {
       className={`relative flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white font-medium text-sm hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 focus:ring-offset-[#032117] overflow-hidden ${className}`}
       aria-label="View profile"
     >
-      {showImage ? (
+      {showImage && photoURL ? (
         <Image
-          src={user.photoURL}
+          src={photoURL}
           alt={displayName}
           width={40}
           height={40}
