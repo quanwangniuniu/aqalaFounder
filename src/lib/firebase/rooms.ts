@@ -575,24 +575,40 @@ export async function claimLeadReciter(roomId: string, userId: string): Promise<
       // If current translator is not a member, we'll clear it and allow claim
     }
     
-    // Verify user is a member
+    // Verify user is a member (or allow room owner/partner to claim and be added as member)
     const memberRef = doc(firestore, COLLECTION, roomId, "members", userId);
     const memberSnap = await tx.get(memberRef);
+    const isOwnerOrPartner =
+      userId === roomData.ownerId || userId === roomData.partnerId;
+
     if (!memberSnap.exists()) {
-      throw new Error("You must be a member of the mosque to become lead reciter");
-    }
-    
-    // Set user as active translator
-    tx.update(roomRef, { activeTranslatorId: userId });
-    tx.set(
-      memberRef,
-      {
+      if (!isOwnerOrPartner) {
+        throw new Error("You must be a member of the mosque to become lead reciter");
+      }
+      // Owner or partner: create member doc and increment memberCount
+      tx.update(roomRef, {
+        activeTranslatorId: userId,
+        memberCount: (roomData.memberCount ?? 0) + 1,
+      });
+      tx.set(memberRef, {
         userId,
         role: "translator",
         joinedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+        email: null,
+      });
+    } else {
+      // Already a member: set as active translator
+      tx.update(roomRef, { activeTranslatorId: userId });
+      tx.set(
+        memberRef,
+        {
+          userId,
+          role: "translator",
+          joinedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
   });
 }
 
