@@ -15,36 +15,35 @@ export default function RoomsPage() {
 
   const isPartner = partnerInfo?.isPartner ?? false;
 
-  // Only show LIVE rooms - filter by activeTranslatorId and recent activity
-  const { livePartnerRooms, liveCommunityRooms } = useMemo(() => {
+  // Show rooms that are live: have active translator (with recent broadcast for partner) OR have at least one member
+  const { partnerRooms, communityRooms, liveCount } = useMemo(() => {
     const now = Date.now();
     const INACTIVE_THRESHOLD_MS = 30000; // 30 seconds of no broadcast = inactive
-    
-    // Only get rooms that are currently live AND have recent activity
-    const liveRooms = rooms.filter(r => {
-      if (!r.activeTranslatorId) return false;
-      
-      // Check if room has had recent broadcast activity
-      if (r.lastBroadcastAt) {
-        const timeSinceLastBroadcast = now - r.lastBroadcastAt.getTime();
-        if (timeSinceLastBroadcast > INACTIVE_THRESHOLD_MS) {
-          return false; // Room is stale/inactive
-        }
-      }
-      
-      return true;
-    });
-    
-    const partner = liveRooms.filter(r => r.isBroadcast === true || r.roomType === "partner");
-    const community = liveRooms.filter(r => r.isBroadcast !== true && r.roomType !== "partner");
-    
+
+    const hasActiveTranslator = (r: { activeTranslatorId: string | null; lastBroadcastAt: Date | null }) =>
+      !!r.activeTranslatorId &&
+      (!r.lastBroadcastAt || now - r.lastBroadcastAt.getTime() <= INACTIVE_THRESHOLD_MS);
+
+    const isLive = (r: { activeTranslatorId: string | null; lastBroadcastAt: Date | null; memberCount?: number }) =>
+      hasActiveTranslator(r) || (r.memberCount ?? 0) >= 1;
+
+    const partner = rooms.filter(r => r.isBroadcast === true || r.roomType === "partner");
+    const community = rooms.filter(r => r.isBroadcast !== true && r.roomType !== "partner");
+
+    const sortByRecency = (a: { lastBroadcastAt?: Date | null; createdAt?: Date | null }, b: { lastBroadcastAt?: Date | null; createdAt?: Date | null }) =>
+      (b.lastBroadcastAt?.getTime() || b.createdAt?.getTime() || 0) - (a.lastBroadcastAt?.getTime() || a.createdAt?.getTime() || 0);
+
+    const livePartner = partner.filter(isLive).sort(sortByRecency);
+    const liveCommunity = community.filter(isLive).sort(sortByRecency);
+
     return {
-      livePartnerRooms: partner.sort((a, b) => (b.lastBroadcastAt?.getTime() || b.createdAt?.getTime() || 0) - (a.lastBroadcastAt?.getTime() || a.createdAt?.getTime() || 0)),
-      liveCommunityRooms: community.sort((a, b) => (b.lastBroadcastAt?.getTime() || b.createdAt?.getTime() || 0) - (a.lastBroadcastAt?.getTime() || a.createdAt?.getTime() || 0)),
+      partnerRooms: livePartner,
+      communityRooms: liveCommunity,
+      liveCount: livePartner.length + liveCommunity.length,
     };
   }, [rooms]);
 
-  const totalLiveRooms = livePartnerRooms.length + liveCommunityRooms.length;
+  const totalLiveRooms = liveCount;
 
   return (
     <div className="min-h-screen text-white">
@@ -88,7 +87,7 @@ export default function RoomsPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-xs font-medium text-white/60">{totalLiveRooms} {totalLiveRooms === 1 ? "room" : "rooms"} live now</span>
+              <span className="text-xs font-medium text-white/60">{liveCount} {liveCount === 1 ? "room" : "rooms"} live now</span>
       </div>
 
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
@@ -102,11 +101,11 @@ export default function RoomsPage() {
           {/* Quick stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="text-center p-4 rounded-2xl bg-gradient-to-br from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/20">
-              <p className="text-2xl font-bold text-[#D4AF37]">{livePartnerRooms.length}</p>
+              <p className="text-2xl font-bold text-[#D4AF37]">{partnerRooms.length}</p>
               <p className="text-xs text-white/40 mt-1">Partner Broadcasts</p>
             </div>
             <div className="text-center p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20">
-              <p className="text-2xl font-bold text-emerald-400">{liveCommunityRooms.length}</p>
+              <p className="text-2xl font-bold text-emerald-400">{communityRooms.length}</p>
               <p className="text-xs text-white/40 mt-1">Community Sessions</p>
             </div>
               </div>
@@ -126,8 +125,8 @@ export default function RoomsPage() {
           </div>
         )}
 
-        {/* Live Partner Broadcasts */}
-        {!loading && livePartnerRooms.length > 0 && (
+        {/* Partner Broadcasts */}
+        {!loading && partnerRooms.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center">
@@ -144,7 +143,7 @@ export default function RoomsPage() {
             </div>
 
           <div className="space-y-3">
-              {livePartnerRooms.map((room) => (
+              {partnerRooms.map((room) => (
                 <RoomCard key={room.id} room={room} />
             ))}
           </div>
@@ -152,12 +151,12 @@ export default function RoomsPage() {
         )}
 
         {/* Ad Banner - Between sections */}
-        {!loading && totalLiveRooms > 0 && (
+        {!loading && (partnerRooms.length > 0 || communityRooms.length > 0) && (
           <AdBanner className="rounded-xl overflow-hidden" />
         )}
 
-        {/* Live Community Rooms */}
-        {!loading && liveCommunityRooms.length > 0 && (
+        {/* Community Rooms */}
+        {!loading && communityRooms.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3">
@@ -177,15 +176,15 @@ export default function RoomsPage() {
                     </div>
             
             <div className="space-y-3">
-              {liveCommunityRooms.map((room) => (
+              {communityRooms.map((room) => (
                 <CommunityRoomCard key={room.id} room={room} />
               ))}
             </div>
           </section>
         )}
 
-        {/* Empty state - no live rooms */}
-        {!loading && totalLiveRooms === 0 && (
+        {/* Empty state - no rooms */}
+        {!loading && partnerRooms.length === 0 && communityRooms.length === 0 && (
           <div className="text-center py-16">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-white/5 flex items-center justify-center mb-6">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/20">
@@ -295,10 +294,6 @@ function RoomCard({ room }: { room: any }) {
                 <p className="text-xs text-white/40 line-clamp-1 mt-0.5">{room.description}</p>
               )}
             </div>
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-semibold shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-              LIVE
-            </span>
           </div>
           
           <div className="flex items-center gap-4 mt-2">
@@ -345,10 +340,6 @@ function CommunityRoomCard({ room }: { room: any }) {
             <p className="font-medium text-sm truncate transition-colors text-white group-hover:text-emerald-400">
               {room.name}
             </p>
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold shrink-0">
-              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE
-            </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-xs text-white/40">

@@ -7,6 +7,11 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadProfileImage } from "@/lib/firebase/storage";
 import { isUsernameAvailable, getUserProfile } from "@/lib/firebase/users";
+import {
+  getTitleFromLevel,
+  getXpProgress,
+  formatListeningTime,
+} from "@/lib/firebase/listenerStats";
 import { subscribeToUserCounts } from "@/lib/firebase/follows";
 import { validateUsername } from "@/utils/profanityFilter";
 
@@ -28,6 +33,12 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [counts, setCounts] = useState({ followerCount: 0, followingCount: 0 });
+  const [listenerStats, setListenerStats] = useState({
+    totalListeningMinutes: 0,
+    xp: 0,
+    level: 1,
+    listenerTitle: "",
+  });
   const [initialSettings, setInitialSettings] = useState({
     username: "",
     bio: "",
@@ -52,6 +63,12 @@ export default function ProfilePage() {
         setBio(profile.bio || "");
         setPrivateHistory(profile.privateHistory);
         setPrivateFollowers(profile.privateFollowers);
+        setListenerStats({
+          totalListeningMinutes: profile.totalListeningMinutes ?? 0,
+          xp: profile.xp ?? 0,
+          level: profile.level ?? 1,
+          listenerTitle: profile.listenerTitle ?? "",
+        });
         setInitialSettings({
           username: profile.username || "",
           bio: profile.bio || "",
@@ -306,6 +323,30 @@ export default function ProfilePage() {
               </p>
               <p className="text-xs text-white/50">Following</p>
             </Link>
+          </div>
+
+          {/* Listening Stats */}
+          <div className="mt-6 w-full max-w-xs mx-auto p-4 bg-white/5 border border-white/10 rounded-xl">
+            <h3 className="text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
+              Listening Stats
+            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-white/70">
+                {listenerStats.listenerTitle || getTitleFromLevel(listenerStats.level)}
+              </span>
+              <span className="text-sm font-medium text-cyan-400">Level {listenerStats.level}</span>
+            </div>
+            <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-500"
+                style={{
+                  width: `${getXpProgress(listenerStats.xp).percent}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs text-white/40">
+              {formatListeningTime(listenerStats.totalListeningMinutes)} listened
+            </p>
           </div>
         </div>
 

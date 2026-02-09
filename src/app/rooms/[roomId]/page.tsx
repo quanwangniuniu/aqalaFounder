@@ -12,10 +12,15 @@ import {
   Room,
   leaveRoom,
 } from "@/lib/firebase/rooms";
+import {
+  startListeningSession,
+  recordListeningSession,
+} from "@/lib/firebase/listenerStats";
 import ClientApp from "@/app/client-app";
 import LiveTranslationView from "@/components/LiveTranslationView";
 import LiveKitListener from "@/components/LiveKitListener";
 import LiveChat from "@/components/LiveChat";
+import EditRoomModal from "@/components/EditRoomModal";
 
 export default function RoomDetailPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -23,10 +28,12 @@ export default function RoomDetailPage() {
   const router = useRouter();
   const {
     rooms,
+    loading: roomsLoading,
     joinRoom,
     claimLeadReciter,
     validateAndCleanTranslator,
     releaseTranslator,
+    deleteRoom,
   } = useRooms();
 
   const roomFromContext = useMemo(
@@ -45,13 +52,52 @@ export default function RoomDetailPage() {
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [showChat, setShowChat] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [showRoomMenu, setShowRoomMenu] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const sessionStartRef = useRef<{ startedAt: number; roomName: string } | null>(null);
+  const roomMenuRef = useRef<HTMLDivElement>(null);
+  const hasAttemptedDirectFetch = useRef(false);
 
-  // Cleanup: leave room on unmount (removes from members, decrements memberCount)
+  const handleDeleteRoom = useCallback(async () => {
+    if (!roomId || !user) return;
+    setIsDeleting(true);
+    try {
+      await deleteRoom(roomId);
+      router.push("/rooms");
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : "Failed to delete room");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setShowRoomMenu(false);
+    }
+  }, [roomId, user, deleteRoom, router]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (roomMenuRef.current && !roomMenuRef.current.contains(e.target as Node)) {
+        setShowRoomMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Cleanup: record listening session, then leave room on unmount
   useEffect(() => {
     if (!roomId || !user) return;
-    
+
     return () => {
-      // Leave room on unmount - this properly decrements memberCount
+      const session = sessionStartRef.current;
+      if (session) {
+        const durationMinutes = (Date.now() - session.startedAt) / 60000;
+        recordListeningSession(user.uid, roomId, session.roomName, durationMinutes).catch(
+          (err) => console.error("[ListenerStats] Failed to record session:", err)
+        );
+        sessionStartRef.current = null;
+      }
       leaveRoom(roomId, user.uid);
     };
   }, [roomId, user]);
@@ -71,11 +117,14 @@ export default function RoomDetailPage() {
     setRole(null);
     setMembers([]);
     setDirectRoom(null);
+    sessionStartRef.current = null;
+    hasAttemptedDirectFetch.current = false;
   }, [roomId]);
 
   // Fetch room directly if user is not authenticated
   useEffect(() => {
     if (!user && !roomFromContext && roomId && !roomLoading) {
+      hasAttemptedDirectFetch.current = true;
       setRoomLoading(true);
       getRoom(roomId)
         .then((fetchedRoom) => {
@@ -91,6 +140,19 @@ export default function RoomDetailPage() {
       setRoomLoading(false);
     }
   }, [user, roomFromContext, roomId]);
+
+  // Redirect to list when room was deleted (not found after load)
+  useEffect(() => {
+    if (!roomId) return;
+    const loadingDone = user
+      ? !roomsLoading
+      : hasAttemptedDirectFetch.current
+        ? !roomLoading
+        : !roomsLoading;
+    if (loadingDone && !room) {
+      router.replace("/rooms");
+    }
+  }, [roomId, room, user, roomsLoading, roomLoading, router]);
 
   // Check if activeTranslatorId is valid
   const validTranslatorId = useMemo(() => {
@@ -153,12 +215,22 @@ export default function RoomDetailPage() {
       try {
         await joinRoom(roomId, false);
         if (isMounted) {
+          const roomName = room?.partnerName || room?.name || roomId;
+          sessionStartRef.current = {
+            startedAt: startListeningSession(),
+            roomName,
+          };
           setRole("listener");
           setJoined(true);
         }
       } catch (err: any) {
         if (err?.code === "already-exists" || err?.message?.includes("already-exists")) {
           if (isMounted) {
+            const roomName = room?.partnerName || room?.name || roomId;
+            sessionStartRef.current = {
+              startedAt: startListeningSession(),
+              roomName,
+            };
             setRole("listener");
             setJoined(true);
           }
@@ -293,6 +365,45 @@ export default function RoomDetailPage() {
                 </svg>
                 <span className="text-xs font-medium">Chat</span>
               </button>
+            )}
+            {isRoomOwner && (
+              <div className="relative" ref={roomMenuRef}>
+                <button
+                  onClick={() => setShowRoomMenu(!showRoomMenu)}
+                  className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                  aria-label="Room settings"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </button>
+                {showRoomMenu && (
+                  <div className="absolute right-0 top-full mt-1 py-1 w-48 rounded-xl bg-[#0d1117] border border-white/10 shadow-xl z-50">
+                    <button
+                      onClick={() => { setShowEditModal(true); setShowRoomMenu(false); }}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Edit Room
+                    </button>
+                    <button
+                      onClick={() => { setShowDeleteConfirm(true); setShowRoomMenu(false); }}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                      Delete Room
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -454,6 +565,49 @@ export default function RoomDetailPage() {
             className="flex-1"
             hideHeader
           />
+        </div>
+      )}
+
+      {/* Edit Room Modal */}
+      {showEditModal && room && (
+        <EditRoomModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          room={room}
+        />
+      )}
+
+      {/* Delete Room Confirmation */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
+          <div className="relative w-full max-w-sm rounded-2xl bg-[#0d1117] border border-white/10 p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-white mb-2">Delete Room</h3>
+            <p className="text-sm text-white/60 mb-6">This will permanently delete the room and all its data. This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => !isDeleting && setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 px-4 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteRoom}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 px-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

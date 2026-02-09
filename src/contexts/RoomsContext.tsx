@@ -6,6 +6,7 @@ import {
   clearTranslator,
   createRoom as createRoomApi,
   deleteRoom as deleteRoomApi,
+  updateRoom as updateRoomApi,
   joinRoom,
   setTranslator,
   subscribeRooms,
@@ -23,6 +24,7 @@ type RoomsContextType = {
   error: string | null;
   createRoom: (name: string) => Promise<void>;
   deleteRoom: (roomId: string) => Promise<void>;
+  updateRoom: (roomId: string, options: { name?: string; description?: string; chatEnabled?: boolean; donationsEnabled?: boolean }) => Promise<void>;
   joinRoom: (roomId: string, asTranslator?: boolean) => Promise<void>;
   claimTranslator: (roomId: string) => Promise<void>;
   claimLeadReciter: (roomId: string) => Promise<void>;
@@ -99,6 +101,11 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
         const u = requireUser();
         setError(null);
         await deleteRoomApi(roomId, u.uid);
+      },
+      async updateRoom(roomId: string, options: { name?: string; description?: string; chatEnabled?: boolean; donationsEnabled?: boolean }) {
+        const u = requireUser();
+        setError(null);
+        await updateRoomApi(roomId, u.uid, options);
       },
       async joinRoom(roomId: string, asTranslator = false) {
         const u = requireUser();

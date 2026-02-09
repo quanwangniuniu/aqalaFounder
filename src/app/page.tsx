@@ -1,4 +1,6 @@
 "use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -13,6 +15,13 @@ export default function Page() {
   const { nextPrayer, loading: prayerLoading } = usePrayer();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, showAds } = useSubscription();
+  const [avatarError, setAvatarError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.uid, user?.photoURL]);
+
+  const showAvatar = user?.photoURL && !avatarError;
 
   return (
     <div className="relative min-h-screen overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
@@ -56,16 +65,19 @@ export default function Page() {
                     href={`/user/${user.uid}`}
                     className="hero-fade-in flex items-center gap-2 px-2 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all"
                 >
-                    {user.photoURL ? (
-                      <img
+                    {showAvatar && user.photoURL ? (
+                      <Image
                         src={user.photoURL}
                         alt="Profile"
+                        width={32}
+                        height={32}
                         className="w-8 h-8 rounded-full object-cover"
+                        onError={() => setAvatarError(true)}
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37]/30 to-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] text-sm font-semibold">
                         {(user.username || user.displayName || user.email || "U")[0].toUpperCase()}
-                  </div>
+                      </div>
                     )}
                     <div className="pr-1">
                       <p className="text-xs font-medium text-white leading-tight">

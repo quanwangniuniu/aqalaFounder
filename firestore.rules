@@ -1,0 +1,180 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is mosque owner or admin
+    function isMosqueOwnerOrAdmin(mosqueId) {
+      let mosque = get(/databases/$(database)/documents/mosques/$(mosqueId));
+      return mosque.data.ownerId == request.auth.uid 
+        || (mosque.data.admins != null && request.auth.uid in mosque.data.admins);
+    }
+    
+    function isMosqueMember(mosqueId) {
+      return exists(/databases/$(database)/documents/mosques/$(mosqueId)/members/$(request.auth.uid));
+    }
+
+    // Reviews
+    match /reviews/{reviewId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Subscriptions
+    match /subscriptions/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Users
+    match /users/{userId} {
+      // Anyone can read user profiles (for viewing profiles)
+      allow read: if true;
+      
+      // Allow user to update their own profile
+      // OR allow any authenticated user to update ONLY followerCount/followingCount
+      allow write: if request.auth != null 
+        && (request.auth.uid == userId 
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount', 'followingCount']));
+      
+      match /translations/{translationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Followers subcollection - who follows this user
+      match /followers/{followerId} {
+        allow read: if true;
+        allow create: if request.auth != null && request.auth.uid == followerId;
+        allow delete: if request.auth != null && request.auth.uid == followerId;
+        allow update: if false;
+      }
+      
+      // Following subcollection - who this user follows
+      match /following/{followingId} {
+        allow read: if true;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
+      }
+      
+      // Room history subcollection
+      match /roomHistory/{historyId} {
+        allow read: if true;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow update, delete: if false;
+      }
+    }
+
+    // Follows collection - social following system (legacy/alternative)
+    match /follows/{followId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null 
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followerId != request.resource.data.followingId;
+      allow delete: if request.auth != null 
+        && resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // Conversations (private messages)
+    match /conversations/{conversationId} {
+      // Only participants can read conversations
+      allow read: if request.auth != null 
+        && request.auth.uid in resource.data.participants;
+      
+      // Any authenticated user can create a conversation if they're a participant
+      allow create: if request.auth != null 
+        && request.auth.uid in request.resource.data.participants;
+      
+      // Only participants can update (for lastMessage, unreadCount, etc.)
+      allow update: if request.auth != null 
+        && request.auth.uid in resource.data.participants;
+      
+      allow delete: if false;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if request.auth != null 
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if request.auth != null 
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // Mosques (rooms)
+    match /mosques/{mosqueId} {
+      allow read: if true;
+      allow create: if request.auth != null 
+        && request.resource.data.ownerId == request.auth.uid;
+      
+      // Allow updates: owner/admin can do anything; any authenticated user can update join/leave fields
+      allow update: if (request.auth != null 
+        && (resource.data.ownerId == request.auth.uid 
+            || (resource.data.admins != null && request.auth.uid in resource.data.admins)))
+        || (request.auth != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewerCount', 'memberCount', 'activeTranslatorId']));
+      
+      allow delete: if (request.auth != null && resource.data.ownerId == request.auth.uid)
+        || (request.auth != null && resource.data.activeTranslatorId == null);
+
+      // Members subcollection
+      match /members/{userId} {
+        allow read: if true;
+        allow create, update: if request.auth != null && request.auth.uid == userId;
+        allow delete: if request.auth != null 
+          && (request.auth.uid == userId || isMosqueOwnerOrAdmin(mosqueId));
+      }
+
+      // Translation history subcollection
+      match /translations/{translationId} {
+        allow read: if true;
+        allow create: if request.auth != null 
+          && request.resource.data.translatorId == request.auth.uid;
+        allow update: if request.auth != null 
+          && resource.data.translatorId == request.auth.uid;
+        allow delete: if request.auth != null 
+          && (resource.data.translatorId == request.auth.uid || isMosqueOwnerOrAdmin(mosqueId));
+      }
+
+      // Live stream subcollection - anyone can read, owner/admin or active translator can write
+      match /liveStream/{docId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+
+      // Chat subcollection
+      match /chat/{messageId} {
+        allow read: if true;
+        allow create: if request.auth != null 
+          && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if request.auth != null 
+          && (resource.data.userId == request.auth.uid || isMosqueOwnerOrAdmin(mosqueId));
+      }
+    }
+    
+    // Rooms collection
+    match /rooms/{roomId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if (request.auth != null && resource.data.ownerId == request.auth.uid)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewerCount', 'listenerCount', 'memberCount', 'activeTranslatorId', 'lastBroadcastAt']);
+      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      
+      // Members subcollection
+      match /members/{userId} {
+        allow read: if true;
+        allow create, update: if request.auth != null && request.auth.uid == userId;
+        allow delete: if request.auth != null 
+          && (request.auth.uid == userId || get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerId == request.auth.uid);
+      }
+      
+      match /chat/{messageId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+      }
+    }
+  }
+}

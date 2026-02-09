@@ -107,6 +107,8 @@ export default function LiveChat({
           isAdmin: user.admin || false,
           isPartner: user.uid === ownerId && isPartnerRoom,
           isPremium,
+          listenerLevel: user.level,
+          listenerTitle: user.listenerTitle,
         }
       );
       setNewMessage("");
@@ -146,6 +148,8 @@ export default function LiveChat({
           isPartner: false,
           isDonation: true,
           donationAmount: amount,
+          listenerLevel: user.level,
+          listenerTitle: user.listenerTitle,
         }
       );
       setShowDonation(false);
@@ -316,6 +320,11 @@ export default function LiveChat({
                           <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
                         </svg>
                         PRO
+                      </span>
+                    )}
+                    {msg.listenerTitle && !msg.isAdmin && !msg.isPartner && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">
+                        {msg.listenerTitle}
                       </span>
                     )}
                     {msg.isDonation && (

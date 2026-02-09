@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getUserProfile, UserProfile, getUserRoomHistory, RoomHistoryEntry } from "@/lib/firebase/users";
+import { getTitleFromLevel, getXpProgress, formatListeningTime } from "@/lib/firebase/listenerStats";
 import { subscribeToUserCounts, getFollowers, getFollowing, getSuggestedUsers, FollowUser } from "@/lib/firebase/follows";
 import FollowButton from "@/components/FollowButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -294,7 +295,7 @@ export default function UserProfilePage() {
       {/* Profile Header */}
       <div className="max-w-lg mx-auto px-4 pt-6 pb-4">
         <div className="flex items-start gap-4">
-          {/* Avatar */}
+          {/* Left column: Avatar */}
           <div className="flex-shrink-0">
             {profile.photoURL ? (
               <Image
@@ -311,41 +312,56 @@ export default function UserProfilePage() {
             )}
           </div>
 
-          {/* Stats */}
-          <div className="flex-1 flex items-center justify-around pt-2">
-            <button
-              onClick={() => setActiveTab("history")}
-              className="text-center"
-            >
-              <p className="text-xl font-bold">{roomHistory.length || 0}</p>
-              <p className="text-xs text-white/50">Rooms</p>
-            </button>
-            <button
-              onClick={() => setActiveTab("followers")}
-              className="text-center"
-            >
-              <p className="text-xl font-bold">{counts.followerCount}</p>
-              <p className="text-xs text-white/50">Followers</p>
-            </button>
-            <button
-              onClick={() => setActiveTab("following")}
-              className="text-center"
-            >
-              <p className="text-xl font-bold">{counts.followingCount}</p>
-              <p className="text-xs text-white/50">Following</p>
-            </button>
+          {/* Right column: Stats row + XP section */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Row 1: Rooms, Followers, Following */}
+            <div className="flex items-center justify-around">
+              <button
+                onClick={() => setActiveTab("history")}
+                className="text-center"
+              >
+                <p className="text-xl font-bold">{roomHistory.length || 0}</p>
+                <p className="text-xs text-white/50">Rooms</p>
+              </button>
+              <button
+                onClick={() => setActiveTab("followers")}
+                className="text-center"
+              >
+                <p className="text-xl font-bold">{counts.followerCount}</p>
+                <p className="text-xs text-white/50">Followers</p>
+              </button>
+              <button
+                onClick={() => setActiveTab("following")}
+                className="text-center"
+              >
+                <p className="text-xl font-bold">{counts.followingCount}</p>
+                <p className="text-xs text-white/50">Following</p>
+              </button>
+            </div>
+            {/* Row 2: XP section - same width as stats row */}
+            <div className="w-full p-4 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-white/70">
+                  {profile.listenerTitle || getTitleFromLevel(profile.level ?? 1)}
+                </span>
+                <span className="text-sm font-medium text-cyan-400">
+                  Level {profile.level ?? 1} ({formatListeningTime(profile.totalListeningMinutes ?? 0)} listened)
+                </span>
+              </div>
+              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${getXpProgress(profile.xp ?? 0).percent}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Name & Bio */}
         <div className="mt-4">
-          <h2 className="font-semibold">{displayName}</h2>
-          {profile.username && (
-            <p className="text-white/50 text-sm">@{profile.username}</p>
-          )}
-          {profile.bio && (
-            <p className="text-sm text-white/70 mt-2">{profile.bio}</p>
-          )}
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mt-2">
             {profile.admin && (
@@ -376,7 +392,7 @@ export default function UserProfilePage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-1">
           {isOwnProfile ? (
             <>
               <Link
