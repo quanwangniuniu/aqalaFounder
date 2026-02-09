@@ -77,7 +77,9 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
     privateHistory: data.privateHistory || false,
     privateFollowers: data.privateFollowers || false,
     isPremium: data.isPremium || false,
-    totalListeningMinutes: data.totalListeningMinutes ?? 0,
+    totalListeningMinutes:
+      (data.totalListeningSeconds ?? (data.totalListeningMinutes ?? 0) * 60) /
+      60,
     xp: data.xp ?? 0,
     level: data.level ?? 1,
     listenerTitle: data.listenerTitle ?? "",
@@ -175,6 +177,7 @@ export async function createOrUpdateUserProfile(
       followingCount: 0,
       privateHistory: false,
       privateFollowers: false,
+      totalListeningSeconds: 0,
       totalListeningMinutes: 0,
       xp: 0,
       level: 1,

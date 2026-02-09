@@ -18,6 +18,10 @@ import {
   TranslationEntry,
 } from "@/lib/firebase/translationHistory";
 import { updateBroadcastActivity } from "@/lib/firebase/rooms";
+import {
+  startListeningSession,
+  recordListeningSession,
+} from "@/lib/firebase/listenerStats";
 import { useRooms } from "@/contexts/RoomsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -78,11 +82,14 @@ export default function ClientApp({
   const arFinalSeen = useRef<Set<string>>(new Set());
   const [isListening, setIsListening] = useState(false);
   const [hasStopped, setHasStopped] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   // Ref to track stopped state synchronously (avoids stale closures)
   const stoppedRef = useRef<boolean>(false);
   // Flag to prevent Firestore from loading ANY translations until session starts
   // This prevents stale/old translations from appearing on page refresh
   const sessionStartedRef = useRef<boolean>(false);
+  // Standalone listen page: track session start for XP / listen minutes when no mosqueId
+  const standaloneSessionStartRef = useRef<number | null>(null);
   const LANG_OPTIONS = [
     { code: "en", label: "English" },
     { code: "ar", label: "Arabic" },
@@ -318,8 +325,42 @@ export default function ClientApp({
       }
       // Disconnect from LiveKit
       disconnectLiveKit();
+      // Standalone listen page: record session on unmount for XP / listen minutes
+      if (standaloneSessionStartRef.current && user) {
+        const durationSeconds = Math.floor(
+          (Date.now() - standaloneSessionStartRef.current) / 1000
+        );
+        recordListeningSession(
+          user.uid,
+          "listen",
+          "Listen",
+          durationSeconds
+        ).catch((err) =>
+          console.error("[ListenerStats] Failed to record standalone session:", err)
+        );
+        standaloneSessionStartRef.current = null;
+      }
     };
-  }, [mosqueId, disconnectLiveKit]);
+  }, [mosqueId, disconnectLiveKit, user]);
+
+  // Standalone listen page: tick elapsed timer every second while listening
+  useEffect(() => {
+    if (!isListening || mosqueId) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const id = setInterval(() => {
+      if (standaloneSessionStartRef.current) {
+        setElapsedSeconds(
+          Math.floor((Date.now() - standaloneSessionStartRef.current) / 1000)
+        );
+      }
+    }, 1000);
+    return () => {
+      clearInterval(id);
+      setElapsedSeconds(0);
+    };
+  }, [isListening, mosqueId]);
 
   // Sync refs with state for live stream broadcast (avoids stale closures in setInterval)
   useEffect(() => {
@@ -891,6 +932,11 @@ export default function ClientApp({
     setSrcPartial("");
     setIsListening(true);
 
+    // Standalone listen page: start session for XP / listen minutes
+    if (!mosqueId && user) {
+      standaloneSessionStartRef.current = startListeningSession();
+    }
+
     // Start live stream broadcasting for <1 second latency
     startLiveStreamBroadcast();
 
@@ -1383,6 +1429,22 @@ export default function ClientApp({
           console.error("Error releasing translator lock:", err);
         });
       }
+
+      // Standalone listen page: record session for XP / listen minutes
+      if (standaloneSessionStartRef.current && user) {
+        const durationSeconds = Math.floor(
+          (Date.now() - standaloneSessionStartRef.current) / 1000
+        );
+        recordListeningSession(
+          user.uid,
+          "listen",
+          "Listen",
+          durationSeconds
+        ).catch((err) =>
+          console.error("[ListenerStats] Failed to record standalone session:", err)
+        );
+        standaloneSessionStartRef.current = null;
+      }
     }
   }
 
@@ -1637,17 +1699,30 @@ ${translatedText || "(No translation recorded)"}
                 </div>
               </div>
             </div>
-            {isListening && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D4AF37]"></span>
-                </span>
-                <span className="text-[9px] text-[#D4AF37] font-semibold uppercase tracking-wider">
-                  {t("listen.live")}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {isListening && !mosqueId && (
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20"
+                  aria-label="Session time"
+                >
+                  <span className="text-[9px] text-[#D4AF37] font-semibold tabular-nums">
+                    {Math.floor(elapsedSeconds / 60)}:
+                    {(elapsedSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+              )}
+              {isListening && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#D4AF37]"></span>
+                  </span>
+                  <span className="text-[9px] text-[#D4AF37] font-semibold uppercase tracking-wider">
+                    {t("listen.live")}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

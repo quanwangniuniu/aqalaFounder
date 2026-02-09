@@ -100,7 +100,7 @@ export function formatListeningTime(totalMinutes: number): string {
 
 /**
  * Returns the timestamp for "now" when a listening session starts.
- * Client should store this and pass (now - startedAt) / 60000 as durationMinutes on leave.
+ * Client should pass (now - startedAt) / 1000 as durationSeconds on leave.
  */
 export function startListeningSession(): number {
   return Date.now();
@@ -108,39 +108,53 @@ export function startListeningSession(): number {
 
 /**
  * Record a completed listening session: add XP, update aggregates, recalc level/title.
- * Client must pass pre-computed durationMinutes (from session start to now).
+ * Duration is counted in seconds for accuracy; XP and display still use whole minutes.
+ * Client must pass pre-computed durationSeconds (from session start to now).
  */
 export async function recordListeningSession(
   uid: string,
   roomId: string,
   roomName: string,
-  durationMinutes: number
+  durationSeconds: number
 ): Promise<void> {
   const firestore = ensureDb();
 
-  // Clamp duration to prevent abuse (max 24h per session)
-  const clampedMinutes = Math.min(Math.max(0, Math.floor(durationMinutes)), 24 * 60);
+  // Clamp to prevent abuse (max 24h per session). Count in seconds for exact timing.
+  const clampedSeconds = Math.min(
+    Math.max(0, Math.floor(durationSeconds)),
+    24 * 60 * 60
+  );
 
-  if (clampedMinutes === 0) return;
+  if (clampedSeconds === 0) return;
 
-  const xpGained = clampedMinutes * XP_PER_MINUTE;
+  // XP and rank stay in minutes: 1 XP per full minute (e.g. 90 sec = 1 XP, 120 sec = 2 XP).
+  const minutesForXp = Math.floor(clampedSeconds / 60);
+  const xpGained = minutesForXp * XP_PER_MINUTE;
+
   const userRef = doc(firestore, USERS_COLLECTION, uid);
 
   await runTransaction(firestore, async (tx) => {
     const userSnap = await tx.get(userRef);
+    const data = userSnap.exists() ? userSnap.data() : null;
 
-    const currentTotal = userSnap.exists()
-      ? (userSnap.data()?.totalListeningMinutes ?? 0)
-      : 0;
-    const currentXp = userSnap.exists() ? (userSnap.data()?.xp ?? 0) : 0;
+    // Prefer totalListeningSeconds; fall back to legacy totalListeningMinutes * 60.
+    const currentTotalSeconds =
+      data?.totalListeningSeconds ??
+      ((data?.totalListeningMinutes ?? 0) * 60);
 
-    const newTotal = currentTotal + clampedMinutes;
+    const currentXp = data?.xp ?? 0;
+
+    const newTotalSeconds = currentTotalSeconds + clampedSeconds;
     const newXp = currentXp + xpGained;
     const newLevel = getLevelFromXp(newXp);
     const newTitle = getTitleFromLevel(newLevel);
 
+    // Store seconds as source of truth; keep totalListeningMinutes for display/backward compat.
+    const newTotalMinutes = Math.round(newTotalSeconds / 60);
+
     const updateData: Record<string, unknown> = {
-      totalListeningMinutes: newTotal,
+      totalListeningSeconds: newTotalSeconds,
+      totalListeningMinutes: newTotalMinutes,
       xp: newXp,
       level: newLevel,
       listenerTitle: newTitle,
@@ -152,7 +166,8 @@ export async function recordListeningSession(
     } else {
       tx.set(userRef, {
         uid,
-        totalListeningMinutes: newTotal,
+        totalListeningSeconds: newTotalSeconds,
+        totalListeningMinutes: newTotalMinutes,
         xp: newXp,
         level: newLevel,
         listenerTitle: newTitle,

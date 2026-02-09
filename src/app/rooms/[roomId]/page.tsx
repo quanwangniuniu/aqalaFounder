@@ -56,6 +56,7 @@ export default function RoomDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const sessionStartRef = useRef<{ startedAt: number; roomName: string } | null>(null);
   const roomMenuRef = useRef<HTMLDivElement>(null);
   const hasAttemptedDirectFetch = useRef(false);
@@ -92,15 +93,41 @@ export default function RoomDetailPage() {
     return () => {
       const session = sessionStartRef.current;
       if (session) {
-        const durationMinutes = (Date.now() - session.startedAt) / 60000;
-        recordListeningSession(user.uid, roomId, session.roomName, durationMinutes).catch(
-          (err) => console.error("[ListenerStats] Failed to record session:", err)
+        const durationSeconds = Math.floor(
+          (Date.now() - session.startedAt) / 1000
+        );
+        recordListeningSession(
+          user.uid,
+          roomId,
+          session.roomName,
+          durationSeconds
+        ).catch((err) =>
+          console.error("[ListenerStats] Failed to record session:", err)
         );
         sessionStartRef.current = null;
       }
       leaveRoom(roomId, user.uid);
     };
   }, [roomId, user]);
+
+  // Session elapsed timer (same as listen page) - tick every second while in room
+  useEffect(() => {
+    if (!joined || !sessionStartRef.current) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const id = setInterval(() => {
+      if (sessionStartRef.current) {
+        setElapsedSeconds(
+          Math.floor((Date.now() - sessionStartRef.current.startedAt) / 1000)
+        );
+      }
+    }, 1000);
+    return () => {
+      clearInterval(id);
+      setElapsedSeconds(0);
+    };
+  }, [joined]);
 
   // Check for mobile view
   useEffect(() => {
@@ -339,8 +366,19 @@ export default function RoomDetailPage() {
             </div>
           </div>
 
-          {/* Right side - Status + Chat toggle */}
+          {/* Right side - Session time + Status + Chat toggle */}
           <div className="flex items-center gap-2">
+            {joined && (
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20"
+                aria-label="Session time"
+              >
+                <span className="text-[9px] text-[#D4AF37] font-semibold tabular-nums">
+                  {Math.floor(elapsedSeconds / 60)}:
+                  {(elapsedSeconds % 60).toString().padStart(2, "0")}
+                </span>
+              </div>
+            )}
             {isLive && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/20">
                 <span className="relative flex h-1.5 w-1.5">
