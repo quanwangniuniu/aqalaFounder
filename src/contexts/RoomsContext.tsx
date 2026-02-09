@@ -6,6 +6,7 @@ import {
   clearTranslator,
   createRoom as createRoomApi,
   deleteRoom as deleteRoomApi,
+  updateRoom as updateRoomApi,
   joinRoom,
   setTranslator,
   subscribeRooms,
@@ -23,6 +24,7 @@ type RoomsContextType = {
   error: string | null;
   createRoom: (name: string) => Promise<void>;
   deleteRoom: (roomId: string) => Promise<void>;
+  updateRoom: (roomId: string, options: { name?: string; description?: string; chatEnabled?: boolean; donationsEnabled?: boolean }) => Promise<void>;
   joinRoom: (roomId: string, asTranslator?: boolean) => Promise<void>;
   claimTranslator: (roomId: string) => Promise<void>;
   claimLeadReciter: (roomId: string) => Promise<void>;
@@ -53,13 +55,22 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Subscribe to rooms for both authenticated and unauthenticated users
     setLoading(true);
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RoomsContext.tsx:subscribeRooms',message:'subscribeRooms effect started',data:{},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
     const unsubscribe = subscribeRooms(
       (incoming) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RoomsContext.tsx:subscribeRooms:onRooms',message:'subscribeRooms received rooms',data:{count:incoming.length,roomIds:incoming.map(r=>r.id),activeTranslatorIds:incoming.map(r=>r.activeTranslatorId),lastBroadcastAts:incoming.map(r=>r.lastBroadcastAt?.toISOString?.()??null)},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
         setRooms(incoming);
         setLoading(false);
         setError(null);
       },
       (err) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RoomsContext.tsx:subscribeRooms:onError',message:'subscribeRooms error',data:{code:err?.code,message:err?.message},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
         // Ignore permission errors (may occur if Firebase rules don't allow unauthenticated reads)
         if (err?.code === "permission-denied" || err?.message?.includes("permission")) {
           setRooms([]);
@@ -99,6 +110,11 @@ export function RoomsProvider({ children }: { children: React.ReactNode }) {
         const u = requireUser();
         setError(null);
         await deleteRoomApi(roomId, u.uid);
+      },
+      async updateRoom(roomId: string, options: { name?: string; description?: string; chatEnabled?: boolean; donationsEnabled?: boolean }) {
+        const u = requireUser();
+        setError(null);
+        await updateRoomApi(roomId, u.uid, options);
       },
       async joinRoom(roomId: string, asTranslator = false) {
         const u = requireUser();

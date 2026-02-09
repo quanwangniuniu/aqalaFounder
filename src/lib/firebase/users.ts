@@ -34,6 +34,11 @@ export interface UserProfile {
   privateFollowers: boolean; // Hide followers list from others
   // Subscription status (public)
   isPremium: boolean;
+  // Listener gamification
+  totalListeningMinutes: number;
+  xp: number;
+  level: number;
+  listenerTitle: string;
 }
 
 function ensureDb() {
@@ -72,6 +77,10 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
     privateHistory: data.privateHistory || false,
     privateFollowers: data.privateFollowers || false,
     isPremium: data.isPremium || false,
+    totalListeningMinutes: data.totalListeningMinutes ?? 0,
+    xp: data.xp ?? 0,
+    level: data.level ?? 1,
+    listenerTitle: data.listenerTitle ?? "",
   };
 }
 
@@ -166,6 +175,10 @@ export async function createOrUpdateUserProfile(
       followingCount: 0,
       privateHistory: false,
       privateFollowers: false,
+      totalListeningMinutes: 0,
+      xp: 0,
+      level: 1,
+      listenerTitle: "",
     });
   }
 }

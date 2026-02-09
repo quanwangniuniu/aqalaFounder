@@ -7,6 +7,8 @@ export interface User {
   photoURL: string | null;
   username: string | null;
   admin: boolean;
+  listenerTitle?: string;
+  level?: number;
 }
 
 export interface PartnerInfo {

@@ -94,6 +94,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             photoURL: profile?.photoURL || firebaseUser.photoURL, // Prefer Firestore photoURL
             username: profile?.username || null,
             admin: profile?.admin || false,
+            listenerTitle: profile?.listenerTitle || undefined,
+            level: profile?.level ?? undefined,
           });
           
           // Fetch partner info after profile is updated

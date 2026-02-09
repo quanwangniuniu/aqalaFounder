@@ -55,6 +55,8 @@ export type ChatMessage = {
   isPremium?: boolean;
   isDonation?: boolean;
   donationAmount?: number;
+  listenerLevel?: number;
+  listenerTitle?: string;
   createdAt: Date | null;
 };
 
@@ -87,7 +89,10 @@ export interface CreateRoomOptions {
 
 export async function createRoom(options: CreateRoomOptions): Promise<Room> {
   const firestore = ensureDb();
-  const { 
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rooms.ts:createRoom',message:'createRoom called',data:{name:options.name,ownerId:options.ownerId,isPartner:options.isPartner},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
+  const {
     name, 
     description, 
     ownerId, 
@@ -130,6 +135,9 @@ export async function createRoom(options: CreateRoomOptions): Promise<Room> {
         email: null,
       });
 
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rooms.ts:createRoom',message:'createRoom succeeded',data:{roomId:roomRef.id,name},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
   return {
     id: roomRef.id,
     name,
@@ -164,6 +172,38 @@ export async function deleteRoom(roomId: string, requesterId: string): Promise<v
     throw new Error("Only the room owner can delete this room");
   }
   await deleteDoc(doc(firestore, COLLECTION, roomId));
+}
+
+export interface UpdateRoomOptions {
+  name?: string;
+  description?: string;
+  chatEnabled?: boolean;
+  donationsEnabled?: boolean;
+}
+
+export async function updateRoom(
+  roomId: string,
+  requesterId: string,
+  options: UpdateRoomOptions
+): Promise<void> {
+  const firestore = ensureDb();
+  const roomRef = doc(firestore, COLLECTION, roomId);
+  const roomDoc = await getDoc(roomRef);
+  if (!roomDoc.exists()) {
+    throw new Error("Room not found");
+  }
+  const data = roomDoc.data() as any;
+  if (data.ownerId !== requesterId) {
+    throw new Error("Only the room owner can edit this room");
+  }
+  const updates: Record<string, unknown> = {};
+  if (options.name !== undefined) updates.name = options.name.trim() || data.name;
+  if (options.description !== undefined) updates.description = options.description?.trim() || null;
+  if (options.chatEnabled !== undefined) updates.chatEnabled = options.chatEnabled;
+  if (options.donationsEnabled !== undefined) updates.donationsEnabled = options.donationsEnabled;
+  if (Object.keys(updates).length > 0) {
+    await updateDoc(roomRef, updates);
+  }
 }
 
 export async function getRoom(roomId: string): Promise<Room | null> {
@@ -366,8 +406,11 @@ export async function leaveRoom(roomId: string, userId: string): Promise<void> {
       
       if (roomData.activeTranslatorId === userId) {
         updates.activeTranslatorId = null;
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/931fe9cd-ff43-487f-b31f-921542519600',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'rooms.ts:leaveRoom',message:'leaveRoom cleared activeTranslatorId',data:{roomId,userId},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+        // #endregion
       }
-      
+
       tx.update(roomRef, updates);
     });
   } catch (error: any) {
@@ -732,6 +775,8 @@ export async function sendChatMessage(
     isPremium?: boolean;
     isDonation?: boolean;
     donationAmount?: number;
+    listenerLevel?: number;
+    listenerTitle?: string;
   }
 ): Promise<ChatMessage> {
   const firestore = ensureDb();
@@ -747,6 +792,8 @@ export async function sendChatMessage(
     isPremium: options?.isPremium || false,
     isDonation: options?.isDonation || false,
     donationAmount: options?.donationAmount || null,
+    listenerLevel: options?.listenerLevel ?? null,
+    listenerTitle: options?.listenerTitle ?? null,
     createdAt: serverTimestamp(),
   };
   
@@ -762,6 +809,8 @@ export async function sendChatMessage(
     isPartner: options?.isPartner,
     isDonation: options?.isDonation,
     donationAmount: options?.donationAmount,
+    listenerLevel: options?.listenerLevel,
+    listenerTitle: options?.listenerTitle,
     createdAt: new Date(),
   };
 }
@@ -795,6 +844,8 @@ export function subscribeChatMessages(
           isPremium: data.isPremium || false,
           isDonation: data.isDonation || false,
           donationAmount: data.donationAmount || undefined,
+          listenerLevel: data.listenerLevel ?? undefined,
+          listenerTitle: data.listenerTitle ?? undefined,
           createdAt: data.createdAt?.toDate?.() ?? null,
         };
       });

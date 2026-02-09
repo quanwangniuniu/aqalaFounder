@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { RoomMember, subscribeRoomMembers } from "@/lib/firebase/rooms";
 import { useAuth } from "@/contexts/AuthContext";
+import { getUserProfile } from "@/lib/firebase/users";
 import { getUserDisplayName, getUserInitials } from "@/utils/userDisplay";
 
 interface MembersModalProps {
@@ -16,6 +17,33 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
   const { user } = useAuth();
   const [members, setMembers] = useState<RoomMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listenerTitles, setListenerTitles] = useState<Record<string, string>>({});
+
+  // Fetch listener titles for members (batched)
+  useEffect(() => {
+    if (!open || members.length === 0) {
+      setListenerTitles({});
+      return;
+    }
+    const fetchTitles = async () => {
+      const results = await Promise.all(
+        members.map(async (m) => {
+          const profile = await getUserProfile(m.userId);
+          const title = profile?.listenerTitle && profile.listenerTitle !== "Novice Listener"
+            ? profile.listenerTitle
+            : "";
+          return { userId: m.userId, title };
+        })
+      );
+      setListenerTitles(
+        results.reduce((acc, { userId, title }) => {
+          if (title) acc[userId] = title;
+          return acc;
+        }, {} as Record<string, string>)
+      );
+    };
+    void fetchTitles();
+  }, [open, members]);
 
   useEffect(() => {
     if (!open || !roomId || !user) {
@@ -107,13 +135,18 @@ export default function MembersModal({ open, onClose, roomId, roomName }: Member
                     {getUserInitials(member.userId === user?.uid ? user : null, member.userId)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium truncate">
                         {member.userId === user?.uid ? "You" : getUserDisplayName(null, member.userId, member.email)}
                       </p>
                       {isLeadReciter && (
                         <span className="px-2 py-0.5 text-xs font-medium bg-[#06402B] text-white rounded-full">
                           Lead Reciter
+                        </span>
+                      )}
+                      {listenerTitles[member.userId] && (
+                        <span className="px-2 py-0.5 text-xs font-medium bg-cyan-500/20 text-cyan-600 rounded-full border border-cyan-500/30">
+                          {listenerTitles[member.userId]}
                         </span>
                       )}
                     </div>
