@@ -11,11 +11,14 @@ import {
   Image,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -92,7 +95,7 @@ export default function LoginScreen() {
   const displayError = localError || authError;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#021a12]">
+    <WallpaperBackground>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -182,9 +185,9 @@ export default function LoginScreen() {
               }`}
             >
               {isLoading ? (
-                <ActivityIndicator color="#021a12" />
+                <ActivityIndicator color={darkBg} />
               ) : (
-                <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
+                <Text style={{ color: darkBg }} className="font-semibold text-base">Sign In</Text>
               )}
             </TouchableOpacity>
 
@@ -241,6 +244,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

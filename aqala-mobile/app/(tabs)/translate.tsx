@@ -10,7 +10,7 @@ import WallpaperBackground from "@/components/WallpaperBackground";
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
 
-export default function ListenScreen() {
+export default function TranslateScreen() {
   const { user } = useAuth();
   const { getDarkestColor, getGradientColors } = usePreferences();
   const darkBg = getDarkestColor();
@@ -27,7 +27,6 @@ export default function ListenScreen() {
 
   useEffect(() => {
     const getToken = async () => {
-      // Use Firebase auth.currentUser which has getIdToken()
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
         try {
@@ -42,13 +41,8 @@ export default function ListenScreen() {
     getToken();
   }, [user]);
 
-  // JavaScript to inject into the WebView to:
-  // 1. Hide the web app's header/nav (mobile app has its own) but KEEP footer (mic button)
-  // 2. Intercept console logs and errors to forward to React Native
-  // 3. Monitor microphone/media permissions
   const injectedJS = `
     (function() {
-      // === LOGGING: Forward all console output to React Native ===
       var _origLog = console.log;
       var _origError = console.error;
       var _origWarn = console.warn;
@@ -73,7 +67,6 @@ export default function ListenScreen() {
       console.error = function() { sendToRN('error', arguments); _origError.apply(console, arguments); };
       console.warn = function() { sendToRN('warn', arguments); _origWarn.apply(console, arguments); };
       
-      // Catch uncaught errors
       window.addEventListener('error', function(e) {
         sendToRN('error', ['UNCAUGHT ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno]);
       });
@@ -81,7 +74,6 @@ export default function ListenScreen() {
         sendToRN('error', ['UNHANDLED PROMISE: ' + (e.reason ? (e.reason.message || String(e.reason)) : 'unknown')]);
       });
 
-      // === MONITOR: getUserMedia calls ===
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         var _origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
         navigator.mediaDevices.getUserMedia = function(constraints) {
@@ -98,7 +90,6 @@ export default function ListenScreen() {
         sendToRN('error', ['[MIC] navigator.mediaDevices.getUserMedia NOT AVAILABLE']);
       }
 
-      // Check permissions API
       if (navigator.permissions) {
         navigator.permissions.query({ name: 'microphone' }).then(function(result) {
           sendToRN('log', ['[MIC] Permission state: ' + result.state]);
@@ -110,7 +101,6 @@ export default function ListenScreen() {
         });
       }
 
-      // === STYLE: Hide header, keep footer with mic button, override background ===
       var style = document.createElement('style');
       style.textContent = \`
         header:not(footer),
@@ -137,7 +127,6 @@ export default function ListenScreen() {
           padding-bottom: 8px !important;
         }
 
-        /* Override web app background with mobile wallpaper gradient */
         html, body {
           background: linear-gradient(to bottom, ${gradientColors.join(', ')}) !important;
           background-attachment: fixed !important;
@@ -150,25 +139,49 @@ export default function ListenScreen() {
           background: transparent !important;
           background-color: transparent !important;
         }
-        /* Override any fixed/absolute background overlays */
-        .fixed.inset-0,
-        .absolute.inset-0 {
+        /* Override backgrounds but preserve summary modal (z-50) and its children */
+        .fixed.inset-0:not(.z-50),
+        .absolute.inset-0:not(.z-50 *) {
           background: transparent !important;
           background-color: transparent !important;
           background-image: none !important;
         }
-        /* Keep content sections transparent so gradient shows through */
-        div[class*="bg-[#0"],
-        div[class*="bg-gradient"],
-        section {
+        div[class*="bg-[#0"]:not(.z-50 *),
+        div[class*="bg-gradient"]:not(.z-50 *),
+        section:not(.z-50 *) {
           background: transparent !important;
           background-color: transparent !important;
           background-image: none !important;
+        }
+        /* Summary modal: solid bg, no blur */
+        .fixed.inset-0.z-50 .summary-modal-content > div:last-child {
+          background: linear-gradient(180deg, #0a2e1f 0%, #032117 50%, #021912 100%) !important;
+        }
+        .fixed.inset-0.z-50 .summary-backdrop-in {
+          background: rgba(0,0,0,0.85) !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
         }
       \`;
       document.head.appendChild(style);
 
-      // Report page info
+      // Replace "Khutba" with "Session" in summary modal text
+      var observer = new MutationObserver(function(mutations) {
+        document.querySelectorAll('.fixed.inset-0.z-50 h2, .fixed.inset-0.z-50 input[placeholder]').forEach(function(el) {
+          if (el.tagName === 'H2' && el.textContent && el.textContent.indexOf('Khutba') !== -1) {
+            el.childNodes.forEach(function(node) {
+              if (node.nodeType === 3 && node.textContent.indexOf('Khutba') !== -1) {
+                node.textContent = node.textContent.replace(/Khutba/gi, 'Session');
+              }
+            });
+          }
+          if (el.tagName === 'INPUT' && el.placeholder && el.placeholder.indexOf('khutba') !== -1) {
+            el.placeholder = el.placeholder.replace(/khutba/gi, 'session');
+          }
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+
       sendToRN('log', ['[WEBVIEW] Page loaded: ' + window.location.href]);
       sendToRN('log', ['[WEBVIEW] User agent: ' + navigator.userAgent]);
 
@@ -177,15 +190,12 @@ export default function ListenScreen() {
     true;
   `;
 
-  // CSS gradient string for early injection (prevent green flash)
   const cssGradient = `linear-gradient(to bottom, ${gradientColors.join(", ")})`;
 
-  // Inject auth token + wallpaper override BEFORE the page loads
   const authInjectionJS = `
     (function() {
       try {
         ${authToken ? `localStorage.setItem('firebase_auth_token', '${authToken}');` : ""}
-        // Apply wallpaper background immediately to prevent flash
         var earlyStyle = document.createElement('style');
         earlyStyle.textContent = 'html, body { background: ${cssGradient} !important; background-attachment: fixed !important; }';
         (document.head || document.documentElement).appendChild(earlyStyle);
@@ -201,28 +211,13 @@ export default function ListenScreen() {
     }
   };
 
-  const handleGoBack = () => {
-    if (canGoBack && webViewRef.current) {
-      webViewRef.current.goBack();
-    } else {
-      router.back();
-    }
-  };
-
   return (
     <WallpaperBackground edges={["top", "bottom"]}>
-      {/* Custom Header */}
+      {/* Header */}
       <View
         className="flex-row items-center px-4 py-3 border-b border-white/10"
         style={{ backgroundColor: darkBg }}
       >
-        <TouchableOpacity
-          onPress={handleGoBack}
-          className="w-9 h-9 rounded-full bg-white/10 items-center justify-center mr-3"
-        >
-          <Ionicons name="chevron-back" size={20} color="white" />
-        </TouchableOpacity>
-
         <View className="flex-1 flex-row items-center gap-2">
           <View className="w-8 h-8 rounded-full bg-[#D4AF37]/20 items-center justify-center">
             <Ionicons name="mic" size={16} color="#D4AF37" />
@@ -281,18 +276,15 @@ export default function ListenScreen() {
           injectedJavaScript={injectedJS}
           javaScriptEnabled={true}
           domStorageEnabled={true}
-          // Microphone permissions
           mediaPlaybackRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
           mediaCapturePermissionGrantType="grant"
-          // Android: grant permission requests for mic/camera
           onPermissionRequest={(event) => {
             event.nativeEvent?.grant?.();
           }}
           startInLoadingState={false}
           originWhitelist={["*"]}
           allowsBackForwardNavigationGestures={true}
-          // Android hardware acceleration for media
           {...(Platform.OS === "android"
             ? {
                 androidLayerType: "hardware",
@@ -307,7 +299,6 @@ export default function ListenScreen() {
                 const prefix = `🌐 [WebView ${data.level}]`;
                 if (data.level === "error") {
                   console.error(prefix, data.message);
-                  // Detect mic not available
                   if (data.message?.includes("getUserMedia NOT AVAILABLE") || 
                       data.message?.includes("getUserMedia FAILED")) {
                     setMicError(true);
@@ -319,7 +310,6 @@ export default function ListenScreen() {
                 }
               }
             } catch (e) {
-              // Non-JSON message — log it anyway
               console.log("🌐 [WebView raw]", event.nativeEvent.data?.substring(0, 200));
             }
           }}

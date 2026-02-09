@@ -1843,7 +1843,7 @@ ${translatedText || "(No translation recorded)"}
           <div className="relative w-full max-w-lg max-h-[75vh] summary-modal-content flex flex-col">
             {/* Glowing border effect */}
             <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-[#D4AF37]/30 via-[#D4AF37]/10 to-[#D4AF37]/30 opacity-50" />
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50 flex flex-col max-h-[75vh]">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50 flex flex-col max-h-[75vh]" style={{ background: "linear-gradient(180deg, #0a2e1f 0%, #032117 50%, #021912 100%)" }}>
               {/* Header */}
               <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
                 <h2 className="text-base font-medium text-white flex items-center gap-2" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
@@ -1863,7 +1863,7 @@ ${translatedText || "(No translation recorded)"}
                       <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
                   </div>
-                  Khutba Summary
+                  Session Summary
                 </h2>
                 <button
                   onClick={() => setShowSummaryModal(false)}
@@ -2206,7 +2206,7 @@ ${translatedText || "(No translation recorded)"}
                           handleAskQuestion();
                         }
                       }}
-                      placeholder="Ask about this khutba..."
+                      placeholder="Ask about this session..."
                       disabled={isAskingQuestion}
                       className="flex-1 bg-white/5 border border-white/[0.08] rounded-lg px-3 py-2 text-white/90 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50 disabled:opacity-50 transition-all"
                       style={{ fontFamily: "'Cormorant Garamond', serif" }}

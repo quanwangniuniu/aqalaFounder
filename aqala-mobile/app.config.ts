@@ -74,8 +74,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             {
                 // icon: "./assets/notification-icon.png", // TODO: Add notification icon (96x96 PNG)
                 color: "#0a5c3e",
+                sounds: ["./assets/azan.mp3"],
             },
         ],
+        "./plugins/withAdhanSound",
+        "./plugins/withWidgetExtension",
         [
             "react-native-google-mobile-ads",
             {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Link } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserProfile, UserProfile, getUserRoomHistory, RoomHistoryEntry } from "@/lib/firebase/users";
 import { subscribeToUserCounts, getFollowers, getFollowing, getSuggestedUsers, FollowUser } from "@/lib/firebase/follows";
@@ -130,17 +130,17 @@ export default function UserProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (notFound || !profile) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center px-4">
           <View
             style={{
@@ -169,14 +169,14 @@ export default function UserProfileScreen() {
             <Text style={{ color: "white", fontSize: 14 }}>Go back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   const displayName = profile.displayName || profile.username || "User";
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -425,9 +425,11 @@ export default function UserProfileScreen() {
               </>
             ) : (
               <>
-                <View style={{ flex: 1, height: 40 }}>
-                  <FollowButton targetUserId={userId} size="md" />
-                </View>
+                <FollowButton
+                  targetUserId={userId}
+                  size="md"
+                  containerStyle={{ flex: 1, height: 40 }}
+                />
                 <TouchableOpacity
                   onPress={() => router.push(`/messages/${userId}` as any)}
                   style={{
@@ -565,7 +567,7 @@ export default function UserProfileScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
 

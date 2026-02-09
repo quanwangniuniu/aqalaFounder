@@ -10,12 +10,15 @@ import {
   Platform,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { isUsernameAvailable } from "@/lib/firebase/users";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function RegisterScreen() {
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -148,7 +151,7 @@ export default function RegisterScreen() {
   const displayError = localError || authError;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#021a12]">
+    <WallpaperBackground>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -270,9 +273,9 @@ export default function RegisterScreen() {
               }`}
             >
               {isLoading ? (
-                <ActivityIndicator color="#021a12" />
+                <ActivityIndicator color={darkBg} />
               ) : (
-                <Text className="text-[#021a12] font-semibold text-base">Create Account</Text>
+                <Text style={{ color: darkBg }} className="font-semibold text-base">Create Account</Text>
               )}
             </TouchableOpacity>
 
@@ -327,6 +330,6 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

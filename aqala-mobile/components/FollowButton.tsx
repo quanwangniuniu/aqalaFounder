@@ -2,16 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { followUser, unfollowUser, subscribeToFollowStatus } from "@/lib/firebase/follows";
 import { getUserProfile } from "@/lib/firebase/users";
 
 interface FollowButtonProps {
   targetUserId: string;
   size?: "sm" | "md" | "lg";
+  containerStyle?: object;
 }
 
-export default function FollowButton({ targetUserId, size = "md" }: FollowButtonProps) {
+export default function FollowButton({ targetUserId, size = "md", containerStyle }: FollowButtonProps) {
   const { user } = useAuth();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const router = useRouter();
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -72,7 +76,7 @@ export default function FollowButton({ targetUserId, size = "md" }: FollowButton
   }, [user, targetUserId, isFollowingUser, actionLoading, router]);
 
   const sizeStyles = {
-    sm: { paddingHorizontal: 12, paddingVertical: 4, fontSize: 12 },
+    sm: { paddingHorizontal: 14, paddingVertical: 8, fontSize: 12 },
     md: { paddingHorizontal: 16, paddingVertical: 6, fontSize: 14 },
     lg: { paddingHorizontal: 20, paddingVertical: 8, fontSize: 16 },
   };
@@ -81,12 +85,14 @@ export default function FollowButton({ targetUserId, size = "md" }: FollowButton
     return (
       <TouchableOpacity
         style={{
-          flex: 1,
+          alignSelf: "stretch",
           borderRadius: 8,
           backgroundColor: "rgba(255,255,255,0.1)",
           paddingHorizontal: sizeStyles[size].paddingHorizontal,
+          paddingVertical: sizeStyles[size].paddingVertical,
           alignItems: "center",
           justifyContent: "center",
+          ...containerStyle,
         }}
         disabled
       >
@@ -102,23 +108,25 @@ export default function FollowButton({ targetUserId, size = "md" }: FollowButton
       onPress={handlePress}
       disabled={actionLoading}
       style={{
-        flex: 1,
+        alignSelf: "stretch",
         borderRadius: 8,
         paddingHorizontal: sizeStyles[size].paddingHorizontal,
+        paddingVertical: sizeStyles[size].paddingVertical,
         backgroundColor: isFollowingUser ? "rgba(255,255,255,0.1)" : "#D4AF37",
         opacity: actionLoading ? 0.5 : 1,
         alignItems: "center",
         justifyContent: "center",
+        ...containerStyle,
       }}
     >
       {actionLoading ? (
-        <ActivityIndicator size="small" color={isFollowingUser ? "white" : "#021a12"} />
+        <ActivityIndicator size="small" color={isFollowingUser ? "white" : darkBg} />
       ) : (
         <Text
           style={{
             fontSize: sizeStyles[size].fontSize,
             fontWeight: "600",
-            color: isFollowingUser ? "white" : "#021a12",
+            color: isFollowingUser ? "white" : darkBg,
             textAlign: "center",
           }}
         >

@@ -11,9 +11,10 @@ import {
   ActivityIndicator,
   Keyboard,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { getUserProfile, UserProfile } from "@/lib/firebase/users";
 import {
   getOrCreateConversation,
@@ -29,6 +30,8 @@ export default function ConversationScreen() {
   const { userId: otherUserId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
   const { user: currentUser, loading: authLoading } = useAuth();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
 
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -128,11 +131,11 @@ export default function ConversationScreen() {
 
   if (authLoading || loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
@@ -205,7 +208,7 @@ export default function ConversationScreen() {
             style={{
               fontSize: 14,
               lineHeight: 20,
-              color: isOwn ? "#021a12" : "white",
+              color: isOwn ? darkBg : "white",
             }}
           >
             {message.text}
@@ -262,7 +265,7 @@ export default function ConversationScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -394,13 +397,13 @@ export default function ConversationScreen() {
             }}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="#021a12" />
+              <ActivityIndicator size="small" color={darkBg} />
             ) : (
-              <Ionicons name="send" size={18} color="#021a12" />
+              <Ionicons name="send" size={18} color={darkBg} />
             )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

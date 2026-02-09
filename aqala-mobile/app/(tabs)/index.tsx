@@ -1,20 +1,26 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Pressable, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useMessageNotifications } from "@/contexts/MessageNotificationContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { formatPrayerTime } from "@/lib/prayer/calculations";
 import { getUserDisplayName, getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Circle, Path, Polyline } from "react-native-svg";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function HomeScreen() {
   const { t, isRTL } = useLanguage();
   const { nextPrayer, loading: prayerLoading } = usePrayer();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, showAds } = useSubscription();
+  const { unreadCount } = useMessageNotifications();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const router = useRouter();
 
   const handleAdLink = (href: string) => {
@@ -27,7 +33,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <ScrollView 
         className="flex-1" 
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -44,6 +50,7 @@ export default function HomeScreen() {
                   style={{
                     width: 64,
                     height: 64,
+                    tintColor: "white",
                   }}
                   resizeMode="contain"
                 />
@@ -56,7 +63,36 @@ export default function HomeScreen() {
               {user && (
                 <Link href="/search" asChild>
                   <TouchableOpacity className="p-2 rounded-full bg-white/5 border border-white/10">
-                    <Text className="text-white/70 text-base">🔍</Text>
+                    <Ionicons name="search-outline" size={18} color="rgba(255,255,255,0.7)" />
+                  </TouchableOpacity>
+                </Link>
+              )}
+
+              {/* Messages */}
+              {user && (
+                <Link href="/messages/index" asChild>
+                  <TouchableOpacity className="p-2 rounded-full bg-white/5 border border-white/10" style={{ position: "relative" }}>
+                    <Ionicons name="chatbubble-outline" size={18} color="rgba(255,255,255,0.7)" />
+                    {unreadCount > 0 && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: -2,
+                          right: -2,
+                          minWidth: 18,
+                          height: 18,
+                          borderRadius: 9,
+                          backgroundColor: "#D4AF37",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingHorizontal: 4,
+                        }}
+                      >
+                        <Text style={{ color: darkBg, fontSize: 10, fontWeight: "700" }}>
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 </Link>
               )}
@@ -86,7 +122,7 @@ export default function HomeScreen() {
                           {user.username ? `@${user.username}` : getUserDisplayName(user).split(" ")[0]}
                         </Text>
                         {isPremium && (
-                          <Text className="text-[10px] text-[#D4AF37]">Premium ✨</Text>
+                          <Text className="text-[10px] text-[#D4AF37]">{t("home.premium")}</Text>
                         )}
                       </View>
                     </TouchableOpacity>
@@ -117,12 +153,12 @@ export default function HomeScreen() {
                       >
                         <Text 
                           style={{ 
-                            color: '#021a12',
+                            color: darkBg,
                             fontSize: 14,
                             fontWeight: '500',
                           }}
                         >
-                          Sign In
+                          {t("home.signIn")}
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -139,14 +175,10 @@ export default function HomeScreen() {
             
             {/* Hero Section - Primary CTA */}
             <View className="mt-4">
-              <View className="relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-6">
-                {/* Decorative glow */}
-                <View className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/10 rounded-full" style={{ transform: [{ translateX: 96 }, { translateY: -96 }] }} />
-                <View className="absolute bottom-0 left-0 w-32 h-32 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: -64 }, { translateY: 64 }] }} />
-                
-                <View className="relative">
+              <View className="overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-6">
+                <View>
                   {/* Headline */}
-                  <Text className="text-3xl font-bold tracking-tight text-white leading-tight mb-3">
+                  <Text className="text-4xl font-bold tracking-tight text-white leading-tight mb-3">
                     {t("home.headline1")}
                     {"\n"}
                     <Text className="text-[#D4AF37]">{t("home.headline2")}</Text>
@@ -177,8 +209,8 @@ export default function HomeScreen() {
                         flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        paddingHorizontal: 24,
-                        paddingVertical: 14,
+                        paddingHorizontal: 20,
+                        paddingVertical: 12,
                         borderRadius: 9999,
                         gap: 12,
                       }}
@@ -188,7 +220,7 @@ export default function HomeScreen() {
                           width: 40,
                           height: 40,
                           borderRadius: 20,
-                          backgroundColor: 'rgba(3, 33, 23, 0.4)',
+                          backgroundColor: `${darkBg}66`,
                           alignItems: 'center',
                           justifyContent: 'center',
                         }}
@@ -197,7 +229,7 @@ export default function HomeScreen() {
                       </View>
                       <Text 
                         style={{ 
-                          color: '#032117',
+                          color: darkBg,
                           fontSize: 16,
                           fontWeight: '600',
                         }}
@@ -210,106 +242,101 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Feature Grid */}
-            <View className="mt-4 flex-row flex-wrap gap-3">
-              {/* Prayer Times Card */}
-              <Pressable onPress={() => handleAdLink("/prayers")} className="flex-1" style={{ minWidth: '47%' }}>
-                <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                  
-                  <View className="relative">
+            {/* Feature Grid – two columns, equal-height rows */}
+            <View style={{ marginTop: 16, gap: 12 }}>
+              {/* Row 1 */}
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                {/* Prayer Times Card */}
+                <Pressable onPress={() => handleAdLink("/prayers")} style={{ flex: 1 }}>
+                  <View className="overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4" style={{ flex: 1 }}>
                     <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                      <Text className="text-[#D4AF37] text-lg">🕐</Text>
+                      <Ionicons name="time-outline" size={20} color="#D4AF37" />
                     </View>
                     
-                    <Text className="text-xs text-white/50 mb-0.5">Prayer Times</Text>
+                    <Text className="text-xs text-white/50 mb-0.5">{t("home.prayerTimes")}</Text>
                     {!prayerLoading && nextPrayer ? (
                       <>
-                        <Text className="text-lg font-semibold text-white leading-tight">{nextPrayer.name}</Text>
+                        <Text className="text-sm font-medium text-white">{nextPrayer.name}</Text>
                         <Text className="text-xs text-[#D4AF37]/80">{formatPrayerTime(nextPrayer.time)}</Text>
                       </>
                     ) : (
-                      <Text className="text-sm text-white/60">View schedule</Text>
+                      <>
+                        <Text className="text-sm font-medium text-white">{t("home.viewSchedule")}</Text>
+                        <Text className="text-xs text-white/0">–</Text>
+                      </>
                     )}
                   </View>
-                </View>
-              </Pressable>
+                </Pressable>
 
-              {/* Qibla Card */}
-              <Pressable onPress={() => handleAdLink("/qibla")} className="flex-1" style={{ minWidth: '47%' }}>
-                <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                  
-                  <View className="relative">
+                {/* Qibla Card */}
+                <Pressable onPress={() => handleAdLink("/qibla")} style={{ flex: 1 }}>
+                  <View className="overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4" style={{ flex: 1 }}>
                     <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                      <Text className="text-[#D4AF37] text-lg">🧭</Text>
+                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                        <Circle cx={12} cy={12} r={10} stroke="#D4AF37" strokeWidth={2} />
+                        <Path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
+                        <Circle cx={12} cy={12} r={3} fill="#D4AF37" />
+                      </Svg>
                     </View>
                     
-                    <Text className="text-xs text-white/50 mb-0.5">Qibla Finder</Text>
-                    <Text className="text-sm font-medium text-white">Find Direction</Text>
-                    <Text className="text-xs text-white/40">Compass guide</Text>
+                    <Text className="text-xs text-white/50 mb-0.5">{t("home.qiblaFinder")}</Text>
+                    <Text className="text-sm font-medium text-white">{t("home.findDirection")}</Text>
+                    <Text className="text-xs text-white/40">{t("home.compassGuide")}</Text>
                   </View>
-                </View>
-              </Pressable>
+                </Pressable>
+              </View>
 
-              {/* Mosques Card */}
-              <Pressable onPress={() => handleAdLink("/rooms")} className="flex-1" style={{ minWidth: '47%' }}>
-                <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                  
-                  <View className="relative">
+              {/* Row 2 */}
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                {/* Mosques Card */}
+                <Pressable onPress={() => handleAdLink("/rooms")} style={{ flex: 1 }}>
+                  <View className="overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4" style={{ flex: 1 }}>
                     <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                      <Text className="text-[#D4AF37] text-lg">🕌</Text>
+                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                        <Path d="M3 21h18" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
+                        <Path d="M5 21V7l7-4 7 4v14" stroke="#D4AF37" strokeWidth={2} />
+                        <Path d="M9 21v-6h6v6" stroke="#D4AF37" strokeWidth={2} />
+                        <Circle cx={12} cy={10} r={2} stroke="#D4AF37" strokeWidth={2} />
+                      </Svg>
                     </View>
                     
-                    <Text className="text-xs text-white/50 mb-0.5">Mosques</Text>
-                    <Text className="text-sm font-medium text-white">Join a Room</Text>
-                    <Text className="text-xs text-white/40">Shared listening</Text>
+                    <Text className="text-xs text-white/50 mb-0.5">{t("home.mosques")}</Text>
+                    <Text className="text-sm font-medium text-white">{t("home.joinRoom")}</Text>
+                    <Text className="text-xs text-white/40">{t("home.sharedListening")}</Text>
                   </View>
-                </View>
-              </Pressable>
+                </Pressable>
 
-              {/* Support Card */}
-              {showAds && user ? (
-                <Link href="/subscription/index" asChild>
-                  <TouchableOpacity className="flex-1" style={{ minWidth: '47%' }}>
-                    <LinearGradient
-                      colors={["rgba(212, 175, 55, 0.1)", "rgba(212, 175, 55, 0.05)"]}
-                      className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/20 p-4"
-                    >
-                      <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/10 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                      
-                      <View className="relative">
+                {/* Support Card */}
+                {showAds && user ? (
+                  <Link href="/subscription/index" asChild>
+                    <TouchableOpacity style={{ flex: 1 }}>
+                      <View className="overflow-hidden rounded-2xl bg-white/5 border border-[#D4AF37]/20 p-4" style={{ flex: 1 }}>
                         <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 items-center justify-center mb-3">
-                          <Text className="text-[#D4AF37] text-lg">⭐</Text>
+                          <Ionicons name="star-outline" size={20} color="#D4AF37" />
                         </View>
                         
-                        <Text className="text-xs text-[#D4AF37]/70 mb-0.5">Go Premium</Text>
-                        <Text className="text-sm font-medium text-white">Remove Ads</Text>
-                        <Text className="text-xs text-[#D4AF37]">$15 one-time</Text>
+                        <Text className="text-xs text-[#D4AF37]/70 mb-0.5">{t("home.goPremium")}</Text>
+                        <Text className="text-sm font-medium text-white">{t("home.removeAds")}</Text>
+                        <Text className="text-xs text-[#D4AF37]">{t("home.oneTime")}</Text>
                       </View>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </Link>
-              ) : (
-                <Link href="/donate" asChild>
-                  <TouchableOpacity className="flex-1" style={{ minWidth: '47%' }}>
-                    <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                      <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                      
-                      <View className="relative">
+                    </TouchableOpacity>
+                  </Link>
+                ) : (
+                  <Link href="/donate" asChild>
+                    <TouchableOpacity style={{ flex: 1 }}>
+                      <View className="overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4" style={{ flex: 1 }}>
                         <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                          <Text className="text-[#D4AF37] text-lg">❤️</Text>
+                          <Ionicons name="heart" size={20} color="#D4AF37" />
                         </View>
                         
-                        <Text className="text-xs text-white/50 mb-0.5">Support</Text>
-                        <Text className="text-sm font-medium text-white">Donate</Text>
+                        <Text className="text-xs text-white/50 mb-0.5">{t("home.support")}</Text>
+                        <Text className="text-sm font-medium text-white">{t("home.donate")}</Text>
                         <Text className="text-xs text-white/40">{t("home.helpKeepFree")}</Text>
                       </View>
-                    </View>
-                  </TouchableOpacity>
-                </Link>
-              )}
+                    </TouchableOpacity>
+                  </Link>
+                )}
+              </View>
             </View>
 
             {/* Bottom Section */}
@@ -334,13 +361,13 @@ export default function HomeScreen() {
                 <View className="w-1 h-1 rounded-full bg-white/20" />
                 
                 <Text className="text-xs text-white/30">
-                  {isPremium ? "Thank you for supporting Aqala ✨" : t("home.freeForever")}
+                  {isPremium ? t("home.thankYouPremium") : t("home.freeForever")}
                 </Text>
               </View>
             </View>
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

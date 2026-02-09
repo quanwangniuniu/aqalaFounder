@@ -53,6 +53,17 @@ export interface PrayerTimes {
     isha: Date;
 }
 
+export type PrayerName = "fajr" | "sunrise" | "dhuhr" | "asr" | "maghrib" | "isha";
+
+export interface AdhanSettings {
+    fajr: boolean;
+    sunrise: boolean;
+    dhuhr: boolean;
+    asr: boolean;
+    maghrib: boolean;
+    isha: boolean;
+}
+
 export interface PrayerSettings {
     method: CalculationMethod;
     school: School; // 0 = Shafi'i/Standard, 1 = Hanafi
@@ -64,7 +75,17 @@ export interface PrayerSettings {
         maghrib: number;
         isha: number;
     };
+    adhan: AdhanSettings;
 }
+
+export const DEFAULT_ADHAN: AdhanSettings = {
+    fajr: false,
+    sunrise: false,
+    dhuhr: false,
+    asr: false,
+    maghrib: false,
+    isha: false,
+};
 
 export const DEFAULT_SETTINGS: PrayerSettings = {
     method: 3, // Muslim World League
@@ -77,6 +98,7 @@ export const DEFAULT_SETTINGS: PrayerSettings = {
         maghrib: 0,
         isha: 0,
     },
+    adhan: { ...DEFAULT_ADHAN },
 };
 
 interface AladhanTimings {

@@ -1,14 +1,17 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { formatPrayerTime, getMethodName } from "@/lib/prayer/calculations";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { formatPrayerTime, getMethodName, PrayerName } from "@/lib/prayer/calculations";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function PrayerScreen() {
-  const { isRTL } = useLanguage();
+  const { isRTL, t } = useLanguage();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   const {
     prayerTimes,
     settings,
@@ -20,21 +23,33 @@ export default function PrayerScreen() {
     timeUntilNext,
     refreshLocation,
     refreshPrayerTimes,
+    toggleAdhan,
+    stopAdhan,
+    isAdhanPlaying,
   } = usePrayer();
+
+  const prayerIcons: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
+    Fajr:    { icon: "moon",           color: "#94a3b8", bg: "bg-indigo-500/10" },    // pre-dawn, still dark
+    Sunrise: { icon: "sunny",          color: "#fb923c", bg: "bg-orange-500/10" },    // sun rising
+    Dhuhr:   { icon: "sunny",          color: "#facc15", bg: "bg-yellow-500/10" },    // midday sun
+    Asr:     { icon: "partly-sunny",   color: "#fbbf24", bg: "bg-amber-500/10" },     // afternoon sun
+    Maghrib: { icon: "cloudy-night",   color: "#f97316", bg: "bg-orange-500/10" },    // sunset
+    Isha:    { icon: "moon",           color: "#818cf8", bg: "bg-indigo-500/10" },    // nighttime
+  };
 
   const prayers = prayerTimes
     ? [
-        { name: "Fajr", nameAr: "الفجر", time: prayerTimes.fajr },
-        { name: "Sunrise", nameAr: "الشروق", time: prayerTimes.sunrise, isSunrise: true },
-        { name: "Dhuhr", nameAr: "الظهر", time: prayerTimes.dhuhr },
-        { name: "Asr", nameAr: "العصر", time: prayerTimes.asr },
-        { name: "Maghrib", nameAr: "المغرب", time: prayerTimes.maghrib },
-        { name: "Isha", nameAr: "العشاء", time: prayerTimes.isha },
+        { key: "fajr" as PrayerName, name: "Fajr", nameAr: "الفجر", time: prayerTimes.fajr },
+        { key: "sunrise" as PrayerName, name: "Sunrise", nameAr: "الشروق", time: prayerTimes.sunrise },
+        { key: "dhuhr" as PrayerName, name: "Dhuhr", nameAr: "الظهر", time: prayerTimes.dhuhr },
+        { key: "asr" as PrayerName, name: "Asr", nameAr: "العصر", time: prayerTimes.asr },
+        { key: "maghrib" as PrayerName, name: "Maghrib", nameAr: "المغرب", time: prayerTimes.maghrib },
+        { key: "isha" as PrayerName, name: "Isha", nameAr: "العشاء", time: prayerTimes.isha },
       ]
     : [];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View className="px-5 py-6 border-b border-white/5">
         <View style={{ maxWidth: 500, alignSelf: 'center', width: '100%' }}>
@@ -45,13 +60,13 @@ export default function PrayerScreen() {
                   <Ionicons name="chevron-back" size={18} color="white" />
                 </TouchableOpacity>
               </Link>
-              <Text className="text-xl font-semibold text-white">Prayer Times</Text>
+              <Text className="text-xl font-semibold text-white">{t("prayer.title")}</Text>
             </View>
             <View className="flex-row items-center gap-2">
               <Link href="/qibla" asChild>
                 <TouchableOpacity className="flex-row items-center gap-2 px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30">
                   <Ionicons name="compass" size={16} color="#D4AF37" />
-                  <Text className="text-xs font-medium text-[#D4AF37]">Qibla</Text>
+                  <Text className="text-xs font-medium text-[#D4AF37]">{t("prayer.qibla")}</Text>
                 </TouchableOpacity>
               </Link>
               <Link href="/prayers/settings" asChild>
@@ -63,6 +78,43 @@ export default function PrayerScreen() {
           </View>
         </View>
       </View>
+
+      {/* Adhan playing banner */}
+      {isAdhanPlaying && (
+        <TouchableOpacity
+          onPress={stopAdhan}
+          activeOpacity={0.8}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            backgroundColor: "rgba(212, 175, 55, 0.12)",
+            borderBottomWidth: 1,
+            borderBottomColor: "rgba(212, 175, 55, 0.2)",
+          }}
+        >
+          <Ionicons name="volume-high" size={20} color="#D4AF37" />
+          <Text style={{ color: "#D4AF37", fontSize: 14, fontWeight: "600" }}>
+            Adhan Playing
+          </Text>
+          <View
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 12,
+              backgroundColor: "rgba(212, 175, 55, 0.2)",
+              marginLeft: 4,
+            }}
+          >
+            <Text style={{ color: "#D4AF37", fontSize: 12, fontWeight: "600" }}>
+              Tap to Stop
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       <ScrollView 
         className="flex-1" 
@@ -78,7 +130,7 @@ export default function PrayerScreen() {
                   <Ionicons name="location" size={14} color="rgba(255,255,255,0.5)" />
                 </View>
                 <Text className="text-sm text-white/50">
-                  {location.city ? `${location.city}, ${location.country}` : "Update location"}
+                  {location.city ? `${location.city}, ${location.country}` : t("prayer.updateLocation")}
                 </Text>
               </View>
             </Pressable>
@@ -88,14 +140,14 @@ export default function PrayerScreen() {
           {nextPrayer && !loading && !error && (
             <View className="rounded-2xl p-6 border border-white/10 overflow-hidden">
               <LinearGradient
-                colors={["#0a5c3e", "#053521"]}
-                className="absolute inset-0"
+                colors={[accent.hover, accent.base]}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }}
               />
               <View className="flex-row items-center justify-between">
                 <View>
-                  <Text className="text-xs text-white/50 uppercase tracking-wider mb-1">Next Prayer</Text>
+                  <Text className="text-xs text-white/50 uppercase tracking-wider mb-1">{t("prayer.nextPrayer")}</Text>
                   <Text className="text-3xl font-bold text-[#D4AF37]">{nextPrayer.name}</Text>
-                  <Text className="text-sm text-white/60 mt-1">in {timeUntilNext}</Text>
+                  <Text className="text-sm text-white/60 mt-1">{t("prayer.in")} {timeUntilNext}</Text>
                 </View>
                 <View className="items-end">
                   <View className="w-16 h-16 rounded-2xl bg-[#D4AF37]/10 items-center justify-center mb-2">
@@ -113,8 +165,8 @@ export default function PrayerScreen() {
               <View className="w-16 h-16 rounded-2xl bg-[#D4AF37]/10 items-center justify-center mb-4">
                 <ActivityIndicator size="large" color="#D4AF37" />
               </View>
-              <Text className="text-white/50">Getting your location...</Text>
-              <Text className="text-xs text-white/30 mt-2">Please allow location access</Text>
+              <Text className="text-white/50">{t("prayer.gettingLocation")}</Text>
+              <Text className="text-xs text-white/30 mt-2">{t("prayer.allowLocation")}</Text>
             </View>
           )}
 
@@ -126,20 +178,20 @@ export default function PrayerScreen() {
                   <Ionicons name="alert-circle" size={20} color="#ef4444" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-red-400 text-sm font-medium mb-1">Location Required</Text>
+                  <Text className="text-red-400 text-sm font-medium mb-1">{t("prayer.locationRequired")}</Text>
                   <Text className="text-white/50 text-xs mb-4">{error}</Text>
                   <View className="flex-row gap-2">
                     <TouchableOpacity
                       onPress={refreshLocation}
                       className="px-4 py-2 bg-white/10 rounded-xl"
                     >
-                      <Text className="text-sm text-white">Retry Location</Text>
+                      <Text className="text-sm text-white">{t("prayer.retryLocation")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={refreshPrayerTimes}
                       className="px-4 py-2 bg-white/10 rounded-xl"
                     >
-                      <Text className="text-sm text-white">Retry Prayer Times</Text>
+                      <Text className="text-sm text-white">{t("prayer.retryPrayerTimes")}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -151,7 +203,7 @@ export default function PrayerScreen() {
           {!loading && !error && prayerTimes && (
             <View>
               <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-                Today&apos;s Prayers
+                {t("prayer.todaysPrayers")}
               </Text>
               <View className="gap-2">
                 {prayers.map((prayer) => {
@@ -176,24 +228,14 @@ export default function PrayerScreen() {
                           className={`w-12 h-12 rounded-xl items-center justify-center ${
                             isNext
                               ? "bg-[#D4AF37]/20"
-                              : prayer.isSunrise
-                              ? "bg-orange-500/10"
-                              : "bg-white/5"
+                              : prayerIcons[prayer.name]?.bg || "bg-white/5"
                           }`}
                         >
-                          {prayer.isSunrise ? (
-                            <Ionicons 
-                              name="sunny" 
-                              size={24} 
-                              color={isNext ? "#D4AF37" : "#fb923c"} 
-                            />
-                          ) : (
-                            <Ionicons 
-                              name="moon" 
-                              size={24} 
-                              color={isNext ? "#D4AF37" : "rgba(255,255,255,0.4)"} 
-                            />
-                          )}
+                          <Ionicons 
+                            name={prayerIcons[prayer.name]?.icon || "time"} 
+                            size={24} 
+                            color={isNext ? "#D4AF37" : prayerIcons[prayer.name]?.color || "rgba(255,255,255,0.4)"} 
+                          />
                         </View>
                         <View>
                           <Text className={`font-semibold text-lg ${isNext ? "text-[#D4AF37]" : "text-white"}`}>
@@ -202,13 +244,41 @@ export default function PrayerScreen() {
                           <Text className="text-sm text-white/40">{prayer.nameAr}</Text>
                         </View>
                       </View>
-                      <View className="items-end">
-                        <Text className={`text-xl font-medium ${isNext ? "text-[#D4AF37]" : "text-white/80"}`}>
-                          {formatPrayerTime(prayer.time)}
-                        </Text>
-                        {isNext && (
-                          <Text className="text-xs text-[#D4AF37]/70 mt-0.5">in {timeUntilNext}</Text>
-                        )}
+                      <View className="flex-row items-center gap-3">
+                        {/* Adhan toggle */}
+                        <TouchableOpacity
+                          onPress={() => toggleAdhan(prayer.key)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: settings.adhan?.[prayer.key]
+                              ? "rgba(212, 175, 55, 0.15)"
+                              : "rgba(255,255,255,0.05)",
+                            borderWidth: 1,
+                            borderColor: settings.adhan?.[prayer.key]
+                              ? "rgba(212, 175, 55, 0.3)"
+                              : "rgba(255,255,255,0.08)",
+                          }}
+                        >
+                          <Ionicons
+                            name={settings.adhan?.[prayer.key] ? "notifications" : "notifications-off-outline"}
+                            size={16}
+                            color={settings.adhan?.[prayer.key] ? "#D4AF37" : "rgba(255,255,255,0.3)"}
+                          />
+                        </TouchableOpacity>
+
+                        <View className="items-end">
+                          <Text className={`text-xl font-medium ${isNext ? "text-[#D4AF37]" : "text-white/80"}`}>
+                            {formatPrayerTime(prayer.time)}
+                          </Text>
+                          {isNext && (
+                            <Text className="text-xs text-[#D4AF37]/70 mt-0.5">{t("prayer.in")} {timeUntilNext}</Text>
+                          )}
+                        </View>
                       </View>
                     </View>
                   );
@@ -221,7 +291,7 @@ export default function PrayerScreen() {
           {!loading && !error && prayerTimes && (
             <View className="bg-white/5 rounded-2xl p-5 border border-white/5">
               <Text className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
-                Calculation Method
+                {t("prayer.calculationMethod")}
               </Text>
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-3">
@@ -230,12 +300,12 @@ export default function PrayerScreen() {
                   </View>
                   <View>
                     <Text className="text-sm text-white font-medium">{getMethodName(settings.method)}</Text>
-                    <Text className="text-xs text-white/40">{settings.school === 1 ? "Hanafi School" : "Standard"}</Text>
+                    <Text className="text-xs text-white/40">{settings.school === 1 ? t("prayer.hanafiSchool") : t("prayer.standard")}</Text>
                   </View>
                 </View>
                 <Link href="/prayers/settings" asChild>
                   <TouchableOpacity>
-                    <Text className="text-xs text-[#D4AF37]">Change</Text>
+                    <Text className="text-xs text-[#D4AF37]">{t("prayer.change")}</Text>
                   </TouchableOpacity>
                 </Link>
               </View>
@@ -243,6 +313,6 @@ export default function PrayerScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

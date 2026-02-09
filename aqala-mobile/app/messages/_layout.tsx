@@ -5,7 +5,7 @@ export default function MessagesLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#021a12" },
+        contentStyle: { backgroundColor: "transparent" },
       }}
     />
   );

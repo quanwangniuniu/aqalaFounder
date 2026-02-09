@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -8,14 +7,20 @@ import { getUserDisplayName, getUserInitials } from "@/utils/userDisplay";
 import { getUserProfile, UserProfile, getUserRoomHistory, RoomHistoryEntry } from "@/lib/firebase/users";
 import { subscribeToUserCounts, getFollowers, getFollowing, getSuggestedUsers, FollowUser } from "@/lib/firebase/follows";
 import FollowButton from "@/components/FollowButton";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 type TabType = "history" | "followers" | "following" | "discover";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { isPremium } = useSubscription();
+  const { getDarkestColor } = usePreferences();
+  const { t } = useLanguage();
+  const darkBg = getDarkestColor();
   const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -127,38 +132,38 @@ export default function ProfileScreen() {
   // Not signed in
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="person-circle-outline" size={64} color="rgba(255,255,255,0.2)" />
-          <Text className="text-white text-xl font-semibold mt-4">Sign in to view your profile</Text>
+          <Text className="text-white text-xl font-semibold mt-4">{t("profile.signInToView")}</Text>
           <Text className="text-white/50 text-sm mt-2 text-center mb-6">
-            Create an account or sign in to access your profile, history, and more
+            {t("profile.signInDesc")}
           </Text>
           <TouchableOpacity
             onPress={() => router.push("/auth/login")}
             className="bg-[#D4AF37] rounded-xl py-3.5 px-8"
           >
-            <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
+            <Text style={{ color: darkBg }} className="font-semibold text-base">{t("home.signIn")}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   const displayName = profile?.displayName || getUserDisplayName(user);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header Bar */}
       <View
         style={{
@@ -203,7 +208,7 @@ export default function ProfileScreen() {
             top: 100,
             right: 16,
             width: 208,
-            backgroundColor: "#0f1a15",
+            backgroundColor: darkBg,
             borderWidth: 1,
             borderColor: "rgba(255,255,255,0.1)",
             borderRadius: 12,
@@ -230,7 +235,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="chatbubbles-outline" size={18} color="rgba(255,255,255,0.7)" />
-            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Messages</Text>
+            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{t("profile.messages")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -247,7 +252,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="cog-outline" size={18} color="rgba(255,255,255,0.7)" />
-            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Settings</Text>
+            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>{t("nav.settings")}</Text>
           </TouchableOpacity>
 
           <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.1)" }} />
@@ -267,7 +272,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="log-out-outline" size={18} color="#f87171" />
-            <Text style={{ color: "#f87171", fontSize: 14 }}>Sign Out</Text>
+            <Text style={{ color: "#f87171", fontSize: 14 }}>{t("settings.signOut")}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -318,15 +323,15 @@ export default function ProfileScreen() {
             <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-around", paddingTop: 8 }}>
               <TouchableOpacity onPress={() => setActiveTab("history")} style={{ alignItems: "center" }}>
                 <Text style={{ fontSize: 20, fontWeight: "700", color: "white" }}>{roomHistory.length || 0}</Text>
-                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Rooms</Text>
+                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t("profile.rooms")}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setActiveTab("followers")} style={{ alignItems: "center" }}>
                 <Text style={{ fontSize: 20, fontWeight: "700", color: "white" }}>{counts.followerCount}</Text>
-                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Followers</Text>
+                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t("profile.followers")}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setActiveTab("following")} style={{ alignItems: "center" }}>
                 <Text style={{ fontSize: 20, fontWeight: "700", color: "white" }}>{counts.followingCount}</Text>
-                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Following</Text>
+                <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t("profile.following")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -362,7 +367,7 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Ionicons name="shield-checkmark" size={12} color="#f43f5e" />
-                  <Text style={{ fontSize: 12, fontWeight: "500", color: "#fb7185" }}>Admin</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "500", color: "#fb7185" }}>{t("profile.admin")}</Text>
                 </View>
               )}
               {profile?.partner && (
@@ -380,7 +385,7 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Ionicons name="checkmark-circle" size={12} color="#D4AF37" />
-                  <Text style={{ fontSize: 12, fontWeight: "500", color: "#D4AF37" }}>Official Partner</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "500", color: "#D4AF37" }}>{t("profile.officialPartner")}</Text>
                 </View>
               )}
               {(isPremium || profile?.isPremium) && (
@@ -400,7 +405,7 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Ionicons name="trophy" size={12} color="#f59e0b" />
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: "#f59e0b" }}>Pro Member</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: "#f59e0b" }}>{t("profile.proMember")}</Text>
                 </LinearGradient>
               )}
             </View>
@@ -418,7 +423,7 @@ export default function ProfileScreen() {
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "white", fontSize: 14, fontWeight: "500" }}>Edit Profile</Text>
+              <Text style={{ color: "white", fontSize: 14, fontWeight: "500" }}>{t("profile.editProfile")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/messages")}
@@ -487,7 +492,7 @@ export default function ProfileScreen() {
               {historyLoading ? (
                 <LoadingSpinner />
               ) : roomHistory.length === 0 ? (
-                <EmptyState icon="grid-outline" text="No room activity yet" />
+                <EmptyState icon="grid-outline" text={t("profile.noActivity")} />
               ) : (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                   {roomHistory.map((room, idx) => (
@@ -525,7 +530,7 @@ export default function ProfileScreen() {
               {followersLoading ? (
                 <LoadingSpinner />
               ) : followers.length === 0 ? (
-                <EmptyState icon="people-outline" text="No followers yet" />
+                <EmptyState icon="people-outline" text={t("profile.noFollowers")} />
               ) : (
                 <View style={{ gap: 8 }}>
                   {followers.map((follower) => (
@@ -542,7 +547,7 @@ export default function ProfileScreen() {
               {followingLoading ? (
                 <LoadingSpinner />
               ) : following.length === 0 ? (
-                <EmptyState icon="person-add-outline" text="Not following anyone yet" />
+                <EmptyState icon="person-add-outline" text={t("profile.notFollowing")} />
               ) : (
                 <View style={{ gap: 8 }}>
                   {following.map((u) => (
@@ -561,13 +566,13 @@ export default function ProfileScreen() {
               ) : suggestedUsers.length === 0 ? (
                 <EmptyState
                   icon="compass-outline"
-                  text="No suggestions yet"
-                  subtext="Follow more people to get personalized suggestions"
+                  text={t("profile.noSuggestions")}
+                  subtext={t("profile.suggestionsHint")}
                 />
               ) : (
                 <View style={{ gap: 8 }}>
                   <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 4, paddingHorizontal: 4 }}>
-                    People you may know
+                    {t("profile.peopleYouMayKnow")}
                   </Text>
                   {suggestedUsers.map((u) => (
                     <UserListItem key={u.id} user={u} currentUserId={user?.uid} />
@@ -578,7 +583,7 @@ export default function ProfileScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
 

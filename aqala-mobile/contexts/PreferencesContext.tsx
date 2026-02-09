@@ -54,6 +54,8 @@ interface PreferencesContextType {
   setWallpaper: (id: WallpaperId) => void;
   getGradientColors: () => string[];
   getAccentColor: () => { base: string; hover: string };
+  /** Returns the darkest colour from the current gradient – useful for contrast text on gold buttons */
+  getDarkestColor: () => string;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -112,11 +114,32 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({ childr
     return { base: selected.accentColor, hover: selected.accentHover };
   };
 
+  // Get the darkest colour from the gradient (for contrast text on gold buttons, etc.)
+  const getDarkestColor = (): string => {
+    const selected = WALLPAPERS.find((w) => w.id === wallpaper) || WALLPAPERS[0];
+    // Pick the colour with the lowest perceived brightness
+    let darkest = selected.gradientColors[0];
+    let minBrightness = Infinity;
+    for (const c of selected.gradientColors) {
+      const hex = c.replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+      if (brightness < minBrightness) {
+        minBrightness = brightness;
+        darkest = c;
+      }
+    }
+    return darkest;
+  };
+
   const value: PreferencesContextType = {
     wallpaper,
     setWallpaper,
     getGradientColors,
     getAccentColor,
+    getDarkestColor,
   };
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

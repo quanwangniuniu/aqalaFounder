@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { View, Text, Pressable, Platform, Linking } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -76,7 +77,7 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
                 opacity: loading ? 0.6 : 1,
               }}
             >
-              <Text style={{ color: "#032117", fontSize: 13, fontWeight: "600" }}>
+              <Text style={{ color: "#021a12", fontSize: 13, fontWeight: "600" }}>
                 {loading ? "..." : "Allow"}
               </Text>
             </LinearGradient>
@@ -129,6 +130,8 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
   const [micGranted, setMicGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -187,7 +190,7 @@ export default function OnboardingScreen() {
   const bothAnswered = locationGranted !== null && micGranted !== null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top", "bottom"]}>
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "space-between" }}>
         {/* Top content */}
         <View>
@@ -261,8 +264,8 @@ export default function OnboardingScreen() {
                   gap: 8,
                 }}
               >
-                <Text style={{ color: "#032117", fontSize: 17, fontWeight: "700" }}>Continue to Aqala</Text>
-                <Ionicons name="arrow-forward" size={20} color="#032117" />
+                <Text style={{ color: darkBg, fontSize: 17, fontWeight: "700" }}>Continue to Aqala</Text>
+                <Ionicons name="arrow-forward" size={20} color={darkBg} />
               </LinearGradient>
             </Pressable>
           ) : (
@@ -282,6 +285,6 @@ export default function OnboardingScreen() {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

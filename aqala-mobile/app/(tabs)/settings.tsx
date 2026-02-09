@@ -1,20 +1,29 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { usePreferences, WALLPAPERS, WallpaperId } from "@/contexts/PreferencesContext";
-import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
+// getDarkestColor used for contrast text on gold buttons
+import { useLanguage, LANGUAGE_OPTIONS, type LanguageOption } from "@/contexts/LanguageContext";
 import { getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Path, Circle } from "react-native-svg";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function SettingsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isPremium } = useSubscription();
-  const { wallpaper, setWallpaper } = usePreferences();
-  const { language, setLanguage } = useLanguage();
+  const { wallpaper, setWallpaper, getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
+  const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
+  // Calculate wallpaper tile size: 3 columns with 12px gaps, 20px padding each side
+  const containerWidth = Math.min(screenWidth - 40, 500 - 40); // account for p-5 padding
+  const tileGap = 12;
+  const tileWidth = (containerWidth - tileGap * 2) / 3;
+  const tileHeight = tileWidth * 0.75; // 4:3 aspect ratio
 
   const handleSignOut = async () => {
     try {
@@ -27,35 +36,35 @@ export default function SettingsScreen() {
 
   if (authLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-white text-xl font-semibold mb-2">Sign in required</Text>
+          <Text className="text-white text-xl font-semibold mb-2">{t("settings.signInRequired")}</Text>
           <Text className="text-white/50 text-sm text-center mb-6">
-            Please sign in to access settings
+            {t("settings.signInToAccess")}
           </Text>
           <TouchableOpacity
             onPress={() => router.push("/auth/login")}
             className="bg-[#D4AF37] rounded-xl py-3.5 px-8"
           >
-            <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
+            <Text style={{ color: darkBg }} className="font-semibold text-base">{t("home.signIn")}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View className="px-5 py-6 border-b border-white/5">
         <View className="flex-row items-center gap-3" style={{ maxWidth: 500, alignSelf: 'center', width: '100%' }}>
@@ -64,7 +73,7 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-back" size={18} color="white" />
             </TouchableOpacity>
           </Link>
-          <Text className="text-xl font-semibold text-white">Account Settings</Text>
+          <Text className="text-xl font-semibold text-white">{t("settings.title")}</Text>
         </View>
       </View>
 
@@ -77,7 +86,7 @@ export default function SettingsScreen() {
           {/* Profile Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Profile
+              {t("settings.profile")}
             </Text>
             <View className="bg-white/5 rounded-2xl p-5 border border-white/5">
               <View className="flex-row items-center gap-4">
@@ -100,8 +109,10 @@ export default function SettingsScreen() {
                     </LinearGradient>
                   )}
                   {isPremium && (
-                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#D4AF37] rounded-full border-2 border-[#032117] items-center justify-center">
-                      <Text className="text-[#032117] text-xs">⭐</Text>
+                    <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#D4AF37] rounded-full items-center justify-center" style={{ borderWidth: 2, borderColor: darkBg }}>
+                      <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={darkBg} strokeWidth={2.5}>
+                        <Path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
                     </View>
                   )}
                 </View>
@@ -112,9 +123,9 @@ export default function SettingsScreen() {
                   <Text className="text-sm text-white/50" numberOfLines={1}>{user.email}</Text>
                   <Text className="text-xs mt-1">
                     {isPremium ? (
-                      <Text className="text-[#D4AF37]">✨ Premium Member</Text>
+                      <Text className="text-[#D4AF37]">{t("settings.premiumMember")}</Text>
                     ) : (
-                      <Text className="text-white/40">Free Plan</Text>
+                      <Text className="text-white/40">{t("settings.freePlan")}</Text>
                     )}
                   </Text>
                 </View>
@@ -125,7 +136,7 @@ export default function SettingsScreen() {
           {/* Language Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Language
+              {t("settings.language")}
             </Text>
             <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <ScrollView className="max-h-48">
@@ -152,66 +163,88 @@ export default function SettingsScreen() {
           {/* Wallpaper Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Wallpaper
+              {t("settings.wallpaper")}
             </Text>
-            <View className="flex-row flex-wrap gap-3">
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: tileGap }}>
               {WALLPAPERS.map((wp) => (
                 <TouchableOpacity
                   key={wp.id}
                   onPress={() => setWallpaper(wp.id)}
-                  className={`relative rounded-xl overflow-hidden border-2 ${
-                    wallpaper === wp.id
-                      ? "border-[#D4AF37]"
-                      : "border-white/10"
-                  }`}
-                  style={{ width: '30%', aspectRatio: 4/3 }}
+                  activeOpacity={0.7}
+                  style={{
+                    width: tileWidth,
+                    height: tileHeight,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    borderWidth: 2,
+                    borderColor: wallpaper === wp.id ? "#D4AF37" : "rgba(255,255,255,0.1)",
+                  }}
                 >
                   <LinearGradient
-                    colors={wp.gradientColors}
-                    className="absolute inset-0"
+                    colors={[...wp.gradientColors]}
+                    style={StyleSheet.absoluteFill}
                   />
                   
                   {/* Label */}
-                  <View className="absolute inset-x-0 bottom-0 bg-black/80 p-2">
-                    <Text className="text-[10px] font-medium text-white/90 leading-tight">
+                  <View style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.8)",
+                    padding: 6,
+                  }}>
+                    <Text style={{ fontSize: 10, fontWeight: "500", color: "rgba(255,255,255,0.9)" }}>
                       {wp.name}
                     </Text>
                   </View>
                   
                   {/* Selected checkmark */}
                   {wallpaper === wp.id && (
-                    <View className="absolute top-2 right-2 w-5 h-5 bg-[#D4AF37] rounded-full items-center justify-center">
-                      <Ionicons name="checkmark" size={12} color="#032117" />
+                    <View style={{
+                      position: "absolute",
+                      top: 6,
+                      right: 6,
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#D4AF37",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                      <Ionicons name="checkmark" size={12} color={darkBg} />
                     </View>
                   )}
                 </TouchableOpacity>
               ))}
             </View>
             <Text className="text-xs text-white/40 mt-3">
-              Choose a wallpaper for your home screen
+              {t("settings.wallpaperHint")}
             </Text>
           </View>
 
           {/* Plan Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Plan
+              {t("settings.plan")}
             </Text>
             <View className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
               {isPremium ? (
                 <View className="p-5">
                   <View className="flex-row items-center gap-3 mb-3">
                     <View className="w-10 h-10 rounded-full bg-[#D4AF37]/20 items-center justify-center">
-                      <Text className="text-[#D4AF37] text-lg">⭐</Text>
+                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth={2}>
+                        <Path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
                     </View>
                     <View>
-                      <Text className="font-medium text-white">Premium Active</Text>
-                      <Text className="text-xs text-white/50">Ad-free experience enabled</Text>
+                      <Text className="font-medium text-white">{t("settings.premiumActive")}</Text>
+                      <Text className="text-xs text-white/50">{t("settings.adFreeEnabled")}</Text>
                     </View>
                   </View>
                   <Link href="/subscription/manage" asChild>
                     <TouchableOpacity className="w-full items-center py-2.5 bg-white/5 rounded-xl">
-                      <Text className="text-sm text-white/70">Manage Subscription</Text>
+                      <Text className="text-sm text-white/70">{t("settings.manageSubscription")}</Text>
                     </TouchableOpacity>
                   </Link>
                 </View>
@@ -222,8 +255,8 @@ export default function SettingsScreen() {
                       <Ionicons name="star-outline" size={20} color="rgba(255,255,255,0.5)" />
                     </View>
                     <View>
-                      <Text className="font-medium text-white">Free Plan</Text>
-                      <Text className="text-xs text-white/50">Upgrade to remove ads</Text>
+                      <Text className="font-medium text-white">{t("settings.freePlan")}</Text>
+                      <Text className="text-xs text-white/50">{t("settings.upgradeToRemoveAds")}</Text>
                     </View>
                   </View>
                   <Link href="/subscription/index" asChild>
@@ -232,8 +265,8 @@ export default function SettingsScreen() {
                         colors={["#D4AF37", "#c9a431"]}
                         className="w-full items-center py-3 rounded-xl"
                       >
-                        <Text className="text-sm font-semibold text-[#032117]">
-                          Go Ad-Free • $15 one-time
+                        <Text style={{ color: darkBg }} className="text-sm font-semibold">
+                          {t("settings.goAdFree")}
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -246,7 +279,7 @@ export default function SettingsScreen() {
           {/* Account Actions */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Account
+              {t("settings.account")}
             </Text>
             <TouchableOpacity
               onPress={handleSignOut}
@@ -256,8 +289,8 @@ export default function SettingsScreen() {
                 <Ionicons name="log-out-outline" size={20} color="#f87171" />
               </View>
               <View className="flex-1">
-                <Text className="font-medium text-white">Sign Out</Text>
-                <Text className="text-xs text-white/50">Log out of your account</Text>
+                <Text className="font-medium text-white">{t("settings.signOut")}</Text>
+                <Text className="text-xs text-white/50">{t("settings.signOutDesc")}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -269,6 +302,6 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

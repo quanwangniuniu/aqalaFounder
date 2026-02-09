@@ -10,11 +10,14 @@ import {
   Platform,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ForgotPasswordScreen() {
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const [email, setEmail] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +57,7 @@ export default function ForgotPasswordScreen() {
   const displayError = localError || (authError && !isSuccess ? authError : null);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#021a12]">
+    <WallpaperBackground>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -92,8 +95,8 @@ export default function ForgotPasswordScreen() {
                 </View>
                 <Link href="/auth/login" asChild>
                   <TouchableOpacity className="w-full rounded-xl py-3.5 bg-[#D4AF37] items-center justify-center flex-row gap-2">
-                    <Ionicons name="arrow-back" size={20} color="#021a12" />
-                    <Text className="text-[#021a12] font-semibold text-base">Back to Sign In</Text>
+                    <Ionicons name="arrow-back" size={20} color={darkBg} />
+                    <Text style={{ color: darkBg }} className="font-semibold text-base">Back to Sign In</Text>
                   </TouchableOpacity>
                 </Link>
               </View>
@@ -132,11 +135,11 @@ export default function ForgotPasswordScreen() {
                   }`}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color="#021a12" />
+                    <ActivityIndicator color={darkBg} />
                   ) : (
                     <>
-                      <Ionicons name="mail-outline" size={20} color="#021a12" />
-                      <Text className="text-[#021a12] font-semibold text-base">Send Reset Link</Text>
+                      <Ionicons name="mail-outline" size={20} color={darkBg} />
+                      <Text style={{ color: darkBg }} className="font-semibold text-base">Send Reset Link</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -164,6 +167,6 @@ export default function ForgotPasswordScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

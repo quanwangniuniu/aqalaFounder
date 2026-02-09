@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { subscribeToConversations, Conversation } from "@/lib/firebase/messages";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,6 +32,8 @@ function formatTime(date: Date): string {
 export default function MessagesScreen() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,18 +58,18 @@ export default function MessagesScreen() {
 
   if (authLoading || loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (!user) return null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -202,7 +205,7 @@ export default function MessagesScreen() {
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={{ fontSize: 11, fontWeight: "600", color: "#021a12" }}>
+                    <Text style={{ fontSize: 11, fontWeight: "600", color: darkBg }}>
                       {unread > 99 ? "99+" : unread}
                     </Text>
                   </View>
@@ -212,6 +215,6 @@ export default function MessagesScreen() {
           })
         )}
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

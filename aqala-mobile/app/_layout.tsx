@@ -10,6 +10,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { PrayerProvider } from "@/contexts/PrayerContext";
 import { RoomsProvider } from "@/contexts/RoomsContext";
 import { InterstitialAdProvider } from "@/contexts/InterstitialAdContext";
+import { MessageNotificationProvider } from "@/contexts/MessageNotificationContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 import * as Location from "expo-location";
@@ -92,29 +93,31 @@ export default function RootLayout() {
         <AuthProvider>
           <SubscriptionProvider>
             <InterstitialAdProvider>
-              <PreferencesProvider>
-                <LanguageProvider>
-                  <PrayerProvider>
-                    <RoomsProvider>
-                      <StatusBar style="light" />
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: "#021a12" },
-                          animation: "fade",
-                        }}
-                      >
-                        <Stack.Screen name="onboarding" options={{ animation: "none" }} />
-                        <Stack.Screen name="(tabs)" />
-                        <Stack.Screen name="auth" />
-                        <Stack.Screen name="messages" />
-                        <Stack.Screen name="room/[roomId]" />
-                        <Stack.Screen name="user/[userId]" />
-                      </Stack>
-                    </RoomsProvider>
-                  </PrayerProvider>
-                </LanguageProvider>
-              </PreferencesProvider>
+              <MessageNotificationProvider>
+                <PreferencesProvider>
+                  <LanguageProvider>
+                    <PrayerProvider>
+                      <RoomsProvider>
+                        <StatusBar style="light" />
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: "transparent" },
+                            animation: "fade",
+                          }}
+                        >
+                          <Stack.Screen name="onboarding" options={{ animation: "none" }} />
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen name="auth" />
+                          <Stack.Screen name="messages" />
+                          <Stack.Screen name="room/[roomId]" />
+                          <Stack.Screen name="user/[userId]" />
+                        </Stack>
+                      </RoomsProvider>
+                    </PrayerProvider>
+                  </LanguageProvider>
+                </PreferencesProvider>
+              </MessageNotificationProvider>
             </InterstitialAdProvider>
           </SubscriptionProvider>
         </AuthProvider>

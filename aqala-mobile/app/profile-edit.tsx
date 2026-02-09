@@ -3,9 +3,10 @@ import {
   View, Text, ScrollView, TouchableOpacity, Image,
   TextInput, ActivityIndicator, Alert, Switch, KeyboardAvoidingView, Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import WallpaperBackground from "@/components/WallpaperBackground";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { getUserProfile, isUsernameAvailable } from "@/lib/firebase/users";
 import { subscribeToUserCounts } from "@/lib/firebase/follows";
 import { uploadProfileImage } from "@/lib/firebase/storage";
@@ -17,6 +18,8 @@ import * as ImagePicker from "expo-image-picker";
 export default function ProfileEditScreen() {
   const router = useRouter();
   const { user, loading: authLoading, updateUserProfile } = useAuth();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
 
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
@@ -206,11 +209,11 @@ export default function ProfileEditScreen() {
 
   if (authLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
@@ -225,7 +228,7 @@ export default function ProfileEditScreen() {
     privateFollowers !== initialSettings.privateFollowers;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -340,7 +343,7 @@ export default function ProfileEditScreen() {
                     elevation: 4,
                   }}
                 >
-                  <Ionicons name="camera" size={16} color="#0a1f16" />
+                  <Ionicons name="camera" size={16} color={darkBg} />
                 </TouchableOpacity>
               </View>
 
@@ -603,17 +606,17 @@ export default function ProfileEditScreen() {
               >
                 {isSaving ? (
                   <>
-                    <ActivityIndicator size="small" color="#021a12" />
-                    <Text style={{ color: "#021a12", fontWeight: "600", fontSize: 16 }}>Saving...</Text>
+                    <ActivityIndicator size="small" color={darkBg} />
+                    <Text style={{ color: darkBg, fontWeight: "600", fontSize: 16 }}>Saving...</Text>
                   </>
                 ) : (
-                  <Text style={{ color: "#021a12", fontWeight: "600", fontSize: 16 }}>Save Changes</Text>
+                  <Text style={{ color: darkBg, fontWeight: "600", fontSize: 16 }}>Save Changes</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

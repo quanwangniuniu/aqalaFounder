@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { createRoom, CreateRoomOptions } from "@/lib/firebase/rooms";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +26,8 @@ interface CreateRoomModalProps {
 
 export default function CreateRoomModal({ visible, onClose }: CreateRoomModalProps) {
   const { user, partnerInfo } = useAuth();
+  const { getDarkestColor } = usePreferences();
+  const darkBg = getDarkestColor();
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -100,7 +103,7 @@ export default function CreateRoomModal({ visible, onClose }: CreateRoomModalPro
           <Pressable onPress={() => {}}>
             <View
               style={{
-                backgroundColor: "#0a1f16",
+                backgroundColor: darkBg,
                 borderRadius: 24,
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.1)",
@@ -374,12 +377,12 @@ export default function CreateRoomModal({ visible, onClose }: CreateRoomModalPro
                       >
                         {isCreating ? (
                           <>
-                            <ActivityIndicator size="small" color={isPartner ? "#0a1f16" : "white"} />
+                            <ActivityIndicator size="small" color={isPartner ? darkBg : "white"} />
                             <Text
                               style={{
                                 fontWeight: "500",
                                 fontSize: 14,
-                                color: isPartner ? "#0a1f16" : "white",
+                                color: isPartner ? darkBg : "white",
                               }}
                             >
                               Creating...
@@ -387,12 +390,12 @@ export default function CreateRoomModal({ visible, onClose }: CreateRoomModalPro
                           </>
                         ) : (
                           <>
-                            <Ionicons name="add" size={18} color={isPartner ? "#0a1f16" : "white"} />
+                            <Ionicons name="add" size={18} color={isPartner ? darkBg : "white"} />
                             <Text
                               style={{
                                 fontWeight: "500",
                                 fontSize: 14,
-                                color: isPartner ? "#0a1f16" : "white",
+                                color: isPartner ? darkBg : "white",
                               }}
                             >
                               Create Room
