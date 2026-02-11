@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   ChatMessage, 
@@ -37,7 +38,11 @@ export default function LiveChat({
   const [isPremium, setIsPremium] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Subscribe to chat messages
   useEffect(() => {
@@ -117,15 +122,72 @@ export default function LiveChat({
     } finally {
       setIsSending(false);
     }
-  }, [user, newMessage, isSending, roomId, ownerId, isPartnerRoom]);
+  }, [user, newMessage, isSending, roomId, ownerId, isPartnerRoom, isPremium]);
 
   // Handle Enter key
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
+
+  const handleEmojiSelect = useCallback(
+    (emojiData: EmojiClickData) => {
+      const emoji = emojiData.emoji;
+      setNewMessage((prev) => {
+        const input = inputRef.current;
+        if (!input) {
+          return prev + emoji;
+        }
+        const start = input.selectionStart ?? prev.length;
+        const end = input.selectionEnd ?? prev.length;
+        const updated = prev.slice(0, start) + emoji + prev.slice(end);
+        requestAnimationFrame(() => {
+          const cursorPosition = start + emoji.length;
+          input.selectionStart = cursorPosition;
+          input.selectionEnd = cursorPosition;
+          input.focus();
+        });
+        return updated;
+      });
+      setShowEmojiPicker(false);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!showEmojiPicker) {
+      return;
     }
-  }, [handleSend]);
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (pickerRef.current?.contains(target) || emojiButtonRef.current?.contains(target)) {
+        return;
+      }
+      setShowEmojiPicker(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [showEmojiPicker]);
 
   // Send donation message
   const handleDonation = useCallback(async (amount: number) => {
@@ -361,9 +423,44 @@ export default function LiveChat({
 
       {/* Input */}
       {user ? (
-        <div className="flex-shrink-0 p-3 border-t border-white/5">
+        <div className="flex-shrink-0 p-3 border-t border-white/5 relative">
+          {showEmojiPicker && (
+            <div
+              ref={pickerRef}
+              className="absolute bottom-[76px] right-16 z-50 drop-shadow-2xl"
+            >
+              <EmojiPicker
+                onEmojiClick={handleEmojiSelect}
+                theme={Theme.DARK}
+                lazyLoadEmojis
+                searchDisabled
+                skinTonesDisabled
+                previewConfig={{ showPreview: false }}
+                width={320}
+                height={360}
+              />
+            </div>
+          )}
           <div className="flex gap-2">
+            <button
+              ref={emojiButtonRef}
+              type="button"
+              onClick={() => {
+                setShowEmojiPicker((prev) => !prev);
+                requestAnimationFrame(() => inputRef.current?.focus());
+              }}
+              aria-label="Add emoji"
+              aria-expanded={showEmojiPicker}
+              className="px-3 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white hover:border-white/30 transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9 10h.01M15 10h.01" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M8 15.5c1.4 1.05 2.8 1.05 4.2 0" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
             <input
+              ref={inputRef}
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}

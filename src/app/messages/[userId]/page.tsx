@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,9 +27,12 @@ export default function ConversationPage() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -99,6 +103,63 @@ export default function ConversationPage() {
 
     return () => unsubscribe();
   }, [conversationId, currentUser, scrollToBottom]);
+
+  const handleEmojiSelect = useCallback(
+    (emojiData: EmojiClickData) => {
+      const emoji = emojiData.emoji;
+      setNewMessage((prev) => {
+        const input = inputRef.current;
+        if (!input) {
+          return prev + emoji;
+        }
+        const start = input.selectionStart ?? prev.length;
+        const end = input.selectionEnd ?? prev.length;
+        const updated = prev.slice(0, start) + emoji + prev.slice(end);
+        requestAnimationFrame(() => {
+          const cursorPosition = start + emoji.length;
+          input.selectionStart = cursorPosition;
+          input.selectionEnd = cursorPosition;
+          input.focus();
+        });
+        return updated;
+      });
+      setShowEmojiPicker(false);
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!showEmojiPicker) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (
+        pickerRef.current?.contains(target) ||
+        emojiButtonRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setShowEmojiPicker(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showEmojiPicker]);
 
   // Send message
   const handleSend = async () => {
@@ -251,7 +312,45 @@ export default function ConversationPage() {
 
       {/* Input - fixed at bottom */}
       <div className="flex-shrink-0 bg-black/20 backdrop-blur-xl border-t border-white/5 pb-safe">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3 relative">
+          {showEmojiPicker && (
+            <div
+              ref={pickerRef}
+              className="absolute bottom-[calc(100%+0.75rem)] right-4 sm:right-0 z-50 drop-shadow-2xl"
+            >
+              <EmojiPicker
+                onEmojiClick={handleEmojiSelect}
+                theme={Theme.DARK}
+                lazyLoadEmojis
+                searchDisabled
+                skinTonesDisabled
+                previewConfig={{ showPreview: false }}
+                width={320}
+                height={380}
+              />
+            </div>
+          )}
+          <button
+            ref={emojiButtonRef}
+            type="button"
+            onClick={() => {
+              setShowEmojiPicker((prev) => !prev);
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }}
+            aria-label="Add emoji"
+            aria-expanded={showEmojiPicker}
+            className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:border-white/30 transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9 10h.01M15 10h.01" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M8 15.5c1.333 1 2.667 1 4 0"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
           <input
             ref={inputRef}
             type="text"
