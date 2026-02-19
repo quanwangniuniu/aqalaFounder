@@ -35,6 +35,29 @@ export default function Footer() {
     <footer className="mt-auto relative z-50 bg-black/20 backdrop-blur-md border-t border-white/5" dir={isRTL ? "rtl" : "ltr"}>
       
       <div className="relative mx-auto max-w-[600px] px-6 py-5">
+        {/* Policy / site info links */}
+        <div className="flex items-center justify-center gap-4 mb-4 text-sm">
+          <Link
+            href="/privacy"
+            className="text-white/60 hover:text-[#D4AF37] transition-colors duration-200"
+          >
+            Privacy
+          </Link>
+          <span className="w-1 h-1 rounded-full bg-white/20" aria-hidden />
+          <Link
+            href="/site-map"
+            className="text-white/60 hover:text-[#D4AF37] transition-colors duration-200"
+          >
+            Sitemap
+          </Link>
+          <span className="w-1 h-1 rounded-full bg-white/20" aria-hidden />
+          <Link
+            href="/about"
+            className="text-white/60 hover:text-[#D4AF37] transition-colors duration-200"
+          >
+            About
+          </Link>
+        </div>
         <div className="flex items-center justify-center gap-3 sm:gap-5">
           {/* Instagram Link */}
           <a
