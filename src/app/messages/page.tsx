@@ -6,11 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeToConversations, Conversation } from "@/lib/firebase/messages";
+import { getBlockedUsers } from "@/lib/firebase/moderation";
 
 export default function MessagesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   // Redirect if not logged in
@@ -19,6 +21,14 @@ export default function MessagesPage() {
       router.push("/auth/login?returnUrl=/messages");
     }
   }, [user, authLoading, router]);
+
+  // Load blocked user IDs
+  useEffect(() => {
+    if (!user) return;
+    getBlockedUsers(user.uid).then((list) => {
+      setBlockedIds(new Set(list.map((b) => b.id)));
+    }).catch(() => {});
+  }, [user]);
 
   // Subscribe to conversations
   useEffect(() => {
@@ -82,9 +92,14 @@ export default function MessagesPage() {
           </div>
         ) : (
           <div className="divide-y divide-white/5">
-            {conversations.map((conversation) => {
-              const otherUserId = conversation.participants.find((p) => p !== user.uid);
-              const otherUser = otherUserId ? conversation.participantInfo[otherUserId] : null;
+            {conversations
+              .filter((conversation) => {
+                const otherUserId = conversation.participants.find((p) => p !== user.uid);
+                return otherUserId && !blockedIds.has(otherUserId);
+              })
+              .map((conversation) => {
+              const otherUserId = conversation.participants.find((p) => p !== user.uid)!;
+              const otherUser = conversation.participantInfo[otherUserId] ?? null;
               const unread = conversation.unreadCount[user.uid] || 0;
               const isLastSender = conversation.lastSenderId === user.uid;
 

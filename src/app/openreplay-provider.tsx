@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import Tracker from "@openreplay/tracker";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePrivacyConsent } from "@/contexts/PrivacyConsentContext";
 
 interface OpenReplayProviderProps {
   children: React.ReactNode;
@@ -10,37 +11,40 @@ interface OpenReplayProviderProps {
 
 export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
   const { user } = useAuth();
+  const { consent } = usePrivacyConsent();
   const trackerRef = useRef<Tracker | null>(null);
 
   useEffect(() => {
-    // Only initialize on client side
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined") return;
+
+    // Only initialize if user has consented to session recording
+    if (!consent.consentGiven || !consent.sessionRecording) {
+      // If tracker was previously initialized but consent was revoked, clear it
+      if (trackerRef.current) {
+        trackerRef.current = null;
+      }
       return;
     }
 
     const projectKey = process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY;
 
-    // Skip initialization if project key is not provided
     if (!projectKey) {
-      console.warn("OpenReplay: Project key not found. Session recording disabled.");
       return;
     }
 
+    // Don't re-initialize if already running
+    if (trackerRef.current) return;
+
     try {
-      // Initialize tracker
       const tracker = new Tracker({
         projectKey,
       });
 
-      // Start tracking
       tracker.start();
-
       trackerRef.current = tracker;
 
-      // Cleanup function
       return () => {
         try {
-          // OpenReplay doesn't have an explicit stop method, but we can clear the reference
           trackerRef.current = null;
         } catch (error) {
           console.error("OpenReplay cleanup error:", error);
@@ -49,22 +53,18 @@ export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
     } catch (error) {
       console.error("OpenReplay initialization error:", error);
     }
-  }, []);
+  }, [consent.consentGiven, consent.sessionRecording]);
 
   // Handle user identification
   useEffect(() => {
     const tracker = trackerRef.current;
 
-    if (!tracker) {
-      return;
-    }
+    if (!tracker) return;
 
     try {
       if (user) {
-        // Identify user with their ID and metadata
         tracker.setUserID(user.uid);
 
-        // Set additional user metadata (setMetadata requires key and value)
         if (user.email) {
           tracker.setMetadata("email", user.email);
         }
@@ -72,7 +72,6 @@ export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
           tracker.setMetadata("displayName", user.displayName);
         }
       } else {
-        // Clear user identification when logged out
         tracker.setUserID("");
       }
     } catch (error) {
@@ -82,4 +81,3 @@ export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
 
   return <>{children}</>;
 }
-

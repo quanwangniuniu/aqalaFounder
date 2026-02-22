@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -22,6 +23,8 @@ import {
   subscribeToMessages,
   Message,
 } from "@/lib/firebase/messages";
+import { blockUser, unblockUser, isUserBlocked } from "@/lib/firebase/moderation";
+import ReportModal from "@/components/ReportModal";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -36,9 +39,51 @@ export default function ConversationScreen() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
+
+  // Check block status
+  useEffect(() => {
+    if (!currentUser || !otherUserId) return;
+    isUserBlocked(currentUser.uid, otherUserId).then(setBlocked).catch(() => {});
+  }, [currentUser, otherUserId]);
+
+  const handleBlock = () => {
+    if (!currentUser || !otherUserId) return;
+    const name = otherUser?.username ? `@${otherUser.username}` : otherUser?.displayName || "this user";
+    Alert.alert(
+      blocked ? "Unblock User" : "Block User",
+      blocked ? `Unblock ${name}?` : `Block ${name}? They won't be able to message you.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: blocked ? "Unblock" : "Block",
+          style: blocked ? "default" : "destructive",
+          onPress: async () => {
+            setBlockLoading(true);
+            try {
+              if (blocked) {
+                await unblockUser(currentUser.uid, otherUserId);
+                setBlocked(false);
+              } else {
+                await blockUser(currentUser.uid, otherUserId);
+                setBlocked(true);
+              }
+            } catch {
+              Alert.alert("Error", "Something went wrong. Please try again.");
+            } finally {
+              setBlockLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -110,7 +155,7 @@ export default function ConversationScreen() {
 
   // Send message
   const handleSend = async () => {
-    if (!newMessage.trim() || !conversationId || !currentUser || sending) return;
+    if (!newMessage.trim() || !conversationId || !currentUser || sending || blocked) return;
 
     setSending(true);
     const text = newMessage.trim();
@@ -324,10 +369,96 @@ export default function ConversationScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={{ padding: 8 }}>
+          <TouchableOpacity
+            onPress={() => setShowMenu(!showMenu)}
+            style={{ padding: 8 }}
+          >
             <Ionicons name="ellipsis-horizontal" size={20} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
         </View>
+
+        {/* Menu Dropdown */}
+        {showMenu && (
+          <View
+            style={{
+              position: "absolute",
+              top: 100,
+              right: 16,
+              width: 200,
+              backgroundColor: "#0f1a15",
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.1)",
+              borderRadius: 12,
+              zIndex: 100,
+              overflow: "hidden",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 10,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(false);
+                router.push(`/user/${otherUserId}` as any);
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+            >
+              <Ionicons name="person-outline" size={18} color="rgba(255,255,255,0.7)" />
+              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>View Profile</Text>
+            </TouchableOpacity>
+            <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.05)" }} />
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(false);
+                setShowReportModal(true);
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+            >
+              <Ionicons name="flag-outline" size={18} color="rgba(255,255,255,0.7)" />
+              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Report User</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(false);
+                handleBlock();
+              }}
+              disabled={blockLoading}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                opacity: blockLoading ? 0.5 : 1,
+              }}
+            >
+              <Ionicons name={blocked ? "checkmark-circle-outline" : "ban-outline"} size={18} color="#f87171" />
+              <Text style={{ color: "#f87171", fontSize: 14 }}>
+                {blockLoading ? "Loading..." : blocked ? "Unblock User" : "Block User"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Blocked banner */}
+        {blocked && (
+          <View
+            style={{
+              flexShrink: 0,
+              backgroundColor: "rgba(248,113,113,0.1)",
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(248,113,113,0.2)",
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+            }}
+          >
+            <Text style={{ color: "#f87171", fontSize: 13, textAlign: "center" }}>
+              You have blocked this user. Unblock in the menu above to send messages.
+            </Text>
+          </View>
+        )}
 
         {/* Messages */}
         <FlatList
@@ -345,62 +476,77 @@ export default function ConversationScreen() {
           }}
         />
 
-        {/* Input */}
-        <View
-          style={{
-            flexShrink: 0,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.05)",
-            backgroundColor: "rgba(0,0,0,0.2)",
-          }}
-        >
-          <TextInput
-            ref={inputRef}
-            value={newMessage}
-            onChangeText={setNewMessage}
-            placeholder="Message..."
-            placeholderTextColor="rgba(255,255,255,0.4)"
+        {/* Input (hidden when blocked) */}
+        {!blocked && (
+          <View
             style={{
-              flex: 1,
-              backgroundColor: "rgba(255,255,255,0.1)",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.1)",
-              borderRadius: 24,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              color: "white",
-              fontSize: 14,
-            }}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-            blurOnSubmit={false}
-          />
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={!newMessage.trim() || sending}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: "#D4AF37",
+              flexShrink: 0,
+              flexDirection: "row",
               alignItems: "center",
-              justifyContent: "center",
-              opacity: !newMessage.trim() || sending ? 0.5 : 1,
+              gap: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderTopWidth: 1,
+              borderTopColor: "rgba(255,255,255,0.05)",
+              backgroundColor: "rgba(0,0,0,0.2)",
             }}
           >
-            {sending ? (
-              <ActivityIndicator size="small" color="#021a12" />
-            ) : (
-              <Ionicons name="send" size={18} color="#021a12" />
-            )}
-          </TouchableOpacity>
-        </View>
+            <TextInput
+              ref={inputRef}
+              value={newMessage}
+              onChangeText={setNewMessage}
+              placeholder="Message..."
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.1)",
+                borderRadius: 24,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                color: "white",
+                fontSize: 14,
+              }}
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={!newMessage.trim() || sending}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#D4AF37",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: !newMessage.trim() || sending ? 0.5 : 1,
+              }}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="#021a12" />
+              ) : (
+                <Ionicons name="send" size={18} color="#021a12" />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
+
+      {/* Report Modal */}
+      {currentUser && otherUserId && (
+        <ReportModal
+          visible={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          reporterId={currentUser.uid}
+          targetType="user"
+          targetId={otherUserId}
+          targetUserId={otherUserId}
+          targetLabel={otherUser?.username ? `@${otherUser.username}` : otherUser?.displayName || "User"}
+        />
+      )}
     </SafeAreaView>
   );
 }

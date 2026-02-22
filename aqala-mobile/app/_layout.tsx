@@ -10,11 +10,15 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { PrayerProvider } from "@/contexts/PrayerContext";
 import { RoomsProvider } from "@/contexts/RoomsContext";
 import { InterstitialAdProvider } from "@/contexts/InterstitialAdContext";
+import { PrivacyConsentProvider } from "@/contexts/PrivacyConsentContext";
+import ConsentBanner from "@/components/ConsentBanner";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 import * as Location from "expo-location";
 import { getRecordingPermissionsAsync } from "expo-audio";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { useFonts } from "expo-font";
+import { Platform } from "react-native";
 import "../global.css";
 
 const ONBOARDING_KEY = "aqala_permissions_onboarded";
@@ -72,6 +76,18 @@ export default function RootLayout() {
     })();
   }, []);
 
+  // Request App Tracking Transparency permission (iOS only, required for AdMob)
+  useEffect(() => {
+    if (!onboardingChecked || needsOnboarding) return;
+    if (Platform.OS === "ios") {
+      (async () => {
+        try {
+          await requestTrackingPermissionsAsync();
+        } catch {}
+      })();
+    }
+  }, [onboardingChecked, needsOnboarding]);
+
   // Redirect to onboarding if needed (after layout has mounted)
   useEffect(() => {
     if (!onboardingChecked) return;
@@ -93,27 +109,33 @@ export default function RootLayout() {
           <SubscriptionProvider>
             <InterstitialAdProvider>
               <PreferencesProvider>
-                <LanguageProvider>
-                  <PrayerProvider>
-                    <RoomsProvider>
-                      <StatusBar style="light" />
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: "#021a12" },
-                          animation: "fade",
-                        }}
-                      >
-                        <Stack.Screen name="onboarding" options={{ animation: "none" }} />
-                        <Stack.Screen name="(tabs)" />
-                        <Stack.Screen name="auth" />
-                        <Stack.Screen name="messages" />
-                        <Stack.Screen name="room/[roomId]" />
-                        <Stack.Screen name="user/[userId]" />
-                      </Stack>
-                    </RoomsProvider>
-                  </PrayerProvider>
-                </LanguageProvider>
+                <PrivacyConsentProvider>
+                  <LanguageProvider>
+                    <PrayerProvider>
+                      <RoomsProvider>
+                        <StatusBar style="light" />
+                        <Stack
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: "#021a12" },
+                            animation: "fade",
+                          }}
+                        >
+                          <Stack.Screen name="onboarding" options={{ animation: "none" }} />
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen name="auth" />
+                          <Stack.Screen name="messages" />
+                          <Stack.Screen name="room/[roomId]" />
+                          <Stack.Screen name="user/[userId]" />
+                          <Stack.Screen name="privacy" />
+                          <Stack.Screen name="terms" />
+                          <Stack.Screen name="support" />
+                        </Stack>
+                        <ConsentBanner />
+                      </RoomsProvider>
+                    </PrayerProvider>
+                  </LanguageProvider>
+                </PrivacyConsentProvider>
               </PreferencesProvider>
             </InterstitialAdProvider>
           </SubscriptionProvider>

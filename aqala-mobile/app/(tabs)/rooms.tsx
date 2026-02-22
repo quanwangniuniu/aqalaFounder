@@ -1,5 +1,4 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +6,7 @@ import { useRooms } from "@/contexts/RoomsContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import CreateRoomModal from "@/components/CreateRoomModal";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function RoomsScreen() {
   const { user, partnerInfo } = useAuth();
@@ -48,7 +48,7 @@ export default function RoomsScreen() {
   const totalLiveRooms = livePartnerRooms.length + liveCommunityRooms.length;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <ScrollView 
         className="flex-1" 
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -203,7 +203,7 @@ export default function RoomsScreen() {
 
       {/* Create Room Modal */}
       <CreateRoomModal visible={showCreateModal} onClose={() => setShowCreateModal(false)} />
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
 

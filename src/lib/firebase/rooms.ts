@@ -808,11 +808,14 @@ export async function sendChatMessage(
     listenerTitle?: string;
   }
 ): Promise<ChatMessage> {
+  const { filterProfanity } = await import("@/utils/profanityFilter");
   const firestore = ensureDb();
   const chatRef = collection(firestore, COLLECTION, roomId, "chat");
   
+  const filteredText = filterProfanity(text.trim());
+  
   const messageData = {
-    text: text.trim(),
+    text: filteredText,
     userId,
     userName,
     userPhoto: options?.userPhoto || null,
@@ -830,7 +833,7 @@ export async function sendChatMessage(
   
   return {
     id: docRef.id,
-    text: text.trim(),
+    text: filteredText,
     userId,
     userName,
     userPhoto: options?.userPhoto,

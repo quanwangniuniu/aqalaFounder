@@ -21,11 +21,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         // googleServicesFile: "./GoogleService-Info.plist", // TODO: Add GoogleService-Info.plist for Firebase
         infoPlist: {
             NSLocationWhenInUseUsageDescription:
-                "Aqala needs your location to show accurate prayer times and Qibla direction.",
+                "Aqala uses your location to calculate accurate prayer times for your area and to show the Qibla direction. Your location data is processed on-device and is not stored on our servers.",
             NSMicrophoneUsageDescription:
-                "Aqala needs microphone access for live translation broadcasting.",
+                "Aqala uses microphone access to capture live speech for real-time Quran translation broadcasting in audio rooms. Audio is streamed for speech-to-text processing and is not permanently recorded.",
             NSCameraUsageDescription:
-                "Aqala needs camera access to take profile photos.",
+                "Aqala uses camera access to let you take a new profile photo directly from the app.",
+            NSPhotoLibraryUsageDescription:
+                "Aqala uses photo library access to let you choose an existing photo as your profile picture.",
+            NSUserTrackingUsageDescription:
+                "Aqala uses this permission to deliver personalised ads. You can choose to opt out and still use the app with non-personalised ads.",
         },
         config: {
             googleSignIn: {
@@ -54,19 +58,26 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "expo-secure-store",
         "expo-apple-authentication",
         [
+            "expo-tracking-transparency",
+            {
+                userTrackingPermission:
+                    "Aqala uses this permission to deliver personalised ads. You can choose to opt out and still use the app with non-personalised ads.",
+            },
+        ],
+        [
             "expo-location",
             {
                 locationWhenInUsePermission:
-                    "Aqala needs your location to show accurate prayer times and Qibla direction.",
+                    "Aqala uses your location to calculate accurate prayer times for your area and to show the Qibla direction. Your location data is processed on-device and is not stored on our servers.",
             },
         ],
         [
             "expo-image-picker",
             {
                 photosPermission:
-                    "Aqala needs access to your photos to set a profile picture.",
+                    "Aqala uses photo library access to let you choose an existing photo as your profile picture.",
                 cameraPermission:
-                    "Aqala needs camera access to take profile photos.",
+                    "Aqala uses camera access to let you take a new profile photo directly from the app.",
             },
         ],
         [

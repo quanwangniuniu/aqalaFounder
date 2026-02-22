@@ -1,11 +1,11 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatPrayerTime, getMethodName } from "@/lib/prayer/calculations";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function PrayerScreen() {
   const { isRTL } = useLanguage();
@@ -34,7 +34,7 @@ export default function PrayerScreen() {
     : [];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View className="px-5 py-6 border-b border-white/5">
         <View style={{ maxWidth: 500, alignSelf: 'center', width: '100%' }}>
@@ -243,6 +243,6 @@ export default function PrayerScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

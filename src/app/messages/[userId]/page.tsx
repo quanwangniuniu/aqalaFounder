@@ -14,6 +14,7 @@ import {
   subscribeToMessages,
   Message,
 } from "@/lib/firebase/messages";
+import { isUserBlocked } from "@/lib/firebase/moderation";
 
 export default function ConversationPage() {
   const params = useParams();
@@ -28,6 +29,7 @@ export default function ConversationPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +47,12 @@ export default function ConversationPage() {
       router.push(`/auth/login?returnUrl=/messages/${otherUserId}`);
     }
   }, [currentUser, authLoading, router, otherUserId]);
+
+  // Check if current user has blocked the other user
+  useEffect(() => {
+    if (!currentUser || !otherUserId) return;
+    isUserBlocked(currentUser.uid, otherUserId).then(setBlocked).catch(() => {});
+  }, [currentUser, otherUserId]);
 
   // Load other user and create/get conversation
   useEffect(() => {
@@ -163,7 +171,7 @@ export default function ConversationPage() {
 
   // Send message
   const handleSend = async () => {
-    if (!newMessage.trim() || !conversationId || !currentUser || sending) return;
+    if (!newMessage.trim() || !conversationId || !currentUser || sending || blocked) return;
 
     setSending(true);
     const text = newMessage.trim();
@@ -240,9 +248,22 @@ export default function ConversationPage() {
         </div>
       </div>
 
+      {/* Blocked banner */}
+      {blocked && (
+        <div className="flex-shrink-0 bg-red-500/10 border-b border-red-500/20 px-4 py-3 max-w-lg mx-auto w-full">
+          <p className="text-red-400 text-sm text-center">
+            You have blocked this user.{" "}
+            <Link href={`/user/${otherUserId}`} className="underline font-medium">
+              Unblock them
+            </Link>{" "}
+            to send messages.
+          </p>
+        </div>
+      )}
+
       {/* Messages - scrollable area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full min-h-0">
-        {messages.length === 0 ? (
+        {messages.length === 0 && !blocked ? (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#D4AF37]/30 to-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
               {otherUser.photoURL ? (
@@ -310,7 +331,8 @@ export default function ConversationPage() {
         )}
       </div>
 
-      {/* Input - fixed at bottom */}
+      {/* Input - fixed at bottom (hidden when blocked) */}
+      {!blocked && (
       <div className="flex-shrink-0 bg-black/20 backdrop-blur-xl border-t border-white/5 pb-safe">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3 relative">
           {showEmojiPicker && (
@@ -379,6 +401,7 @@ export default function ConversationPage() {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

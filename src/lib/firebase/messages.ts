@@ -98,13 +98,16 @@ export async function sendMessage(
   senderId: string,
   text: string
 ): Promise<void> {
+  const { filterProfanity } = await import("@/utils/profanityFilter");
   const firestore = ensureDb();
+  
+  const filteredText = filterProfanity(text);
   
   // Add message to messages subcollection
   const messagesRef = collection(firestore, "conversations", conversationId, "messages");
   await addDoc(messagesRef, {
     senderId,
-    text,
+    text: filteredText,
     createdAt: serverTimestamp(),
     read: false,
   });
@@ -118,7 +121,7 @@ export async function sendMessage(
     const otherUserId = data.participants.find((p: string) => p !== senderId);
     
     await updateDoc(conversationRef, {
-      lastMessage: text,
+      lastMessage: filteredText,
       lastMessageAt: serverTimestamp(),
       lastSenderId: senderId,
       [`unreadCount.${otherUserId}`]: (data.unreadCount?.[otherUserId] || 0) + 1,

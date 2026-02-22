@@ -232,9 +232,13 @@ export default function CharityModal({
                 {/* Footer */}
                 <div className="px-5 py-4 border-t border-white/5">
                     <p className="text-xs text-white/40 mb-4 text-center">
-                        By donating, you agree to Aqala's{" "}
+                        By donating, you agree to Aqala&apos;s{" "}
                         <a href="/terms" className="text-[#D4AF37]/70 hover:text-[#D4AF37]">
-                            terms of use
+                            Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="/privacy" className="text-[#D4AF37]/70 hover:text-[#D4AF37]">
+                            Privacy Policy
                         </a>
                     </p>
                     <button

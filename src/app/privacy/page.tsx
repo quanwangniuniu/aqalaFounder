@@ -1,3 +1,5 @@
+"use client";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -7,134 +9,390 @@ export const metadata: Metadata = {
     "Aqala Privacy Policy: how we collect, use, and protect your data. Covers account data, cookies, Google AdSense, and your rights.",
 };
 
-export default function PrivacyPage() {
+
+export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-[calc(100vh-60px)] flex flex-col">
+    <div className="min-h-screen text-white">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-white/10">
-        <div className="flex items-center justify-between max-w-[554px] mx-auto">
+      <div className="px-5 py-6 border-b border-white/5">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 18-6-6 6-6" />
             </svg>
-            <span className="text-sm">Back</span>
           </Link>
-          <h1 className="text-lg font-semibold text-white">Privacy Policy</h1>
-          <div className="w-16" />
+          <h1 className="text-xl font-semibold">Privacy Policy</h1>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 px-4 py-8">
-        <div className="max-w-[554px] mx-auto prose prose-invert prose-sm space-y-6 text-white/80">
-          <p className="text-white/60 text-xs">
-            Last updated: February 2025
-          </p>
+      <div className="max-w-lg mx-auto p-5 space-y-8 pb-16">
+        {/* Last Updated */}
+        <p className="text-sm text-white/40">Last updated: February 17, 2026</p>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">1. Introduction</h2>
-            <p>
-              Aqala (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates aqala.org and the Aqala app, providing real-time translation and multilingual communication. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our services.
+        {/* Introduction */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Introduction
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
+            <p className="text-sm text-white/70 leading-relaxed">
+              Aqala (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to
+              protecting your privacy. This Privacy Policy explains how we collect, use, disclose,
+              and safeguard your information when you use our mobile application and website
+              (collectively, the &ldquo;Service&rdquo;).
             </p>
-          </section>
+            <p className="text-sm text-white/70 leading-relaxed">
+              Please read this privacy policy carefully. By using the Service, you agree to the
+              collection and use of information in accordance with this policy. If you do not agree
+              with the terms of this privacy policy, please do not access the Service.
+            </p>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">2. Information We Collect</h2>
-            <p className="mb-2">We may collect:</p>
-            <ul className="list-disc pl-5 space-y-1 text-white/70">
-              <li><strong className="text-white/80">Account data:</strong> When you sign up (e.g., email, display name, profile photo), we store this via Firebase Authentication.</li>
-              <li><strong className="text-white/80">Usage data:</strong> How you use the app (e.g., features used, sessions) to improve our service and fix issues.</li>
-              <li><strong className="text-white/80">Device and technical data:</strong> Device type, browser, and similar technical information.</li>
-              <li><strong className="text-white/80">Content you provide:</strong> Messages, room names, and other content you create within the service, stored to provide the product.</li>
+        {/* Information We Collect */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Information We Collect
+          </h2>
+          <div className="space-y-3">
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Account Information</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                When you create an account, we collect your name, email address, and profile photo.
+                If you sign in with Google or Apple, we receive basic profile information from those
+                services. You may also optionally set a username and bio.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Location Data</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                We request location access solely to provide accurate prayer times and Qibla
+                direction. Location data is processed on-device and is not stored on our servers
+                or shared with third parties.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Microphone Data</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Microphone access is required for live translation broadcasting features. Audio is
+                streamed in real-time for speech-to-text processing and is not recorded or stored
+                permanently. Audio streams are discarded immediately after translation processing.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Camera &amp; Photo Library</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Camera and photo library access are used exclusively for setting your profile
+                picture. Photos are uploaded to our secure image hosting service (Cloudinary) and
+                are associated with your account.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Usage Data</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                We collect anonymous usage data such as listening time, room participation history,
+                and app interaction patterns. This data is used to improve the Service and provide
+                features like listener progression and experience levels.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Messages &amp; Chat</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Direct messages and room chat messages are stored securely on our servers (Firebase
+                Firestore) to enable messaging functionality. Messages are only accessible to the
+                participants in the conversation or room.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Third-Party Services */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Third-Party Services
+          </h2>
+          <div className="space-y-3">
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Firebase (Google)</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                We use Firebase for authentication, data storage, and basic analytics. Firebase may
+                collect device identifiers and usage statistics.{" "}
+                <a
+                  href="https://firebase.google.com/support/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#D4AF37] hover:underline"
+                >
+                  Firebase Privacy Policy
+                </a>
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Vercel Analytics</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                We use Vercel Analytics to understand how our web application is used. This service
+                collects anonymous, aggregated data about page views and performance. It does not
+                use cookies or collect personally identifiable information.{" "}
+                <a
+                  href="https://vercel.com/docs/analytics/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#D4AF37] hover:underline"
+                >
+                  Vercel Analytics Privacy Policy
+                </a>
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Session Recording (OpenReplay)</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                With your consent, we may record browsing sessions on our web application using
+                OpenReplay to identify bugs and improve user experience. Session recordings may
+                include your interactions with the app but do not capture passwords or sensitive
+                form inputs. You can opt out of session recording at any time in your account
+                settings.{" "}
+                <a
+                  href="https://openreplay.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#D4AF37] hover:underline"
+                >
+                  OpenReplay Privacy Policy
+                </a>
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Cloudinary</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Profile photos are hosted on Cloudinary, a secure cloud-based image hosting service.
+                Only your profile photo is stored.{" "}
+                <a
+                  href="https://cloudinary.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#D4AF37] hover:underline"
+                >
+                  Cloudinary Privacy Policy
+                </a>
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Soniox (Speech-to-Text)</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Live audio from broadcasting sessions is streamed to Soniox for real-time
+                speech-to-text conversion. Audio is processed in real-time and is not stored by
+                Soniox after processing.
+              </p>
+            </div>
+
+            <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+              <h3 className="text-sm font-semibold text-white mb-2">Advertising (Google AdMob)</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Our mobile app may display ads through Google AdMob. AdMob may collect device
+                identifiers and usage data for ad personalization. Premium subscribers do not see
+                ads.{" "}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#D4AF37] hover:underline"
+                >
+                  Google Privacy Policy
+                </a>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* How We Use Your Information */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            How We Use Your Information
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+            <ul className="space-y-2 text-sm text-white/70">
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span>To provide and maintain the Service, including prayer times, Qibla direction, live translation, and social features</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span>To manage your account and provide customer support</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span>To improve the Service by understanding how it is used</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span>To communicate with you about updates or issues related to the Service</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span>To detect and prevent fraud, abuse, or violations of our Terms of Service</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span>To enforce content moderation and community safety standards</span>
+              </li>
             </ul>
-          </section>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">3. Cookies and Similar Technologies</h2>
-            <p>
-              We use cookies and similar technologies for authentication, preferences, and security. Third-party services we use (including Google AdSense and analytics) may set their own cookies. You can control cookies through your browser settings.
+        {/* Data Retention & Deletion */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Data Retention &amp; Deletion
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
+            <p className="text-sm text-white/70 leading-relaxed">
+              We retain your personal data only for as long as necessary to provide the Service
+              and fulfill the purposes described in this policy. When you delete your account,
+              we will delete or anonymize your personal data within 30 days, except where we are
+              required to retain it by law.
             </p>
-          </section>
+            <p className="text-sm text-white/70 leading-relaxed">
+              You can request deletion of your account and all associated data by navigating to
+              Account Settings and selecting &ldquo;Delete Account&rdquo;, or by contacting us at
+              the email address below.
+            </p>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">4. How We Use Your Information</h2>
-            <p>
-              We use collected information to provide and improve Aqala, personalize your experience, process payments (via Stripe), communicate with you, enforce our terms, and comply with law. We do not sell your personal information to third parties.
+        {/* Your Rights */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Your Rights
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+            <p className="text-sm text-white/70 leading-relaxed mb-3">
+              Depending on your jurisdiction, you may have the following rights regarding your
+              personal data:
             </p>
-          </section>
+            <ul className="space-y-2 text-sm text-white/70">
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span><strong className="text-white/90">Access</strong> &ndash; Request a copy of the personal data we hold about you</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span><strong className="text-white/90">Correction</strong> &ndash; Request correction of inaccurate data</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span><strong className="text-white/90">Deletion</strong> &ndash; Request deletion of your personal data</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span><strong className="text-white/90">Portability</strong> &ndash; Request a machine-readable copy of your data</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#D4AF37] mt-1">&#x2022;</span>
+                <span><strong className="text-white/90">Withdraw consent</strong> &ndash; Opt out of optional data collection at any time</span>
+              </li>
+            </ul>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">5. Google AdSense and Advertising</h2>
-            <p>
-              We use Google AdSense to show ads on some pages. Google may collect and use data (e.g., cookies, device identifiers) to serve ads and measure performance. Their use of data is governed by Google&apos;s Privacy Policy and AdSense Program Policies. You can manage ad personalization at{" "}
-              <a
-                href="https://adssettings.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#D4AF37] hover:underline"
-              >
-                adssettings.google.com
-              </a>
-              .
+        {/* Children's Privacy */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Children&apos;s Privacy
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
+            <p className="text-sm text-white/70 leading-relaxed">
+              The Service is not directed to children under 13 years of age. We do not knowingly
+              collect personal information from children under 13. If we become aware that we have
+              collected personal data from a child under 13 without parental consent, we will take
+              steps to delete that information.
             </p>
-          </section>
+            <p className="text-sm text-white/70 leading-relaxed">
+              If you are a parent or guardian and believe your child has provided us with personal
+              information, please contact us so we can take appropriate action.
+            </p>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">6. Third-Party Services</h2>
-            <p>
-              We use Firebase (authentication, database, hosting), Stripe (payments), and may use analytics or other tools. Each has its own privacy practices; we encourage you to review their policies. We only share data with these providers as needed to operate our service.
+        {/* Security */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Security
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+            <p className="text-sm text-white/70 leading-relaxed">
+              We implement appropriate technical and organizational security measures to protect
+              your personal data, including encryption in transit (TLS/SSL), secure data storage
+              through Firebase, and access controls. However, no method of transmission over the
+              internet or electronic storage is 100% secure, and we cannot guarantee absolute
+              security.
             </p>
-          </section>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">7. Data Retention and Security</h2>
-            <p>
-              We retain your data for as long as your account is active or as needed to provide the service and comply with legal obligations. We implement reasonable security measures to protect your data; no system is completely secure.
+        {/* Changes to This Policy */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Changes to This Policy
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+            <p className="text-sm text-white/70 leading-relaxed">
+              We may update this Privacy Policy from time to time. We will notify you of any
+              changes by posting the new policy on this page and updating the &ldquo;Last
+              Updated&rdquo; date. You are advised to review this Privacy Policy periodically for
+              any changes.
             </p>
-          </section>
+          </div>
+        </section>
 
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">8. Your Rights</h2>
-            <p>
-              Depending on where you live, you may have the right to access, correct, delete, or export your data, or to object to or restrict certain processing. You can update account details in the app; for other requests or to delete your account, contact us (see Contact below).
+        {/* Contact */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            Contact Us
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
+            <p className="text-sm text-white/70 leading-relaxed">
+              If you have any questions about this Privacy Policy or wish to exercise your data
+              rights, please contact us:
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">9. Children</h2>
-            <p>
-              Our service is not directed at children under 13. We do not knowingly collect personal information from children under 13. If you believe we have collected such information, please contact us so we can delete it.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">10. Changes to This Policy</h2>
-            <p>
-              We may update this Privacy Policy from time to time. We will post the updated version on this page and update the &quot;Last updated&quot; date. Continued use of Aqala after changes constitutes acceptance of the updated policy.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-white mb-2">11. Contact</h2>
-            <p>
-              For privacy-related questions, data requests, or to report concerns, contact us at{" "}
-              <a
-                href="mailto:contact@aqala.org"
-                className="text-[#D4AF37] hover:underline"
-              >
-                contact@aqala.org
-              </a>
-              . You can also use the contact details on our{" "}
-              <Link href="/about" className="text-[#D4AF37] hover:underline">
-                About & Contact
-              </Link>{" "}
-              page.
-            </p>
-          </section>
-        </div>
+            <div className="text-sm text-white/70 space-y-1">
+              <p>
+                Email:{" "}
+                <a href="mailto:privacy@aqala.io" className="text-[#D4AF37] hover:underline">
+                  privacy@aqala.io
+                </a>
+              </p>
+              <p>
+                Website:{" "}
+                <a href="https://aqala.io" className="text-[#D4AF37] hover:underline">
+                  aqala.io
+                </a>
+              </p>
+              <p>
+                Instagram:{" "}
+                <a
+                  href="https://www.instagram.com/aqala.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#D4AF37] hover:underline"
+                >
+                  @aqala.io
+                </a>
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

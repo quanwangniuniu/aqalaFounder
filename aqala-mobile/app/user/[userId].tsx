@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Alert, Share } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Link } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserProfile, UserProfile, getUserRoomHistory, RoomHistoryEntry } from "@/lib/firebase/users";
 import { subscribeToUserCounts, getFollowers, getFollowing, getSuggestedUsers, FollowUser } from "@/lib/firebase/follows";
+import { blockUser, unblockUser, isUserBlocked, getBlockedUserIds } from "@/lib/firebase/moderation";
 import FollowButton from "@/components/FollowButton";
+import ReportModal from "@/components/ReportModal";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -22,6 +24,10 @@ export default function UserProfileScreen() {
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("history");
   const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
 
   // Tab data
   const [roomHistory, setRoomHistory] = useState<RoomHistoryEntry[]>([]);
@@ -63,6 +69,67 @@ export default function UserProfileScreen() {
     const unsubscribeCount = subscribeToUserCounts(userId, setCounts);
     return () => unsubscribeCount();
   }, [userId]);
+
+  // Check block status
+  useEffect(() => {
+    if (!currentUser || !userId || isOwnProfile) return;
+    isUserBlocked(currentUser.uid, userId).then(setBlocked).catch(() => {});
+  }, [currentUser, userId, isOwnProfile]);
+
+  // Load blocked list when viewing own profile (to filter Following/Followers)
+  useEffect(() => {
+    if (!currentUser || !isOwnProfile) return;
+    getBlockedUserIds(currentUser.uid).then((ids) => setBlockedIds(new Set(ids))).catch(() => {});
+  }, [currentUser, isOwnProfile]);
+
+  const webBaseUrl = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
+  const profileShareUrl = `${webBaseUrl}/user/${userId}`;
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `${displayName} on Aqala: ${profileShareUrl}`,
+        url: profileShareUrl,
+        title: profile?.username ? `@${profile.username}` : displayName,
+      });
+    } catch (err) {
+      // User cancelled or share failed
+    }
+  };
+
+  const handleBlock = () => {
+    if (!currentUser || !userId) return;
+    const name = profile?.username ? `@${profile.username}` : profile?.displayName || "this user";
+    Alert.alert(
+      blocked ? "Unblock User" : "Block User",
+      blocked
+        ? `Are you sure you want to unblock ${name}?`
+        : `Are you sure you want to block ${name}? They won't be able to message you.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: blocked ? "Unblock" : "Block",
+          style: blocked ? "default" : "destructive",
+          onPress: async () => {
+            setBlockLoading(true);
+            try {
+              if (blocked) {
+                await unblockUser(currentUser.uid, userId);
+                setBlocked(false);
+              } else {
+                await blockUser(currentUser.uid, userId);
+                setBlocked(true);
+              }
+            } catch (err) {
+              Alert.alert("Error", "Something went wrong. Please try again.");
+            } finally {
+              setBlockLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Load tab data
   useEffect(() => {
@@ -261,18 +328,34 @@ export default function UserProfileScreen() {
           ) : (
             <>
               <TouchableOpacity
-                onPress={() => setShowMenu(false)}
+                onPress={() => {
+                  setShowMenu(false);
+                  setShowReportModal(true);
+                }}
                 style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}
               >
                 <Ionicons name="flag-outline" size={18} color="rgba(255,255,255,0.7)" />
                 <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Report User</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => setShowMenu(false)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+                onPress={() => {
+                  setShowMenu(false);
+                  handleBlock();
+                }}
+                disabled={blockLoading}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  opacity: blockLoading ? 0.5 : 1,
+                }}
               >
-                <Ionicons name="ban-outline" size={18} color="#f87171" />
-                <Text style={{ color: "#f87171", fontSize: 14 }}>Block User</Text>
+                <Ionicons name={blocked ? "checkmark-circle-outline" : "ban-outline"} size={18} color="#f87171" />
+                <Text style={{ color: "#f87171", fontSize: 14 }}>
+                  {blockLoading ? "Loading..." : blocked ? "Unblock User" : "Block User"}
+                </Text>
               </TouchableOpacity>
             </>
           )}
@@ -423,6 +506,46 @@ export default function UserProfileScreen() {
                   <Ionicons name="chatbubble-outline" size={18} color="white" />
                 </TouchableOpacity>
               </>
+            ) : blocked ? (
+              <View style={{ flex: 1, flexDirection: "column", gap: 10 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <Ionicons name="ban" size={18} color="rgba(255,255,255,0.5)" />
+                  <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
+                    You have blocked this user
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleBlock}
+                  disabled={blockLoading}
+                  style={{
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: "rgba(248,113,113,0.15)",
+                    borderWidth: 1,
+                    borderColor: "rgba(248,113,113,0.35)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: blockLoading ? 0.6 : 1,
+                  }}
+                >
+                  <Text style={{ color: "#f87171", fontSize: 15, fontWeight: "600" }}>
+                    {blockLoading ? "..." : "Unblock user"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <>
                 <View style={{ flex: 1, height: 40 }}>
@@ -441,6 +564,7 @@ export default function UserProfileScreen() {
               </>
             )}
             <TouchableOpacity
+              onPress={handleShare}
               style={{
                 width: 40, height: 40, borderRadius: 8,
                 backgroundColor: "rgba(255,255,255,0.1)",
@@ -515,11 +639,11 @@ export default function UserProfileScreen() {
                 <PrivateState text="This user's followers are private" />
               ) : followersLoading ? (
                 <LoadingSpinner />
-              ) : followers.length === 0 ? (
+              ) : (isOwnProfile ? followers.filter((f) => !blockedIds.has(f.id)) : followers).length === 0 ? (
                 <EmptyState icon="people-outline" text="No followers yet" />
               ) : (
                 <View style={{ gap: 8 }}>
-                  {followers.map((follower) => (
+                  {(isOwnProfile ? followers.filter((f) => !blockedIds.has(f.id)) : followers).map((follower) => (
                     <UserListItem key={follower.id} user={follower} currentUserId={currentUser?.uid} />
                   ))}
                 </View>
@@ -532,11 +656,11 @@ export default function UserProfileScreen() {
             <>
               {followingLoading ? (
                 <LoadingSpinner />
-              ) : following.length === 0 ? (
+              ) : (isOwnProfile ? following.filter((u) => !blockedIds.has(u.id)) : following).length === 0 ? (
                 <EmptyState icon="person-add-outline" text="Not following anyone yet" />
               ) : (
                 <View style={{ gap: 8 }}>
-                  {following.map((u) => (
+                  {(isOwnProfile ? following.filter((u) => !blockedIds.has(u.id)) : following).map((u) => (
                     <UserListItem key={u.id} user={u} currentUserId={currentUser?.uid} />
                   ))}
                 </View>
@@ -565,6 +689,19 @@ export default function UserProfileScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Report Modal */}
+      {currentUser && !isOwnProfile && (
+        <ReportModal
+          visible={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          reporterId={currentUser.uid}
+          targetType="user"
+          targetId={userId}
+          targetUserId={userId}
+          targetLabel={profile.username ? `@${profile.username}` : displayName}
+        />
+      )}
     </SafeAreaView>
   );
 }

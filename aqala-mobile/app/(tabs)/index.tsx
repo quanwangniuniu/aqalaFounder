@@ -1,33 +1,30 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Pressable, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useInterstitialAd } from "@/contexts/InterstitialAdContext";
 import { formatPrayerTime } from "@/lib/prayer/calculations";
 import { getUserDisplayName, getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function HomeScreen() {
   const { t, isRTL } = useLanguage();
   const { nextPrayer, loading: prayerLoading } = usePrayer();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, showAds } = useSubscription();
+  const { showAdBeforeNavigation } = useInterstitialAd();
   const router = useRouter();
 
   const handleAdLink = (href: string) => {
-    if (showAds && !isPremium) {
-      // TODO: Show interstitial ad, then navigate
-      router.push(href as any);
-    } else {
-      router.push(href as any);
-    }
+    showAdBeforeNavigation(href);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <ScrollView 
         className="flex-1" 
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -341,6 +338,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

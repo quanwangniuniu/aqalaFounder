@@ -1,8 +1,13 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform } from "react-native";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export default function TabsLayout() {
+  const { getGradientColors } = usePreferences();
+  const gradientColors = getGradientColors();
+  const tabBarBg = gradientColors[0] ?? "#021a12";
+
   return (
     <Tabs
       screenOptions={{
@@ -10,7 +15,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#D4AF37",
         tabBarInactiveTintColor: "rgba(255,255,255,0.35)",
         tabBarStyle: {
-          backgroundColor: "#021a12",
+          backgroundColor: tabBarBg,
           borderTopColor: "rgba(255,255,255,0.08)",
           borderTopWidth: 1,
           height: Platform.OS === "ios" ? 88 : 64,

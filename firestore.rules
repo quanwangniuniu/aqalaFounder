@@ -28,6 +28,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Reports (user reports for moderation)
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+        && request.resource.data.reporterId == request.auth.uid;
+      allow read, update: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
+      allow delete: if false;
+    }
+
     // Users
     match /users/{userId} {
       // Anyone can read user profiles (for viewing profiles)
@@ -40,6 +49,11 @@ service cloud.firestore {
             || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount', 'followingCount']));
       
       match /translations/{translationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Blocked users subcollection (blocker's list)
+      match /blockedUsers/{blockedId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
       

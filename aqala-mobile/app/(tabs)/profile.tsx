@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -10,6 +9,7 @@ import { subscribeToUserCounts, getFollowers, getFollowing, getSuggestedUsers, F
 import FollowButton from "@/components/FollowButton";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 type TabType = "history" | "followers" | "following" | "discover";
 
@@ -127,7 +127,7 @@ export default function ProfileScreen() {
   // Not signed in
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center px-6">
           <Ionicons name="person-circle-outline" size={64} color="rgba(255,255,255,0.2)" />
           <Text className="text-white text-xl font-semibold mt-4">Sign in to view your profile</Text>
@@ -141,24 +141,24 @@ export default function ProfileScreen() {
             <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   const displayName = profile?.displayName || getUserDisplayName(user);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header Bar */}
       <View
         style={{
@@ -578,7 +578,7 @@ export default function ProfileScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
 

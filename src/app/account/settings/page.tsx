@@ -226,6 +226,61 @@ export default function AccountSettingsPage() {
           </div>
         </section>
 
+        {/* Support & Legal */}
+        <section>
+          <h2 className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
+            Support &amp; Legal
+          </h2>
+          <div className="space-y-2">
+            <Link
+              href="/support"
+              className="flex items-center gap-3 w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
+                <svg className="w-5 h-5 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-white">Help &amp; Support</p>
+                <p className="text-xs text-white/50">FAQ, contact, and more</p>
+              </div>
+            </Link>
+            <Link
+              href="/privacy"
+              className="flex items-center gap-3 w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-white">Privacy Policy</p>
+                <p className="text-xs text-white/50">How we handle your data</p>
+              </div>
+            </Link>
+            <Link
+              href="/terms"
+              className="flex items-center gap-3 w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-white">Terms of Service</p>
+                <p className="text-xs text-white/50">Usage terms and conditions</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
         {/* Account Actions */}
         <section>
           <h2 className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">

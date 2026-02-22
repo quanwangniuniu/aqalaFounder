@@ -7,7 +7,9 @@ import Link from "next/link";
 import { getUserProfile, UserProfile, getUserRoomHistory, RoomHistoryEntry } from "@/lib/firebase/users";
 import { getTitleFromLevel, getXpProgress, formatListeningTime } from "@/lib/firebase/listenerStats";
 import { subscribeToUserCounts, getFollowers, getFollowing, getSuggestedUsers, FollowUser } from "@/lib/firebase/follows";
+import { blockUser, unblockUser, isUserBlocked, getBlockedUsers } from "@/lib/firebase/moderation";
 import FollowButton from "@/components/FollowButton";
+import ReportModal from "@/components/ReportModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 type TabType = "history" | "followers" | "following" | "discover";
@@ -34,9 +36,44 @@ export default function UserProfilePage() {
   const [followingLoading, setFollowingLoading] = useState(false);
   const [suggestedLoading, setSuggestedLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
+  const [shareCopied, setShareCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isOwnProfile = currentUser?.uid === userId;
+
+  const shareTitle = profile?.username ? `@${profile.username}` : profile?.displayName || "Profile";
+  const shareText = profile?.displayName || profile?.username ? `Check out ${profile?.displayName || profile?.username} on Aqala` : "Check out this profile on Aqala";
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? `${window.location.origin}/user/${userId}` : "";
+    if (!url) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -144,6 +181,37 @@ export default function UserProfilePage() {
 
     loadTabData();
   }, [activeTab, profile, userId, isOwnProfile, currentUser, roomHistory.length, followers.length, following.length, suggestedUsers.length]);
+
+  // Check if user is blocked
+  useEffect(() => {
+    if (!currentUser || isOwnProfile) return;
+    isUserBlocked(currentUser.uid, userId).then(setBlocked).catch(() => {});
+  }, [currentUser, userId, isOwnProfile]);
+
+  // Load blocked list when viewing own profile (to filter Following/Followers)
+  useEffect(() => {
+    if (!currentUser || !isOwnProfile) return;
+    getBlockedUsers(currentUser.uid).then((list) => setBlockedIds(new Set(list.map((b) => b.id)))).catch(() => {});
+  }, [currentUser, isOwnProfile]);
+
+  const handleBlock = async () => {
+    if (!currentUser) return;
+    setBlockLoading(true);
+    try {
+      if (blocked) {
+        await unblockUser(currentUser.uid, userId);
+        setBlocked(false);
+      } else {
+        await blockUser(currentUser.uid, userId);
+        setBlocked(true);
+      }
+    } catch (err) {
+      console.error("Failed to update block status:", err);
+    } finally {
+      setBlockLoading(false);
+      setShowMenu(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -265,7 +333,10 @@ export default function UserProfilePage() {
                 ) : (
                   <>
                     <button
-                      onClick={() => setShowMenu(false)}
+                      onClick={() => {
+                        setShowMenu(false);
+                        setShowReportModal(true);
+                      }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -275,14 +346,15 @@ export default function UserProfilePage() {
                       Report User
                     </button>
                     <button
-                      onClick={() => setShowMenu(false)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                      onClick={handleBlock}
+                      disabled={blockLoading}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                       </svg>
-                      Block User
+                      {blockLoading ? "Loading..." : blocked ? "Unblock User" : "Block User"}
                     </button>
                   </>
                 )}
@@ -339,18 +411,18 @@ export default function UserProfilePage() {
               </button>
             </div>
             {/* Row 2: XP section - same width as stats row */}
-            <div className="w-full p-4 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-white/70">
+            <div className="w-full mt-3 px-1">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-[#D4AF37]">
                   {profile.listenerTitle || getTitleFromLevel(profile.level ?? 1)}
                 </span>
-                <span className="text-sm font-medium text-cyan-400">
-                  Level {profile.level ?? 1} ({formatListeningTime(profile.totalListeningMinutes ?? 0)} listened)
+                <span className="text-[10px] text-white/40">
+                  Lvl {profile.level ?? 1} · {formatListeningTime(profile.totalListeningMinutes ?? 0)}
                 </span>
               </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#D4AF37]/80 to-[#D4AF37] rounded-full transition-all duration-500"
                   style={{
                     width: `${getXpProgress(profile.xp ?? 0).percent}%`,
                   }}
@@ -410,6 +482,19 @@ export default function UserProfilePage() {
                 </svg>
               </Link>
             </>
+          ) : blocked ? (
+            <>
+              <div className="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white/60 text-sm text-center">
+                You have blocked this user
+              </div>
+              <button
+                onClick={handleBlock}
+                disabled={blockLoading}
+                className="flex-1 py-2.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50"
+              >
+                {blockLoading ? "..." : "Unblock"}
+              </button>
+            </>
           ) : (
             <>
               <div className="flex-1">
@@ -423,12 +508,25 @@ export default function UserProfilePage() {
               </Link>
             </>
           )}
-          <button className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            title={shareCopied ? "Link copied!" : "Share profile"}
+          >
+            {shareCopied ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
@@ -567,7 +665,7 @@ export default function UserProfilePage() {
               <div className="flex justify-center py-12">
                 <div className="w-6 h-6 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
               </div>
-            ) : followers.length === 0 ? (
+            ) : (isOwnProfile ? followers.filter((f) => !blockedIds.has(f.id)) : followers).length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/30">
@@ -579,7 +677,7 @@ export default function UserProfilePage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {followers.map((follower) => (
+                {(isOwnProfile ? followers.filter((f) => !blockedIds.has(f.id)) : followers).map((follower) => (
                   <UserListItem key={follower.id} user={follower} currentUserId={currentUser?.uid} />
                 ))}
               </div>
@@ -594,7 +692,7 @@ export default function UserProfilePage() {
               <div className="flex justify-center py-12">
                 <div className="w-6 h-6 border-2 border-[#D4AF37]/30 border-t-[#D4AF37] rounded-full animate-spin" />
               </div>
-            ) : following.length === 0 ? (
+            ) : (isOwnProfile ? following.filter((u) => !blockedIds.has(u.id)) : following).length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/30">
@@ -608,7 +706,7 @@ export default function UserProfilePage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {following.map((user) => (
+                {(isOwnProfile ? following.filter((u) => !blockedIds.has(u.id)) : following).map((user) => (
                   <UserListItem key={user.id} user={user} currentUserId={currentUser?.uid} />
                 ))}
               </div>
@@ -645,6 +743,19 @@ export default function UserProfilePage() {
           </>
         )}
       </div>
+
+      {/* Report Modal */}
+      {currentUser && !isOwnProfile && (
+        <ReportModal
+          open={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          reporterId={currentUser.uid}
+          targetType="user"
+          targetId={userId}
+          targetUserId={userId}
+          targetLabel={profile.username ? `@${profile.username}` : displayName}
+        />
+      )}
     </div>
   );
 }
