@@ -378,7 +378,9 @@ function UserSearchItem({
       </View>
 
       {currentUserId && currentUserId !== user.uid && (
-        <FollowButton targetUserId={user.uid} size="sm" />
+        <View style={{ alignSelf: "stretch", minWidth: 80 }}>
+          <FollowButton targetUserId={user.uid} size="sm" fillHeight />
+        </View>
       )}
     </TouchableOpacity>
   );

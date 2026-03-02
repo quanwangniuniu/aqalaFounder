@@ -24,12 +24,12 @@ export default function PrayerScreen() {
 
   const prayers = prayerTimes
     ? [
-        { name: "Fajr", nameAr: "الفجر", time: prayerTimes.fajr },
-        { name: "Sunrise", nameAr: "الشروق", time: prayerTimes.sunrise, isSunrise: true },
-        { name: "Dhuhr", nameAr: "الظهر", time: prayerTimes.dhuhr },
-        { name: "Asr", nameAr: "العصر", time: prayerTimes.asr },
-        { name: "Maghrib", nameAr: "المغرب", time: prayerTimes.maghrib },
-        { name: "Isha", nameAr: "العشاء", time: prayerTimes.isha },
+        { name: "Fajr", nameAr: "الفجر", time: prayerTimes.fajr, icon: "moon" as const },           // pre-dawn
+        { name: "Sunrise", nameAr: "الشروق", time: prayerTimes.sunrise, icon: "sunny" as const },   // sunrise
+        { name: "Dhuhr", nameAr: "الظهر", time: prayerTimes.dhuhr, icon: "sunny" as const },        // midday
+        { name: "Asr", nameAr: "العصر", time: prayerTimes.asr, icon: "partly-sunny" as const },     // afternoon
+        { name: "Maghrib", nameAr: "المغرب", time: prayerTimes.maghrib, icon: "sunny-outline" as const }, // sunset
+        { name: "Isha", nameAr: "العشاء", time: prayerTimes.isha, icon: "moon" as const },         // night
       ]
     : [];
 
@@ -95,7 +95,9 @@ export default function PrayerScreen() {
                 <View>
                   <Text className="text-xs text-white/50 uppercase tracking-wider mb-1">Next Prayer</Text>
                   <Text className="text-3xl font-bold text-[#D4AF37]">{nextPrayer.name}</Text>
-                  <Text className="text-sm text-white/60 mt-1">in {timeUntilNext}</Text>
+                  <Text className="text-sm text-white/60 mt-1">
+                    {(nextPrayer as any).isTomorrow ? "tomorrow" : `in ${timeUntilNext}`}
+                  </Text>
                 </View>
                 <View className="items-end">
                   <View className="w-16 h-16 rounded-2xl bg-[#D4AF37]/10 items-center justify-center mb-2">
@@ -155,9 +157,9 @@ export default function PrayerScreen() {
               </Text>
               <View className="gap-2">
                 {prayers.map((prayer) => {
-                  const isNext = nextPrayer?.name === prayer.name;
+                  const isNext = nextPrayer?.name === prayer.name && !(nextPrayer as any).isTomorrow;
                   const isCurrent = currentPrayer === prayer.name;
-                  const isPast = new Date() > prayer.time && !isNext;
+                  const isPast = new Date() > prayer.time && !isCurrent;
 
                   return (
                     <View
@@ -166,44 +168,52 @@ export default function PrayerScreen() {
                         isNext
                           ? "bg-[#D4AF37]/10 border-[#D4AF37]/30"
                           : isCurrent
-                          ? "bg-white/5 border-white/10"
+                          ? "bg-[#0a5c3e]/30 border-[#0a5c3e]/50"
                           : "bg-white/5 border-white/5"
                       }`}
-                      style={{ opacity: isPast ? 0.4 : 1 }}
+                      style={{ opacity: isPast && !isCurrent ? 0.4 : 1 }}
                     >
                       <View className="flex-row items-center gap-4">
                         <View
-                          className={`w-12 h-12 rounded-xl items-center justify-center ${
-                            isNext
-                              ? "bg-[#D4AF37]/20"
-                              : prayer.isSunrise
-                              ? "bg-orange-500/10"
-                              : "bg-white/5"
-                          }`}
-                        >
-                          {prayer.isSunrise ? (
-                            <Ionicons 
-                              name="sunny" 
-                              size={24} 
-                              color={isNext ? "#D4AF37" : "#fb923c"} 
-                            />
-                          ) : (
-                            <Ionicons 
-                              name="moon" 
-                              size={24} 
-                              color={isNext ? "#D4AF37" : "rgba(255,255,255,0.4)"} 
-                            />
-                          )}
+                            className={`w-12 h-12 rounded-xl items-center justify-center ${
+                              isNext
+                                ? "bg-[#D4AF37]/20"
+                                : prayer.name === "Maghrib"
+                                ? "bg-orange-500/10"
+                                : prayer.icon === "sunny" || prayer.icon === "partly-sunny"
+                                ? "bg-amber-500/10"
+                                : "bg-white/5"
+                            }`}
+                          >
+                          <Ionicons
+                            name={prayer.icon}
+                            size={24}
+                            color={
+                              isNext
+                                ? "#D4AF37"
+                                : prayer.name === "Maghrib"
+                                ? "#fb923c"
+                                : prayer.icon === "sunny" || prayer.icon === "partly-sunny"
+                                ? "#fbbf24"
+                                : "rgba(255,255,255,0.5)"
+                            }
+                          />
                         </View>
                         <View>
-                          <Text className={`font-semibold text-lg ${isNext ? "text-[#D4AF37]" : "text-white"}`}>
+                          <Text className={`font-semibold text-lg ${
+                            isNext ? "text-[#D4AF37]" : isCurrent ? "text-white" : "text-white"
+                          }`}>
                             {prayer.name}
                           </Text>
-                          <Text className="text-sm text-white/40">{prayer.nameAr}</Text>
+                          <Text className={`text-sm ${isCurrent ? "text-white/60" : "text-white/40"}`}>
+                            {prayer.nameAr}{isCurrent ? " · Now" : ""}
+                          </Text>
                         </View>
                       </View>
                       <View className="items-end">
-                        <Text className={`text-xl font-medium ${isNext ? "text-[#D4AF37]" : "text-white/80"}`}>
+                        <Text className={`text-xl font-medium ${
+                          isNext ? "text-[#D4AF37]" : isCurrent ? "text-white" : "text-white/80"
+                        }`}>
                           {formatPrayerTime(prayer.time)}
                         </Text>
                         {isNext && (

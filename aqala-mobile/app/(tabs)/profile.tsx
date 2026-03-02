@@ -652,7 +652,9 @@ function UserListItem({ user, currentUserId }: { user: FollowUser; currentUserId
         )}
       </View>
       {currentUserId && currentUserId !== user.id && (
-        <FollowButton targetUserId={user.id} size="sm" />
+        <View style={{ alignSelf: "stretch", minWidth: 80 }}>
+          <FollowButton targetUserId={user.id} size="sm" fillHeight />
+        </View>
       )}
     </TouchableOpacity>
   );

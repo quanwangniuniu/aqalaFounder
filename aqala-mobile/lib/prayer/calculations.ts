@@ -202,9 +202,9 @@ export function formatPrayerTime(date: Date): string {
 }
 
 /**
- * Get next prayer
+ * Get next prayer. After Isha, returns tomorrow's Fajr estimate.
  */
-export function getNextPrayer(times: PrayerTimes): { name: string; time: Date } | null {
+export function getNextPrayer(times: PrayerTimes): { name: string; time: Date; isTomorrow?: boolean } | null {
     const now = new Date();
     const prayers = [
         { name: 'Fajr', time: times.fajr },
@@ -221,7 +221,10 @@ export function getNextPrayer(times: PrayerTimes): { name: string; time: Date } 
         }
     }
 
-    return null; // All prayers passed for today
+    // All prayers passed — next is tomorrow's Fajr (approximate using today's time + 24h)
+    const tomorrowFajr = new Date(times.fajr);
+    tomorrowFajr.setDate(tomorrowFajr.getDate() + 1);
+    return { name: 'Fajr', time: tomorrowFajr, isTomorrow: true };
 }
 
 /**
@@ -248,6 +251,7 @@ export function getTimeUntilNextPrayer(times: PrayerTimes): string {
 
     const now = new Date();
     const diff = next.time.getTime() - now.getTime();
+    if (diff < 0) return '';
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));

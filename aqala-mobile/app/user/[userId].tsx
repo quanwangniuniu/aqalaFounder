@@ -549,7 +549,7 @@ export default function UserProfileScreen() {
             ) : (
               <>
                 <View style={{ flex: 1, height: 40 }}>
-                  <FollowButton targetUserId={userId} size="md" />
+                  <FollowButton targetUserId={userId} size="md" fillHeight />
                 </View>
                 <TouchableOpacity
                   onPress={() => router.push(`/messages/${userId}` as any)}
@@ -761,7 +761,9 @@ function UserListItem({ user, currentUserId }: { user: FollowUser; currentUserId
         )}
       </View>
       {currentUserId && currentUserId !== user.id && (
-        <FollowButton targetUserId={user.id} size="sm" />
+        <View style={{ alignSelf: "stretch", minWidth: 80 }}>
+          <FollowButton targetUserId={user.id} size="sm" fillHeight />
+        </View>
       )}
     </TouchableOpacity>
   );

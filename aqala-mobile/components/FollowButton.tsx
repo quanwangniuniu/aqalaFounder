@@ -8,9 +8,11 @@ import { getUserProfile } from "@/lib/firebase/users";
 interface FollowButtonProps {
   targetUserId: string;
   size?: "sm" | "md" | "lg";
+  /** When true, button stretches to full height of its container (e.g. in list rows) */
+  fillHeight?: boolean;
 }
 
-export default function FollowButton({ targetUserId, size = "md" }: FollowButtonProps) {
+export default function FollowButton({ targetUserId, size = "md", fillHeight = false }: FollowButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [isFollowingUser, setIsFollowingUser] = useState(false);
@@ -77,16 +79,21 @@ export default function FollowButton({ targetUserId, size = "md" }: FollowButton
     lg: { paddingHorizontal: 20, paddingVertical: 8, fontSize: 16 },
   };
 
+  const baseButtonStyle = {
+    borderRadius: 8,
+    paddingHorizontal: sizeStyles[size].paddingHorizontal,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    ...(fillHeight && { flex: 1, alignSelf: "stretch" as const }),
+    ...(!fillHeight && { flex: 1 }),
+  };
+
   if (loading) {
     return (
       <TouchableOpacity
         style={{
-          flex: 1,
-          borderRadius: 8,
+          ...baseButtonStyle,
           backgroundColor: "rgba(255,255,255,0.1)",
-          paddingHorizontal: sizeStyles[size].paddingHorizontal,
-          alignItems: "center",
-          justifyContent: "center",
         }}
         disabled
       >
@@ -102,13 +109,9 @@ export default function FollowButton({ targetUserId, size = "md" }: FollowButton
       onPress={handlePress}
       disabled={actionLoading}
       style={{
-        flex: 1,
-        borderRadius: 8,
-        paddingHorizontal: sizeStyles[size].paddingHorizontal,
+        ...baseButtonStyle,
         backgroundColor: isFollowingUser ? "rgba(255,255,255,0.1)" : "#D4AF37",
         opacity: actionLoading ? 0.5 : 1,
-        alignItems: "center",
-        justifyContent: "center",
       }}
     >
       {actionLoading ? (

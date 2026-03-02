@@ -223,18 +223,24 @@ export default function SettingsScreen() {
                       <Text className="text-xs text-white/50">Upgrade to remove ads</Text>
                     </View>
                   </View>
-                  <Link href="/subscription/index" asChild>
-                    <TouchableOpacity>
-                      <LinearGradient
-                        colors={["#D4AF37", "#c9a431"]}
-                        className="w-full items-center py-3 rounded-xl"
-                      >
-                        <Text className="text-sm font-semibold text-[#032117]">
-                          Go Ad-Free Forever
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </Link>
+                  <TouchableOpacity
+                    onPress={() => router.push("/subscription/index")}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={["#D4AF37", "#c9a431"]}
+                      style={{
+                        borderRadius: 12,
+                        paddingVertical: 14,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text className="text-base font-semibold text-[#032117]">
+                        Go Ad-Free Forever
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
