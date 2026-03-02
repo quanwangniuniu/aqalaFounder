@@ -12,8 +12,8 @@ import {
   Keyboard,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserProfile, UserProfile } from "@/lib/firebase/users";
 import {
@@ -173,11 +173,11 @@ export default function ConversationScreen() {
 
   if (authLoading || loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
@@ -307,7 +307,7 @@ export default function ConversationScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -547,6 +547,6 @@ export default function ConversationScreen() {
           targetLabel={otherUser?.username ? `@${otherUser.username}` : otherUser?.displayName || "User"}
         />
       )}
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

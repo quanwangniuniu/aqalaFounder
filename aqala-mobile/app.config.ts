@@ -7,19 +7,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     scheme: "aqala",
     version: "1.0.0",
     orientation: "portrait",
-    // icon: "./assets/icon.png", // TODO: Add app icon (1024x1024 PNG)
+    icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
     newArchEnabled: true,
     splash: {
-        // image: "./assets/splash-icon.png", // TODO: Add splash screen image
+        image: "./assets/splash.png",
         resizeMode: "contain",
-        backgroundColor: "#021a12",
+        backgroundColor: "#000000",
     },
     ios: {
         supportsTablet: true,
         bundleIdentifier: "com.aqala.app",
-        // googleServicesFile: "./GoogleService-Info.plist", // TODO: Add GoogleService-Info.plist for Firebase
+        googleServicesFile: "./GoogleService-Info.plist",
         infoPlist: {
+            ITSAppUsesNonExemptEncryption: false,
             NSLocationWhenInUseUsageDescription:
                 "Aqala uses your location to calculate accurate prayer times for your area and to show the Qibla direction. Your location data is processed on-device and is not stored on our servers.",
             NSMicrophoneUsageDescription:
@@ -30,18 +31,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 "Aqala uses photo library access to let you choose an existing photo as your profile picture.",
             NSUserTrackingUsageDescription:
                 "Aqala uses this permission to deliver personalised ads. You can choose to opt out and still use the app with non-personalised ads.",
-        },
-        config: {
-            googleSignIn: {
-                reservedClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "",
-            },
+            CFBundleURLTypes: [
+                {
+                    CFBundleTypeRole: "Editor",
+                    CFBundleURLSchemes: ["com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih"],
+                },
+            ],
         },
     },
     android: {
-        // adaptiveIcon: {
-        //     foregroundImage: "./assets/adaptive-icon.png", // TODO: Add adaptive icon (1024x1024 PNG)
-        //     backgroundColor: "#021a12",
-        // },
+        adaptiveIcon: {
+            foregroundImage: "./assets/adaptive-icon.png",
+            backgroundColor: "#021a12",
+        },
         package: "com.aqala.app",
         // googleServicesFile: "./google-services.json", // TODO: Add google-services.json for Firebase
         permissions: [
@@ -52,6 +54,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
     },
     plugins: [
+        [
+            "@react-native-google-signin/google-signin",
+            {
+                iosUrlScheme: "com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih",
+            },
+        ],
         "expo-router",
         "expo-asset",
         "expo-font",
@@ -87,20 +95,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 color: "#0a5c3e",
             },
         ],
+        "expo-iap",
         [
             "react-native-google-mobile-ads",
             {
-                androidAppId: process.env.EXPO_PUBLIC_ADMOB_APP_ID_ANDROID || "ca-app-pub-xxxxxxxx~xxxxxxxx",
-                iosAppId: process.env.EXPO_PUBLIC_ADMOB_APP_ID_IOS || "ca-app-pub-xxxxxxxx~xxxxxxxx",
+                androidAppId: "ca-app-pub-3882364799598893~5390694213",
+                iosAppId: "ca-app-pub-3882364799598893~5227042684",
             },
         ],
     ],
     experiments: {
         typedRoutes: true,
     },
-    extra: {
-        eas: {
-            projectId: "your-eas-project-id",
-        },
-    },
+    "extra": {
+      "eas": {
+        "projectId": "79f93fd7-00d8-4803-81e4-e4661d5342fd"
+      }
+    }
 });

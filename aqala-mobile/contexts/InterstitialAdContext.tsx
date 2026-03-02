@@ -9,22 +9,32 @@ import React, {
 } from "react";
 import { useRouter } from "expo-router";
 import { Platform } from "react-native";
-import {
-  InterstitialAd,
-  AdEventType,
-  TestIds,
-} from "react-native-google-mobile-ads";
 import { useSubscription } from "./SubscriptionContext";
 
-const adUnitId = __DEV__
-  ? TestIds.INTERSTITIAL
-  : Platform.select({
-      ios:
-        process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS ?? TestIds.INTERSTITIAL,
-      android:
-        process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID ??
-        TestIds.INTERSTITIAL,
-    }) ?? TestIds.INTERSTITIAL;
+let InterstitialAd: any = null;
+let AdEventType: any = null;
+let TestIds: any = null;
+
+try {
+  const ads = require("react-native-google-mobile-ads");
+  InterstitialAd = ads.InterstitialAd;
+  AdEventType = ads.AdEventType;
+  TestIds = ads.TestIds;
+} catch {
+  // Native module not available (e.g. running in Expo Go)
+}
+
+const adUnitId =
+  !InterstitialAd || __DEV__
+    ? TestIds?.INTERSTITIAL ?? "ca-app-pub-3940256099942544/1033173712"
+    : Platform.select({
+        ios:
+          process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS ??
+          TestIds?.INTERSTITIAL,
+        android:
+          process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID ??
+          TestIds?.INTERSTITIAL,
+      }) ?? TestIds?.INTERSTITIAL;
 
 interface InterstitialAdContextType {
   showAdBeforeNavigation: (destination: string) => void;
@@ -55,7 +65,7 @@ export const InterstitialAdProvider: React.FC<{ children: ReactNode }> = ({
   routerRef.current = router;
 
   const pendingRef = useRef<string | null>(null);
-  const adRef = useRef<InterstitialAd | null>(null);
+  const adRef = useRef<any>(null);
   const listenersRef = useRef<(() => void)[]>([]);
 
   const removeListeners = useCallback(() => {
@@ -64,6 +74,8 @@ export const InterstitialAdProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   const loadNewAd = useCallback(() => {
+    if (!InterstitialAd || !AdEventType) return;
+
     removeListeners();
     setIsAdLoaded(false);
 
@@ -92,7 +104,7 @@ export const InterstitialAdProvider: React.FC<{ children: ReactNode }> = ({
 
     const unsubError = interstitial.addAdEventListener(
       AdEventType.ERROR,
-      (error) => {
+      (error: any) => {
         console.warn("Interstitial ad error:", error);
         setIsAdLoaded(false);
         if (pendingRef.current) {
@@ -108,7 +120,7 @@ export const InterstitialAdProvider: React.FC<{ children: ReactNode }> = ({
   }, [removeListeners]);
 
   useEffect(() => {
-    if (!showAds) {
+    if (!showAds || !InterstitialAd) {
       removeListeners();
       adRef.current = null;
       setIsAdLoaded(false);
@@ -120,7 +132,7 @@ export const InterstitialAdProvider: React.FC<{ children: ReactNode }> = ({
 
   const showAdBeforeNavigation = useCallback(
     (destination: string) => {
-      if (!showAds) {
+      if (!showAds || !InterstitialAd) {
         router.push(destination as any);
         return;
       }

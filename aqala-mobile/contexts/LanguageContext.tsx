@@ -195,9 +195,6 @@ const LanguageContext = createContext<LanguageContextType | null>(null);
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<string>("en");
   const [isFirstVisit, setIsFirstVisit] = useState<boolean>(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Load saved language and first visit state from AsyncStorage
   useEffect(() => {
     const loadPreferences = async () => {
       try {
@@ -213,8 +210,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e) {
         console.error("Failed to load language preferences:", e);
-      } finally {
-        setMounted(true);
       }
     };
 
@@ -261,11 +256,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   // Check if current language is RTL
   const isRTL = RTL_LANGUAGES.includes(language);
-
-  // Prevent rendering before preferences are loaded
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <LanguageContext.Provider

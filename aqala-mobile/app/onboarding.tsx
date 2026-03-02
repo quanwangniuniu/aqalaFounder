@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, Platform, Linking } from "react-native";
+import { View, Text, Pressable, Platform, Linking, Modal, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { requestRecordingPermissionsAsync, getRecordingPermissionsAsync } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLanguage, LANGUAGE_OPTIONS, type LanguageOption } from "@/contexts/LanguageContext";
 
 const ONBOARDING_KEY = "aqala_permissions_onboarded";
 
@@ -32,7 +33,6 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
         marginBottom: 12,
       }}
     >
-      {/* Icon + Title + Status + Action — single row layout */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 }}>
         <View
           style={{
@@ -62,7 +62,6 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
           )}
         </View>
 
-        {/* Inline action */}
         {granted === null && (
           <Pressable onPress={onRequest} disabled={loading}>
             <LinearGradient
@@ -114,12 +113,10 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
         )}
       </View>
 
-      {/* Reason */}
       <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 19 }}>
         {reason}
       </Text>
 
-      {/* Detail */}
       <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, lineHeight: 16, marginTop: 4 }}>
         {detail}
       </Text>
@@ -127,13 +124,111 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
   );
 }
 
+function LanguageDropdown() {
+  const { language, setLanguage, getLanguageOption } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const current = getLanguageOption(language);
+
+  const renderItem = ({ item }: { item: LanguageOption }) => {
+    const selected = item.code === language;
+    return (
+      <Pressable
+        onPress={() => {
+          setLanguage(item.code);
+          setOpen(false);
+        }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          backgroundColor: selected ? "rgba(212,175,55,0.12)" : "transparent",
+        }}
+      >
+        <Text style={{ fontSize: 20, marginRight: 12 }}>{item.flag}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: selected ? "#E8D5A3" : "#fff", fontSize: 15, fontWeight: selected ? "600" : "400" }}>
+            {item.label}
+          </Text>
+          <Text style={{ color: selected ? "rgba(212,175,55,0.7)" : "rgba(255,255,255,0.4)", fontSize: 12 }}>
+            {item.nativeLabel}
+          </Text>
+        </View>
+        {selected && <Ionicons name="checkmark" size={18} color="#D4AF37" />}
+      </Pressable>
+    );
+  };
+
+  return (
+    <>
+      <View style={{ marginBottom: 16 }}>
+        <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 6, letterSpacing: 0.5 }}>
+          PREFERRED LANGUAGE
+        </Text>
+        <Pressable
+          onPress={() => setOpen(true)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "rgba(255,255,255,0.05)",
+            borderWidth: 1,
+            borderColor: "rgba(212,175,55,0.25)",
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+          }}
+        >
+          <Text style={{ fontSize: 18, marginRight: 10 }}>{current?.flag}</Text>
+          <Text style={{ color: "#fff", fontSize: 15, fontWeight: "500", flex: 1 }}>{current?.label}</Text>
+          <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+        </Pressable>
+        <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
+          You can change this anytime in settings
+        </Text>
+      </View>
+
+      <Modal visible={open} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: "#032117",
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              maxHeight: "70%",
+              borderTopWidth: 1,
+              borderColor: "rgba(212,175,55,0.2)",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
+              <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600" }}>Select Language</Text>
+              <Pressable onPress={() => setOpen(false)} hitSlop={12}>
+                <Ionicons name="close" size={22} color="rgba(255,255,255,0.5)" />
+              </Pressable>
+            </View>
+            <FlatList
+              data={LANGUAGE_OPTIONS}
+              keyExtractor={(item) => item.code}
+              renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.05)", marginHorizontal: 20 }} />
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { completeFirstVisit } = useLanguage();
   const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
   const [micGranted, setMicGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
-  // Pre-check current permission status on mount
   useEffect(() => {
     (async () => {
       try {
@@ -144,9 +239,9 @@ export default function OnboardingScreen() {
         if (locStatus.granted) setLocationGranted(true);
         if (micStatus.granted) setMicGranted(true);
 
-        // If both already granted, auto-finish
         if (locStatus.granted && micStatus.granted) {
           await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+          completeFirstVisit();
           router.replace("/(tabs)");
         }
       } catch (e) {
@@ -181,6 +276,7 @@ export default function OnboardingScreen() {
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    completeFirstVisit();
     router.replace("/(tabs)");
   };
 
@@ -189,9 +285,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "space-between" }}>
-        {/* Top content */}
         <View>
-          {/* Header */}
           <View style={{ alignItems: "center", marginTop: 16, marginBottom: 24 }}>
             <View
               style={{
@@ -218,11 +312,12 @@ export default function OnboardingScreen() {
                 maxWidth: 300,
               }}
             >
-              Aqala needs a couple of permissions to give you the best experience. Here's exactly why:
+              Pick your language and grant a couple of permissions to get the best experience.
             </Text>
           </View>
 
-          {/* Permission Cards */}
+          <LanguageDropdown />
+
           <PermissionCard
             icon="location-outline"
             title="Location"
@@ -244,7 +339,6 @@ export default function OnboardingScreen() {
           />
         </View>
 
-        {/* Bottom button — pinned */}
         <View style={{ paddingBottom: 8 }}>
           {bothAnswered ? (
             <Pressable onPress={finishOnboarding}>

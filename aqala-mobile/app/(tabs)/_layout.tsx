@@ -3,6 +3,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
+const TAB_BAR_ICON_SIZE = 20;
+
 export default function TabsLayout() {
   const { getGradientColors } = usePreferences();
   const gradientColors = getGradientColors();
@@ -23,7 +25,7 @@ export default function TabsLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: "500",
         },
       }}
@@ -32,8 +34,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -41,8 +43,8 @@ export default function TabsLayout() {
         name="rooms"
         options={{
           title: "Rooms",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="people-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -50,8 +52,8 @@ export default function TabsLayout() {
         name="prayer"
         options={{
           title: "Prayer",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="moon-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="moon-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -59,8 +61,8 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -68,8 +70,8 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />

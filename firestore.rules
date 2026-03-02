@@ -25,7 +25,11 @@ service cloud.firestore {
     // Subscriptions
     match /subscriptions/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.plan == "premium"
+        && request.resource.data.status == "active";
+      allow delete: if false;
     }
 
     // Reports (user reports for moderation)

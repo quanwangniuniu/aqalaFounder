@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Switch, Alert, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Switch, Alert, Linking, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import { usePrivacyConsent } from "@/contexts/PrivacyConsentContext";
 import { getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Defs, Rect, Stop, RadialGradient as SvgRadialGradient, LinearGradient as SvgLinearGradient, Path } from "react-native-svg";
 import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function SettingsScreen() {
@@ -158,7 +159,7 @@ export default function SettingsScreen() {
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
               Wallpaper
             </Text>
-            <View className="flex-row flex-wrap gap-3">
+            <View style={styles.wallpaperGrid}>
               {WALLPAPERS.map((wp) => (
                 <TouchableOpacity
                   key={wp.id}
@@ -168,21 +169,16 @@ export default function SettingsScreen() {
                       ? "border-[#D4AF37]"
                       : "border-white/10"
                   }`}
-                  style={{ width: '30%', aspectRatio: 4/3 }}
+                  style={styles.wallpaperThumb}
                 >
-                  <LinearGradient
-                    colors={wp.gradientColors}
-                    className="absolute inset-0"
-                  />
+                  <WallpaperPreviewSvg id={wp.id} width={THUMB_WIDTH} height={THUMB_HEIGHT} />
                   
-                  {/* Label */}
                   <View className="absolute inset-x-0 bottom-0 bg-black/80 p-2">
                     <Text className="text-[10px] font-medium text-white/90 leading-tight">
                       {wp.name}
                     </Text>
                   </View>
                   
-                  {/* Selected checkmark */}
                   {wallpaper === wp.id && (
                     <View className="absolute top-2 right-2 w-5 h-5 bg-[#D4AF37] rounded-full items-center justify-center">
                       <Ionicons name="checkmark" size={12} color="#032117" />
@@ -206,18 +202,15 @@ export default function SettingsScreen() {
                 <View className="p-5">
                   <View className="flex-row items-center gap-3 mb-3">
                     <View className="w-10 h-10 rounded-full bg-[#D4AF37]/20 items-center justify-center">
-                      <Text className="text-[#D4AF37] text-lg">⭐</Text>
+                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </Svg>
                     </View>
                     <View>
                       <Text className="font-medium text-white">Premium Active</Text>
                       <Text className="text-xs text-white/50">Ad-free experience enabled</Text>
                     </View>
                   </View>
-                  <Link href="/subscription/manage" asChild>
-                    <TouchableOpacity className="w-full items-center py-2.5 bg-white/5 rounded-xl">
-                      <Text className="text-sm text-white/70">Manage Subscription</Text>
-                    </TouchableOpacity>
-                  </Link>
                 </View>
               ) : (
                 <View className="p-5">
@@ -237,7 +230,7 @@ export default function SettingsScreen() {
                         className="w-full items-center py-3 rounded-xl"
                       >
                         <Text className="text-sm font-semibold text-[#032117]">
-                          Go Ad-Free • $15 one-time
+                          Go Ad-Free Forever
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -388,3 +381,110 @@ export default function SettingsScreen() {
     </WallpaperBackground>
   );
 }
+
+function WallpaperPreviewSvg({ id, width, height }: { id: string; width: number; height: number }) {
+  return (
+    <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <Defs>
+        {/* Mosque at Night */}
+        <SvgLinearGradient id="mosque-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#021a12" />
+          <Stop offset="0.15" stopColor="#032117" />
+          <Stop offset="0.4" stopColor="#042d1d" />
+          <Stop offset="0.7" stopColor="#032117" />
+          <Stop offset="1" stopColor="#021a12" />
+        </SvgLinearGradient>
+        <SvgRadialGradient id="mosque-glow-top" cx="50%" cy="0%" rx="60%" ry="50%">
+          <Stop offset="0" stopColor="#0a5c3e" stopOpacity={0.8} />
+          <Stop offset="0.5" stopColor="#0a5c3e" stopOpacity={0.3} />
+          <Stop offset="1" stopColor="#0a5c3e" stopOpacity={0} />
+        </SvgRadialGradient>
+        <SvgRadialGradient id="mosque-glow-br" cx="80%" cy="100%" rx="50%" ry="45%">
+          <Stop offset="0" stopColor="#06402b" stopOpacity={0.6} />
+          <Stop offset="0.5" stopColor="#06402b" stopOpacity={0.2} />
+          <Stop offset="1" stopColor="#06402b" stopOpacity={0} />
+        </SvgRadialGradient>
+
+        {/* Emerald — 135deg diagonal */}
+        <SvgLinearGradient id="emerald-base" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#032117" />
+          <Stop offset="0.5" stopColor="#064d33" />
+          <Stop offset="1" stopColor="#032117" />
+        </SvgLinearGradient>
+
+        {/* Golden Hour */}
+        <SvgLinearGradient id="golden-hour-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#1a1510" />
+          <Stop offset="0.3" stopColor="#2d2418" />
+          <Stop offset="0.6" stopColor="#1a1510" />
+          <Stop offset="1" stopColor="#0d0a07" />
+        </SvgLinearGradient>
+
+        {/* Midnight Blue */}
+        <SvgLinearGradient id="midnight-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#0a0f1a" />
+          <Stop offset="0.3" stopColor="#151e30" />
+          <Stop offset="0.7" stopColor="#0d1422" />
+          <Stop offset="1" stopColor="#080c14" />
+        </SvgLinearGradient>
+
+        {/* Desert Sand */}
+        <SvgLinearGradient id="desert-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#1f1a14" />
+          <Stop offset="0.3" stopColor="#2d261e" />
+          <Stop offset="0.7" stopColor="#1a1510" />
+          <Stop offset="1" stopColor="#100d09" />
+        </SvgLinearGradient>
+
+        {/* Deep Ocean */}
+        <SvgLinearGradient id="deep-ocean-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#071318" />
+          <Stop offset="0.3" stopColor="#0c2633" />
+          <Stop offset="0.7" stopColor="#082028" />
+          <Stop offset="1" stopColor="#040d11" />
+        </SvgLinearGradient>
+      </Defs>
+
+      {id === "mosque" && (
+        <>
+          <Rect width={width} height={height} fill="url(#mosque-base)" />
+          <Rect width={width} height={height} fill="url(#mosque-glow-top)" />
+          <Rect width={width} height={height} fill="url(#mosque-glow-br)" />
+        </>
+      )}
+      {id === "emerald" && (
+        <Rect width={width} height={height} fill="url(#emerald-base)" />
+      )}
+      {id === "golden-hour" && (
+        <Rect width={width} height={height} fill="url(#golden-hour-base)" />
+      )}
+      {id === "midnight" && (
+        <Rect width={width} height={height} fill="url(#midnight-base)" />
+      )}
+      {id === "desert" && (
+        <Rect width={width} height={height} fill="url(#desert-base)" />
+      )}
+      {id === "deep-ocean" && (
+        <Rect width={width} height={height} fill="url(#deep-ocean-base)" />
+      )}
+    </Svg>
+  );
+}
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const GRID_PADDING = 20;
+const GRID_GAP = 12;
+const THUMB_WIDTH = (SCREEN_WIDTH - GRID_PADDING * 2 - GRID_GAP * 2) / 3;
+const THUMB_HEIGHT = THUMB_WIDTH * (3 / 4);
+
+const styles = StyleSheet.create({
+  wallpaperGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: GRID_GAP,
+  },
+  wallpaperThumb: {
+    width: THUMB_WIDTH,
+    height: THUMB_HEIGHT,
+  },
+});

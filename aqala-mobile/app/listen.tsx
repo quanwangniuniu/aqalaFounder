@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, Platform, Linking } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { WebView, WebViewNavigation } from "react-native-webview";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { auth } from "@/lib/firebase/config";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -11,6 +13,10 @@ const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
 
 export default function ListenScreen() {
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const { getGradientColors } = usePreferences();
+  const gradientColors = getGradientColors();
+  const cssGradient = `linear-gradient(180deg, ${gradientColors.join(", ")})`;
   const router = useRouter();
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +24,6 @@ export default function ListenScreen() {
   const [pageTitle, setPageTitle] = useState("Listen & Translate");
   const [micError, setMicError] = useState(false);
 
-  // Get the user's Firebase auth token to inject into the WebView
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,9 +111,16 @@ export default function ListenScreen() {
         });
       }
 
-      // === STYLE: Hide header, keep footer with mic button ===
+      // === STYLE: Override web page background with user's chosen gradient ===
       var style = document.createElement('style');
       style.textContent = \`
+        html, body {
+          background: ${cssGradient} !important;
+          background-attachment: fixed !important;
+        }
+        .fixed.inset-0.z-0 {
+          display: none !important;
+        }
         header:not(footer),
         nav:not(footer *),
         [class*="bottom-nav"],
@@ -144,18 +156,16 @@ export default function ListenScreen() {
     true;
   `;
 
-  // Inject auth token before the page loads
-  const authInjectionJS = authToken
-    ? `
-      (function() {
-        try {
-          // Store the token so the web app can authenticate
-          localStorage.setItem('firebase_auth_token', '${authToken}');
-        } catch(e) {}
-      })();
-      true;
-    `
-    : "true;";
+  const preloadJS = `
+    (function() {
+      try {
+        ${authToken ? `localStorage.setItem('firebase_auth_token', '${authToken}');` : ""}
+        localStorage.setItem('aqala_preferred_language', '${language}');
+        localStorage.setItem('aqala_first_visit_complete', 'true');
+      } catch(e) {}
+    })();
+    true;
+  `;
 
   const handleNavigationStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
@@ -173,11 +183,11 @@ export default function ListenScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top", "bottom"]}>
       {/* Custom Header */}
       <View
         className="flex-row items-center px-4 py-3 border-b border-white/10"
-        style={{ backgroundColor: "#032117" }}
+        style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
       >
         <TouchableOpacity
           onPress={handleGoBack}
@@ -222,7 +232,7 @@ export default function ListenScreen() {
       {/* WebView */}
       <View className="flex-1">
         {loading && (
-          <View className="absolute inset-0 z-10 items-center justify-center bg-[#032117]">
+          <View className="absolute inset-0 z-10 items-center justify-center">
             <View className="items-center gap-4">
               <View className="w-16 h-16 rounded-full bg-[#D4AF37]/20 items-center justify-center">
                 <Ionicons name="mic" size={28} color="#D4AF37" />
@@ -237,10 +247,10 @@ export default function ListenScreen() {
         <WebView
           ref={webViewRef}
           source={{ uri: `${WEB_URL}/listen` }}
-          style={{ flex: 1, backgroundColor: "#032117" }}
+          style={{ flex: 1, backgroundColor: gradientColors[0] }}
           onLoadEnd={() => setLoading(false)}
           onNavigationStateChange={handleNavigationStateChange}
-          injectedJavaScriptBeforeContentLoaded={authInjectionJS}
+          injectedJavaScriptBeforeContentLoaded={preloadJS}
           injectedJavaScript={injectedJS}
           javaScriptEnabled={true}
           domStorageEnabled={true}
@@ -257,9 +267,7 @@ export default function ListenScreen() {
           allowsBackForwardNavigationGestures={true}
           // Android hardware acceleration for media
           {...(Platform.OS === "android"
-            ? {
-                androidLayerType: "hardware",
-              }
+            ? { androidLayerType: "hardware" as const }
             : {})}
           onMessage={(event) => {
             try {
@@ -292,7 +300,7 @@ export default function ListenScreen() {
             setLoading(false);
           }}
           renderError={(errorName) => (
-            <View className="flex-1 items-center justify-center bg-[#032117] p-6">
+            <View className="flex-1 items-center justify-center p-6">
               <Ionicons name="cloud-offline" size={48} color="#D4AF37" />
               <Text className="text-white font-semibold text-lg mt-4 mb-2">
                 Connection Error
@@ -310,6 +318,6 @@ export default function ListenScreen() {
           )}
         />
       </View>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

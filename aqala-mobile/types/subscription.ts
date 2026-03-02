@@ -2,6 +2,8 @@ export type SubscriptionPlan = "free" | "premium";
 
 export type SubscriptionStatus = "active" | "inactive";
 
+export type PurchaseSource = "stripe" | "apple" | "google";
+
 export interface Subscription {
   userId: string;
   email: string | null;
@@ -13,6 +15,11 @@ export interface Subscription {
   purchasedAt: Date | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+  source?: PurchaseSource;
+  appleTransactionId?: string | null;
+  appleProductId?: string | null;
+  googleOrderId?: string | null;
+  googleProductId?: string | null;
 }
 
 export interface PlanConfig {

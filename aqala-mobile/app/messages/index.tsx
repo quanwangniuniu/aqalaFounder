@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeToConversations, Conversation } from "@/lib/firebase/messages";
 import { getBlockedUserIds } from "@/lib/firebase/moderation";
@@ -63,18 +63,18 @@ export default function MessagesScreen() {
 
   if (authLoading || loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (!user) return null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -92,7 +92,7 @@ export default function MessagesScreen() {
           <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: "600", color: "white" }}>Messages</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/search")}>
           <Ionicons name="create-outline" size={24} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
       </View>
@@ -225,6 +225,6 @@ export default function MessagesScreen() {
           })
         )}
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

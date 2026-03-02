@@ -10,6 +10,7 @@ import { getUserDisplayName, getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import WallpaperBackground from "@/components/WallpaperBackground";
+import { IconPrayerClock, IconQiblaCompass, IconMosque, IconHeart, IconSearch, IconChat } from "@/components/HomeIcons";
 
 export default function HomeScreen() {
   const { t, isRTL } = useLanguage();
@@ -41,6 +42,7 @@ export default function HomeScreen() {
                   style={{
                     width: 64,
                     height: 64,
+                    tintColor: "white",
                   }}
                   resizeMode="contain"
                 />
@@ -53,7 +55,16 @@ export default function HomeScreen() {
               {user && (
                 <Link href="/search" asChild>
                   <TouchableOpacity className="p-2 rounded-full bg-white/5 border border-white/10">
-                    <Text className="text-white/70 text-base">🔍</Text>
+                    <IconSearch color="rgba(255,255,255,0.7)" size={20} />
+                  </TouchableOpacity>
+                </Link>
+              )}
+
+              {/* Messages */}
+              {user && (
+                <Link href="/messages" asChild>
+                  <TouchableOpacity className="p-2 rounded-full bg-white/5 border border-white/10">
+                    <IconChat color="rgba(255,255,255,0.7)" size={20} />
                   </TouchableOpacity>
                 </Link>
               )}
@@ -136,12 +147,8 @@ export default function HomeScreen() {
             
             {/* Hero Section - Primary CTA */}
             <View className="mt-4">
-              <View className="relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 p-6">
-                {/* Decorative glow */}
-                <View className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/10 rounded-full" style={{ transform: [{ translateX: 96 }, { translateY: -96 }] }} />
-                <View className="absolute bottom-0 left-0 w-32 h-32 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: -64 }, { translateY: 64 }] }} />
-                
-                <View className="relative">
+              <View className="rounded-3xl bg-white/5 border border-white/10 p-6">
+                <View>
                   {/* Headline */}
                   <Text className="text-3xl font-bold tracking-tight text-white leading-tight mb-3">
                     {t("home.headline1")}
@@ -211,98 +218,75 @@ export default function HomeScreen() {
             <View className="mt-4 flex-row flex-wrap gap-3">
               {/* Prayer Times Card */}
               <Pressable onPress={() => handleAdLink("/prayers")} className="flex-1" style={{ minWidth: '47%' }}>
-                <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                  
-                  <View className="relative">
-                    <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                      <Text className="text-[#D4AF37] text-lg">🕐</Text>
-                    </View>
-                    
-                    <Text className="text-xs text-white/50 mb-0.5">Prayer Times</Text>
-                    {!prayerLoading && nextPrayer ? (
-                      <>
-                        <Text className="text-lg font-semibold text-white leading-tight">{nextPrayer.name}</Text>
-                        <Text className="text-xs text-[#D4AF37]/80">{formatPrayerTime(nextPrayer.time)}</Text>
-                      </>
-                    ) : (
-                      <Text className="text-sm text-white/60">View schedule</Text>
-                    )}
+                <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
+                    <IconPrayerClock />
                   </View>
+                  
+                  <Text className="text-xs text-white/50 mb-0.5">Prayer Times</Text>
+                  {!prayerLoading && nextPrayer ? (
+                    <>
+                      <Text className="text-lg font-semibold text-white leading-tight">{nextPrayer.name}</Text>
+                      <Text className="text-xs text-[#D4AF37]/80">{formatPrayerTime(nextPrayer.time)}</Text>
+                    </>
+                  ) : (
+                    <Text className="text-sm text-white/60">View schedule</Text>
+                  )}
                 </View>
               </Pressable>
 
               {/* Qibla Card */}
               <Pressable onPress={() => handleAdLink("/qibla")} className="flex-1" style={{ minWidth: '47%' }}>
-                <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                  
-                  <View className="relative">
-                    <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                      <Text className="text-[#D4AF37] text-lg">🧭</Text>
-                    </View>
-                    
-                    <Text className="text-xs text-white/50 mb-0.5">Qibla Finder</Text>
-                    <Text className="text-sm font-medium text-white">Find Direction</Text>
-                    <Text className="text-xs text-white/40">Compass guide</Text>
+                <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
+                    <IconQiblaCompass />
                   </View>
+                  
+                  <Text className="text-xs text-white/50 mb-0.5">Qibla Finder</Text>
+                  <Text className="text-sm font-medium text-white">Find Direction</Text>
+                  <Text className="text-xs text-white/40">Compass guide</Text>
                 </View>
               </Pressable>
 
               {/* Mosques Card */}
               <Pressable onPress={() => handleAdLink("/rooms")} className="flex-1" style={{ minWidth: '47%' }}>
-                <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                  
-                  <View className="relative">
-                    <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                      <Text className="text-[#D4AF37] text-lg">🕌</Text>
-                    </View>
-                    
-                    <Text className="text-xs text-white/50 mb-0.5">Mosques</Text>
-                    <Text className="text-sm font-medium text-white">Join a Room</Text>
-                    <Text className="text-xs text-white/40">Shared listening</Text>
+                <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
+                    <IconMosque />
                   </View>
+                  
+                  <Text className="text-xs text-white/50 mb-0.5">Mosques</Text>
+                  <Text className="text-sm font-medium text-white">Join a Room</Text>
+                  <Text className="text-xs text-white/40">Shared listening</Text>
                 </View>
               </Pressable>
 
               {/* Support Card */}
               {showAds && user ? (
-                <Link href="/subscription/index" asChild>
+                <Link href="/subscription" asChild>
                   <TouchableOpacity className="flex-1" style={{ minWidth: '47%' }}>
-                    <LinearGradient
-                      colors={["rgba(212, 175, 55, 0.1)", "rgba(212, 175, 55, 0.05)"]}
-                      className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/20 p-4"
-                    >
-                      <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/10 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                      
-                      <View className="relative">
-                        <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 items-center justify-center mb-3">
-                          <Text className="text-[#D4AF37] text-lg">⭐</Text>
-                        </View>
-                        
-                        <Text className="text-xs text-[#D4AF37]/70 mb-0.5">Go Premium</Text>
-                        <Text className="text-sm font-medium text-white">Remove Ads</Text>
-                        <Text className="text-xs text-[#D4AF37]">$15 one-time</Text>
+                    <View className="rounded-2xl bg-[#D4AF37]/5 border border-[#D4AF37]/20 p-4">
+                      <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 items-center justify-center mb-3">
+                        <Ionicons name="star" size={20} color="#D4AF37" />
                       </View>
-                    </LinearGradient>
+                      
+                      <Text className="text-xs text-[#D4AF37]/70 mb-0.5">Go Premium</Text>
+                      <Text className="text-sm font-medium text-white">Remove Ads</Text>
+                      <Text className="text-xs text-[#D4AF37]">One-time</Text>
+                    </View>
                   </TouchableOpacity>
                 </Link>
               ) : (
                 <Link href="/donate" asChild>
                   <TouchableOpacity className="flex-1" style={{ minWidth: '47%' }}>
-                    <View className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-4">
-                      <View className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full" style={{ transform: [{ translateX: 40 }, { translateY: -40 }] }} />
-                      
-                      <View className="relative">
-                        <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                          <Text className="text-[#D4AF37] text-lg">❤️</Text>
-                        </View>
-                        
-                        <Text className="text-xs text-white/50 mb-0.5">Support</Text>
-                        <Text className="text-sm font-medium text-white">Donate</Text>
-                        <Text className="text-xs text-white/40">{t("home.helpKeepFree")}</Text>
+                    <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                      <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
+                        <IconHeart />
                       </View>
+                      
+                      <Text className="text-xs text-white/50 mb-0.5">Support</Text>
+                      <Text className="text-sm font-medium text-white">Donate</Text>
+                      <Text className="text-xs text-white/40">{t("home.helpKeepFree")}</Text>
                     </View>
                   </TouchableOpacity>
                 </Link>

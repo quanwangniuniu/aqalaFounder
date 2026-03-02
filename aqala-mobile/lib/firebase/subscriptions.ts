@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, Unsubscribe } from "firebase/firestore";
 import { db } from "./config";
-import { Subscription, SubscriptionPlan, SubscriptionStatus } from "@/types/subscription";
+import { Subscription, SubscriptionPlan, SubscriptionStatus, PurchaseSource } from "@/types/subscription";
 
 const COLLECTION = "subscriptions";
 
@@ -19,7 +19,20 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
 
 export async function createOrUpdateSubscription(
   userId: string,
-  subscriptionData: { email?: string | null; displayName?: string | null; stripeCustomerId: string; stripePaymentId?: string | null; plan: SubscriptionPlan; status: SubscriptionStatus; purchasedAt?: Date | null }
+  subscriptionData: {
+    email?: string | null;
+    displayName?: string | null;
+    stripeCustomerId?: string;
+    stripePaymentId?: string | null;
+    plan: SubscriptionPlan;
+    status: SubscriptionStatus;
+    purchasedAt?: Date | null;
+    source?: PurchaseSource;
+    appleTransactionId?: string | null;
+    appleProductId?: string | null;
+    googleOrderId?: string | null;
+    googleProductId?: string | null;
+  }
 ): Promise<void> {
   const subscriptionRef = doc(db, COLLECTION, userId);
   const existingDoc = await getDoc(subscriptionRef);

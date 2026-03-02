@@ -1,0 +1,85 @@
+{
+  "cli": {
+    "version": ">= 18.0.5",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAQfHzG9mthNp_nK1dQVkCEjnoBulB2V9A",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "aqala-de71b.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "aqala-de71b",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aqala-de71b.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "424137325708",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:424137325708:web:dd8d9791053eafaa2c4fa9",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "424137325708-d5nt9frkuiokvol8u0t7nbt01apv77dd.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih.apps.googleusercontent.com",
+        "EXPO_PUBLIC_WEB_URL": "https://aqala.org",
+        "EXPO_PUBLIC_LIVEKIT_URL": "wss://aqala-fj288zjy.livekit.cloud",
+        "EXPO_PUBLIC_STRIPE_PRICE_ID_FREE": "price_1SrTwcLyBJpg1YMFYzlKcM0t",
+        "EXPO_PUBLIC_STRIPE_PRICE_ID_PREMIUM": "price_1SrTx1LyBJpg1YMFKi3lFK7l",
+        "EXPO_PUBLIC_SONIOX_API_KEY": "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120",
+        "EXPO_PUBLIC_ADMOB_APP_ID_IOS": "ca-app-pub-3882364799598893~5227042684",
+        "EXPO_PUBLIC_ADMOB_APP_ID_ANDROID": "ca-app-pub-3882364799598893~5390694213",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS": "ca-app-pub-3882364799598893/4918727986",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID": "ca-app-pub-3882364799598893/7557692554"
+      }
+    },
+    "development-device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAQfHzG9mthNp_nK1dQVkCEjnoBulB2V9A",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "aqala-de71b.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "aqala-de71b",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aqala-de71b.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "424137325708",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:424137325708:web:dd8d9791053eafaa2c4fa9",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "424137325708-d5nt9frkuiokvol8u0t7nbt01apv77dd.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih.apps.googleusercontent.com",
+        "EXPO_PUBLIC_WEB_URL": "https://aqala.org",
+        "EXPO_PUBLIC_LIVEKIT_URL": "wss://aqala-fj288zjy.livekit.cloud",
+        "EXPO_PUBLIC_STRIPE_PRICE_ID_FREE": "price_1SrTwcLyBJpg1YMFYzlKcM0t",
+        "EXPO_PUBLIC_STRIPE_PRICE_ID_PREMIUM": "price_1SrTx1LyBJpg1YMFKi3lFK7l",
+        "EXPO_PUBLIC_SONIOX_API_KEY": "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120",
+        "EXPO_PUBLIC_ADMOB_APP_ID_IOS": "ca-app-pub-3882364799598893~5227042684",
+        "EXPO_PUBLIC_ADMOB_APP_ID_ANDROID": "ca-app-pub-3882364799598893~5390694213",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS": "ca-app-pub-3882364799598893/4918727986",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID": "ca-app-pub-3882364799598893/7557692554"
+      }
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAQfHzG9mthNp_nK1dQVkCEjnoBulB2V9A",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "aqala-de71b.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "aqala-de71b",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aqala-de71b.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "424137325708",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:424137325708:web:dd8d9791053eafaa2c4fa9",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "424137325708-d5nt9frkuiokvol8u0t7nbt01apv77dd.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih.apps.googleusercontent.com",
+        "EXPO_PUBLIC_WEB_URL": "https://aqala.org",
+        "EXPO_PUBLIC_LIVEKIT_URL": "wss://aqala-fj288zjy.livekit.cloud",
+        "EXPO_PUBLIC_STRIPE_PRICE_ID_FREE": "price_1SrTwcLyBJpg1YMFYzlKcM0t",
+        "EXPO_PUBLIC_STRIPE_PRICE_ID_PREMIUM": "price_1SrTx1LyBJpg1YMFKi3lFK7l",
+        "EXPO_PUBLIC_SONIOX_API_KEY": "2711b6efddec284139c51a123c3281d52525a5b6382cc622a0a4b58f2b1a9120",
+        "EXPO_PUBLIC_ADMOB_APP_ID_IOS": "ca-app-pub-3882364799598893~5227042684",
+        "EXPO_PUBLIC_ADMOB_APP_ID_ANDROID": "ca-app-pub-3882364799598893~5390694213",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS": "ca-app-pub-3882364799598893/4918727986",
+        "EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID": "ca-app-pub-3882364799598893/7557692554"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
