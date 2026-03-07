@@ -1,4 +1,13 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
+import path from "path";
+
+// Local dev (npx expo start): prefer .env.development (aqala-dev) so we don't touch production
+if (process.env.NODE_ENV === "development") {
+  require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+  require("dotenv").config({ path: path.resolve(__dirname, ".env.development") });
+} else {
+  require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+}
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,

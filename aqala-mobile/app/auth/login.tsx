@@ -8,12 +8,15 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
+import Constants from "expo-constants";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { Ionicons } from "@expo/vector-icons";
+
+const isExpoGo = Constants.appOwnership === "expo";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -23,6 +26,8 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signInWithGoogle, signInWithApple, error: authError } = useAuth();
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
 
   const handleSignIn = async () => {
     setLocalError(null);
@@ -92,7 +97,7 @@ export default function LoginScreen() {
   const displayError = localError || authError;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#021a12]">
+    <WallpaperBackground edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -137,7 +142,7 @@ export default function LoginScreen() {
                 <Text className="text-sm font-medium text-white/70">Password</Text>
                 <Link href="/auth/forgot-password" asChild>
                   <TouchableOpacity>
-                    <Text className="text-sm text-[#D4AF37] font-medium">Forgot password?</Text>
+                    <Text className="text-sm font-medium" style={{ color: accent.base }}>Forgot password?</Text>
                   </TouchableOpacity>
                 </Link>
               </View>
@@ -177,46 +182,50 @@ export default function LoginScreen() {
             <TouchableOpacity
               onPress={handleSignIn}
               disabled={isLoading}
-              className={`w-full rounded-xl py-3.5 items-center justify-center ${
-                isLoading ? "bg-[#D4AF37]/50" : "bg-[#D4AF37]"
-              }`}
+              style={{ backgroundColor: isLoading ? `${accent.base}80` : accent.base }}
+              className="w-full rounded-xl py-3.5 items-center justify-center"
             >
               {isLoading ? (
-                <ActivityIndicator color="#021a12" />
+                <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
+                <Text className="text-white font-semibold text-base">Sign In</Text>
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View className="flex-row items-center my-6">
-              <View className="flex-1 h-px bg-white/10" />
-              <Text className="px-4 text-white/40 text-sm">Or continue with</Text>
-              <View className="flex-1 h-px bg-white/10" />
-            </View>
+            {/* Divider — only when at least one social option is available */}
+            {(!isExpoGo || Platform.OS === "ios") && (
+              <>
+                <View className="flex-row items-center my-6">
+                  <View className="flex-1 h-px bg-white/10" />
+                  <Text className="px-4 text-white/40 text-sm">Or continue with</Text>
+                  <View className="flex-1 h-px bg-white/10" />
+                </View>
 
-            {/* Social Sign In */}
-            <View className="gap-3">
-              <TouchableOpacity
-                onPress={handleGoogleSignIn}
-                disabled={isLoading}
-                className="w-full flex-row items-center justify-center gap-3 rounded-xl py-3.5 bg-white/5 border border-white/10"
-              >
-                <Ionicons name="logo-google" size={20} color="white" />
-                <Text className="text-white font-medium">Continue with Google</Text>
-              </TouchableOpacity>
+                <View className="gap-3">
+                  {!isExpoGo && (
+                    <TouchableOpacity
+                      onPress={handleGoogleSignIn}
+                      disabled={isLoading}
+                      className="w-full flex-row items-center justify-center gap-3 rounded-xl py-3.5 bg-white/5 border border-white/10"
+                    >
+                      <Ionicons name="logo-google" size={20} color="white" />
+                      <Text className="text-white font-medium">Continue with Google</Text>
+                    </TouchableOpacity>
+                  )}
 
-              {Platform.OS === "ios" && (
-                <TouchableOpacity
-                  onPress={handleAppleSignIn}
-                  disabled={isLoading}
-                  className="w-full flex-row items-center justify-center gap-3 rounded-xl py-3.5 bg-white/5 border border-white/10"
-                >
-                  <Ionicons name="logo-apple" size={20} color="white" />
-                  <Text className="text-white font-medium">Continue with Apple</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+                  {Platform.OS === "ios" && (
+                    <TouchableOpacity
+                      onPress={handleAppleSignIn}
+                      disabled={isLoading}
+                      className="w-full flex-row items-center justify-center gap-3 rounded-xl py-3.5 bg-white/5 border border-white/10"
+                    >
+                      <Ionicons name="logo-apple" size={20} color="white" />
+                      <Text className="text-white font-medium">Continue with Apple</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
 
             {/* Register link */}
             <View className="mt-6 pt-6 border-t border-white/10 items-center">
@@ -225,7 +234,7 @@ export default function LoginScreen() {
               </Text>
               <Link href="/auth/register" asChild>
                 <TouchableOpacity>
-                  <Text className="text-sm text-[#D4AF37] font-medium mt-1">Create one</Text>
+                  <Text className="text-sm font-medium mt-1" style={{ color: accent.base }}>Create one</Text>
                 </TouchableOpacity>
               </Link>
             </View>
@@ -241,6 +250,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

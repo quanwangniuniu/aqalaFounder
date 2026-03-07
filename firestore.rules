@@ -83,6 +83,15 @@ service cloud.firestore {
         allow create: if request.auth != null && request.auth.uid == userId;
         allow update, delete: if false;
       }
+      
+      // Insights subcollection (saved tadabbur / reflections)
+      match /insights/{insightId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Follows collection - social following system (legacy/alternative)

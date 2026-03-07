@@ -1,11 +1,14 @@
 import { View, Text, TouchableOpacity, Linking, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export default function ManageSubscriptionScreen() {
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   const { subscription, isPremium } = useSubscription();
 
   const openSubscriptionSettings = () => {
@@ -19,7 +22,7 @@ export default function ManageSubscriptionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <View className="px-4 pt-4">
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -28,11 +31,11 @@ export default function ManageSubscriptionScreen() {
 
       <View className="flex-1 px-6 pt-8">
         <View className="items-center mb-8">
-          <View className="w-20 h-20 rounded-full bg-[#D4AF37]/15 items-center justify-center mb-5">
+          <View className="w-20 h-20 rounded-full items-center justify-center mb-5" style={{ backgroundColor: `${accent.base}20` }}>
             <Ionicons
               name={isPremium ? "star" : "star-outline"}
               size={36}
-              color="#D4AF37"
+              color={accent.base}
             />
           </View>
           <Text className="text-white text-2xl font-bold mb-2">
@@ -48,7 +51,7 @@ export default function ManageSubscriptionScreen() {
         {isPremium && subscription?.source && (
           <View className="bg-white/5 rounded-2xl border border-white/8 p-5 mb-4">
             <View className="flex-row items-center gap-3 mb-3">
-              <Ionicons name="receipt-outline" size={20} color="#D4AF37" />
+              <Ionicons name="receipt-outline" size={20} color={accent.base} />
               <Text className="text-white font-medium">Purchase Details</Text>
             </View>
             <Text className="text-white/50 text-sm">
@@ -95,14 +98,15 @@ export default function ManageSubscriptionScreen() {
         {!isPremium && (
           <TouchableOpacity
             onPress={() => router.replace("/subscription")}
-            className="bg-[#D4AF37] rounded-2xl py-4 items-center"
+            className="rounded-2xl py-4 items-center"
+            style={{ backgroundColor: accent.base }}
           >
-            <Text className="text-[#032117] font-bold text-base">
+            <Text className="text-white font-bold text-base">
               Go Ad-Free Forever
             </Text>
           </TouchableOpacity>
         )}
       </View>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

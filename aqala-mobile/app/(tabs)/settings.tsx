@@ -6,6 +6,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { usePreferences, WALLPAPERS, WallpaperId } from "@/contexts/PreferencesContext";
 import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
+
+const WALLPAPER_KEYS: Record<string, string> = {
+  mosque: "settings.wallpaper.mosque",
+  emerald: "settings.wallpaper.emerald",
+  "golden-hour": "settings.wallpaper.goldenHour",
+  midnight: "settings.wallpaper.midnight",
+  desert: "settings.wallpaper.desert",
+  "deep-ocean": "settings.wallpaper.deepOcean",
+};
 import { usePrivacyConsent } from "@/contexts/PrivacyConsentContext";
 import { getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,7 +26,7 @@ export default function SettingsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isPremium } = useSubscription();
   const { wallpaper, setWallpaper } = usePreferences();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { consent, updateConsent } = usePrivacyConsent();
   const router = useRouter();
 
@@ -44,15 +53,15 @@ export default function SettingsScreen() {
     return (
       <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-white text-xl font-semibold mb-2">Sign in required</Text>
+          <Text className="text-white text-xl font-semibold mb-2">{t("settings.signInRequired")}</Text>
           <Text className="text-white/50 text-sm text-center mb-6">
-            Please sign in to access settings
+            {t("settings.signInPrompt")}
           </Text>
           <TouchableOpacity
             onPress={() => router.push("/auth/login")}
             className="bg-[#D4AF37] rounded-xl py-3.5 px-8"
           >
-            <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
+            <Text className="text-[#021a12] font-semibold text-base">{t("settings.signIn")}</Text>
           </TouchableOpacity>
         </View>
       </WallpaperBackground>
@@ -69,7 +78,7 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-back" size={18} color="white" />
             </TouchableOpacity>
           </Link>
-          <Text className="text-xl font-semibold text-white">Account Settings</Text>
+          <Text className="text-xl font-semibold text-white">{t("settings.title")}</Text>
         </View>
       </View>
 
@@ -82,7 +91,7 @@ export default function SettingsScreen() {
           {/* Profile Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Profile
+              {t("settings.profile")}
             </Text>
             <View className="bg-white/5 rounded-2xl p-5 border border-white/5">
               <View className="flex-row items-center gap-4">
@@ -112,14 +121,14 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1 min-w-0">
                   <Text className="text-lg font-medium text-white" numberOfLines={1}>
-                    {user.displayName || "User"}
+                    {user.displayName || t("settings.user")}
                   </Text>
                   <Text className="text-sm text-white/50" numberOfLines={1}>{user.email}</Text>
                   <Text className="text-xs mt-1">
                     {isPremium ? (
-                      <Text className="text-[#D4AF37]">✨ Premium Member</Text>
+                      <Text className="text-[#D4AF37]">✨ {t("settings.premiumMember")}</Text>
                     ) : (
-                      <Text className="text-white/40">Free Plan</Text>
+                      <Text className="text-white/40">{t("settings.freePlan")}</Text>
                     )}
                   </Text>
                 </View>
@@ -130,7 +139,7 @@ export default function SettingsScreen() {
           {/* Language Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Language
+              {t("settings.language")}
             </Text>
             <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <ScrollView className="max-h-48">
@@ -157,7 +166,7 @@ export default function SettingsScreen() {
           {/* Wallpaper Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Wallpaper
+              {t("settings.wallpaper")}
             </Text>
             <View style={styles.wallpaperGrid}>
               {WALLPAPERS.map((wp) => (
@@ -175,7 +184,7 @@ export default function SettingsScreen() {
                   
                   <View className="absolute inset-x-0 bottom-0 bg-black/80 p-2">
                     <Text className="text-[10px] font-medium text-white/90 leading-tight">
-                      {wp.name}
+                      {t(WALLPAPER_KEYS[wp.id] ?? wp.name)}
                     </Text>
                   </View>
                   
@@ -188,14 +197,14 @@ export default function SettingsScreen() {
               ))}
             </View>
             <Text className="text-xs text-white/40 mt-3">
-              Choose a wallpaper for your home screen
+              {t("settings.wallpaperHint")}
             </Text>
           </View>
 
           {/* Plan Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Plan
+              {t("settings.plan")}
             </Text>
             <View className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
               {isPremium ? (
@@ -207,8 +216,8 @@ export default function SettingsScreen() {
                       </Svg>
                     </View>
                     <View>
-                      <Text className="font-medium text-white">Premium Active</Text>
-                      <Text className="text-xs text-white/50">Ad-free experience enabled</Text>
+                      <Text className="font-medium text-white">{t("settings.premiumActive")}</Text>
+                      <Text className="text-xs text-white/50">{t("settings.adFreeEnabled")}</Text>
                     </View>
                   </View>
                 </View>
@@ -219,8 +228,8 @@ export default function SettingsScreen() {
                       <Ionicons name="star-outline" size={20} color="rgba(255,255,255,0.5)" />
                     </View>
                     <View>
-                      <Text className="font-medium text-white">Free Plan</Text>
-                      <Text className="text-xs text-white/50">Upgrade to remove ads</Text>
+                      <Text className="font-medium text-white">{t("settings.freePlan")}</Text>
+                      <Text className="text-xs text-white/50">{t("settings.upgradeToRemoveAds")}</Text>
                     </View>
                   </View>
                   <TouchableOpacity
@@ -237,7 +246,7 @@ export default function SettingsScreen() {
                       }}
                     >
                       <Text className="text-base font-semibold text-[#032117]">
-                        Go Ad-Free Forever
+                        {t("settings.goAdFreeForever")}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -249,13 +258,13 @@ export default function SettingsScreen() {
           {/* Privacy Preferences */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Privacy
+              {t("settings.privacy")}
             </Text>
             <View className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
               <View className="flex-row items-center justify-between p-4 border-b border-white/5">
                 <View className="flex-1 mr-3">
-                  <Text className="font-medium text-white text-sm">Analytics</Text>
-                  <Text className="text-xs text-white/50 mt-0.5">Help improve the app</Text>
+                  <Text className="font-medium text-white text-sm">{t("settings.analytics")}</Text>
+                  <Text className="text-xs text-white/50 mt-0.5">{t("settings.analyticsDesc")}</Text>
                 </View>
                 <Switch
                   value={consent?.analytics ?? false}
@@ -266,8 +275,8 @@ export default function SettingsScreen() {
               </View>
               <View className="flex-row items-center justify-between p-4">
                 <View className="flex-1 mr-3">
-                  <Text className="font-medium text-white text-sm">Personalised Ads</Text>
-                  <Text className="text-xs text-white/50 mt-0.5">Relevant ad experience</Text>
+                  <Text className="font-medium text-white text-sm">{t("settings.personalisedAds")}</Text>
+                  <Text className="text-xs text-white/50 mt-0.5">{t("settings.personalisedAdsDesc")}</Text>
                 </View>
                 <Switch
                   value={consent?.personalizedAds ?? false}
@@ -282,7 +291,7 @@ export default function SettingsScreen() {
           {/* Support & Legal */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Support &amp; Legal
+              {t("settings.supportLegal")}
             </Text>
             <View className="gap-2">
               <Link href="/support" asChild>
@@ -291,8 +300,8 @@ export default function SettingsScreen() {
                     <Ionicons name="help-circle-outline" size={20} color="#D4AF37" />
                   </View>
                   <View className="flex-1">
-                    <Text className="font-medium text-white">Help &amp; Support</Text>
-                    <Text className="text-xs text-white/50">FAQ, contact, and more</Text>
+                    <Text className="font-medium text-white">{t("settings.helpSupport")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.helpSupportDesc")}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
                 </TouchableOpacity>
@@ -304,8 +313,8 @@ export default function SettingsScreen() {
                     <Ionicons name="shield-checkmark-outline" size={20} color="#D4AF37" />
                   </View>
                   <View className="flex-1">
-                    <Text className="font-medium text-white">Privacy Policy</Text>
-                    <Text className="text-xs text-white/50">How we handle your data</Text>
+                    <Text className="font-medium text-white">{t("settings.privacyPolicy")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.privacyPolicyDesc")}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
                 </TouchableOpacity>
@@ -317,8 +326,8 @@ export default function SettingsScreen() {
                     <Ionicons name="document-text-outline" size={20} color="#D4AF37" />
                   </View>
                   <View className="flex-1">
-                    <Text className="font-medium text-white">Terms of Service</Text>
-                    <Text className="text-xs text-white/50">Usage terms and conditions</Text>
+                    <Text className="font-medium text-white">{t("settings.terms")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.termsDesc")}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
                 </TouchableOpacity>
@@ -329,7 +338,7 @@ export default function SettingsScreen() {
           {/* Account Actions */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Account
+              {t("settings.account")}
             </Text>
             <View className="gap-2">
               <TouchableOpacity
@@ -340,8 +349,8 @@ export default function SettingsScreen() {
                   <Ionicons name="log-out-outline" size={20} color="#f87171" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-medium text-white">Sign Out</Text>
-                  <Text className="text-xs text-white/50">Log out of your account</Text>
+                  <Text className="font-medium text-white">{t("settings.signOut")}</Text>
+                  <Text className="text-xs text-white/50">{t("settings.signOutDesc")}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -370,8 +379,8 @@ export default function SettingsScreen() {
                   <Ionicons name="trash-outline" size={20} color="#f87171" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-medium text-red-400">Delete Account</Text>
-                  <Text className="text-xs text-white/50">Permanently delete your account and data</Text>
+                  <Text className="font-medium text-red-400">{t("settings.deleteAccount")}</Text>
+                  <Text className="text-xs text-white/50">{t("settings.deleteAccountDesc")}</Text>
                 </View>
               </TouchableOpacity>
             </View>

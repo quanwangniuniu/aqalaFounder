@@ -5,12 +5,13 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useIAPContext } from "@/contexts/IAPContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 const FEATURES = [
   { icon: "ban-outline" as const, text: "Remove all ads forever" },
@@ -23,6 +24,8 @@ const FEATURES = [
 
 export default function SubscriptionScreen() {
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   const { isPremium } = useSubscription();
   const {
     premiumProduct,
@@ -37,14 +40,14 @@ export default function SubscriptionScreen() {
 
   if (isPremium) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="px-4 pt-4">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
         </View>
         <View className="flex-1 items-center justify-center px-6">
-          <View className="w-20 h-20 rounded-full bg-[#D4AF37]/20 items-center justify-center mb-6">
+          <View className="w-20 h-20 rounded-full items-center justify-center mb-6" style={{ backgroundColor: `${accent.base}20` }}>
             <Text className="text-4xl">✨</Text>
           </View>
           <Text className="text-white text-2xl font-bold mb-2">
@@ -54,12 +57,12 @@ export default function SubscriptionScreen() {
             Thank you for supporting Aqala. You have an ad-free experience.
           </Text>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <View className="px-4 pt-4 flex-row items-center justify-between">
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -68,7 +71,7 @@ export default function SubscriptionScreen() {
           onPress={restorePurchases}
           disabled={isRestoring}
         >
-          <Text className="text-[#D4AF37] text-sm font-medium">
+          <Text className="text-sm font-medium" style={{ color: accent.base }}>
             {isRestoring ? "Restoring..." : "Restore"}
           </Text>
         </TouchableOpacity>
@@ -81,8 +84,8 @@ export default function SubscriptionScreen() {
       >
         {/* Header */}
         <View className="items-center px-6 mt-8 mb-8">
-          <View className="w-20 h-20 rounded-full bg-[#D4AF37]/15 items-center justify-center mb-5">
-            <Ionicons name="star" size={36} color="#D4AF37" />
+          <View className="w-20 h-20 rounded-full items-center justify-center mb-5" style={{ backgroundColor: `${accent.base}15` }}>
+            <Ionicons name="star" size={36} color={accent.base} />
           </View>
           <Text className="text-white text-3xl font-bold mb-2">
             Go Ad-Free
@@ -97,24 +100,24 @@ export default function SubscriptionScreen() {
         <View className="px-6 mb-8">
           <View className="bg-white/5 rounded-2xl border border-white/8 p-5">
             {FEATURES.map((feature, i) => (
-              <View
-                key={i}
-                className={`flex-row items-center gap-4 ${
-                  i < FEATURES.length - 1 ? "mb-4" : ""
-                }`}
-              >
-                <View className="w-9 h-9 rounded-xl bg-[#D4AF37]/10 items-center justify-center">
-                  <Ionicons name={feature.icon} size={18} color="#D4AF37" />
+                <View
+                  key={i}
+                  className={`flex-row items-center gap-4 ${
+                    i < FEATURES.length - 1 ? "mb-4" : ""
+                  }`}
+                >
+                  <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: `${accent.base}20` }}>
+                    <Ionicons name={feature.icon} size={18} color={accent.base} />
+                  </View>
+                  <Text className="text-white text-[15px] flex-1">
+                    {feature.text}
+                  </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={accent.base}
+                  />
                 </View>
-                <Text className="text-white text-[15px] flex-1">
-                  {feature.text}
-                </Text>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color="#D4AF37"
-                />
-              </View>
             ))}
           </View>
         </View>
@@ -127,7 +130,7 @@ export default function SubscriptionScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={["#D4AF37", "#c9a431"]}
+              colors={[accent.base, accent.hover]}
               style={{
                 borderRadius: 16,
                 paddingVertical: 18,
@@ -136,13 +139,13 @@ export default function SubscriptionScreen() {
               }}
             >
               {isPurchasing ? (
-                <ActivityIndicator color="#032117" />
+                <ActivityIndicator color="white" />
               ) : (
                 <View className="items-center">
-                  <Text className="text-[#032117] text-lg font-bold">
+                  <Text className="text-white text-lg font-bold">
                     Purchase for {displayPrice}
                   </Text>
-                  <Text className="text-[#032117]/60 text-xs mt-0.5">
+                  <Text className="text-white/80 text-xs mt-0.5">
                     One-time payment
                   </Text>
                 </View>
@@ -175,6 +178,6 @@ export default function SubscriptionScreen() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

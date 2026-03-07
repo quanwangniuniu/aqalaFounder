@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { PreferencesProvider } from "@/contexts/PreferencesContext";
+import { PreferencesProvider, usePreferences } from "@/contexts/PreferencesContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { PrayerProvider } from "@/contexts/PrayerContext";
 import { RoomsProvider } from "@/contexts/RoomsContext";
@@ -54,6 +54,33 @@ const ONBOARDING_KEY = "aqala_permissions_onboarded";
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
+function ThemedStack() {
+  const { getGradientColors } = usePreferences();
+  const colors = getGradientColors();
+  const backgroundColor = colors[0] ?? "#021a12";
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor },
+        animation: "fade",
+      }}
+    >
+      <Stack.Screen name="onboarding" options={{ animation: "none" }} />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="live-listen" />
+      <Stack.Screen name="auth" />
+      <Stack.Screen name="messages" />
+      <Stack.Screen name="room/[roomId]" />
+      <Stack.Screen name="user/[userId]" />
+      <Stack.Screen name="privacy" />
+      <Stack.Screen name="terms" />
+      <Stack.Screen name="support" />
+      <Stack.Screen name="insights" />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
@@ -140,23 +167,7 @@ export default function RootLayout() {
                       <PrayerProvider>
                         <RoomsProvider>
                           <StatusBar style="light" />
-                          <Stack
-                            screenOptions={{
-                              headerShown: false,
-                              contentStyle: { backgroundColor: "#021a12" },
-                              animation: "fade",
-                            }}
-                          >
-                            <Stack.Screen name="onboarding" options={{ animation: "none" }} />
-                            <Stack.Screen name="(tabs)" />
-                            <Stack.Screen name="auth" />
-                            <Stack.Screen name="messages" />
-                            <Stack.Screen name="room/[roomId]" />
-                            <Stack.Screen name="user/[userId]" />
-                            <Stack.Screen name="privacy" />
-                            <Stack.Screen name="terms" />
-                            <Stack.Screen name="support" />
-                          </Stack>
+                          <ThemedStack />
                           <ConsentBanner />
                         </RoomsProvider>
                       </PrayerProvider>

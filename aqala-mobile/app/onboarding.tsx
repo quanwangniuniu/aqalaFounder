@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { View, Text, Pressable, Platform, Linking, Modal, FlatList } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,6 +7,8 @@ import * as Location from "expo-location";
 import { requestRecordingPermissionsAsync, getRecordingPermissionsAsync } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage, LANGUAGE_OPTIONS, type LanguageOption } from "@/contexts/LanguageContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 const ONBOARDING_KEY = "aqala_permissions_onboarded";
 
@@ -22,12 +23,14 @@ interface PermissionCardProps {
 }
 
 function PermissionCard({ icon, title, reason, detail, granted, onRequest, loading }: PermissionCardProps) {
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   return (
     <View
       style={{
         backgroundColor: "rgba(255,255,255,0.05)",
         borderWidth: 1,
-        borderColor: granted ? "rgba(212,175,55,0.3)" : "rgba(255,255,255,0.1)",
+        borderColor: granted ? `${accent.base}4D` : "rgba(255,255,255,0.1)",
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
@@ -39,12 +42,12 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
             width: 40,
             height: 40,
             borderRadius: 12,
-            backgroundColor: granted ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.08)",
+            backgroundColor: granted ? `${accent.base}26` : "rgba(255,255,255,0.08)",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Ionicons name={icon} size={20} color={granted ? "#D4AF37" : "rgba(255,255,255,0.6)"} />
+          <Ionicons name={icon} size={20} color={granted ? accent.base : "rgba(255,255,255,0.6)"} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{title}</Text>
@@ -65,7 +68,7 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
         {granted === null && (
           <Pressable onPress={onRequest} disabled={loading}>
             <LinearGradient
-              colors={["#D4AF37", "#b8944d"]}
+              colors={[accent.base, accent.hover]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{
@@ -75,7 +78,7 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
                 opacity: loading ? 0.6 : 1,
               }}
             >
-              <Text style={{ color: "#032117", fontSize: 13, fontWeight: "600" }}>
+              <Text style={{ color: "white", fontSize: 13, fontWeight: "600" }}>
                 {loading ? "..." : "Allow"}
               </Text>
             </LinearGradient>
@@ -126,6 +129,10 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
 
 function LanguageDropdown() {
   const { language, setLanguage, getLanguageOption } = useLanguage();
+  const { getAccentColor, getGradientColors } = usePreferences();
+  const accent = getAccentColor();
+  const gradientColors = getGradientColors();
+  const sheetBg = gradientColors[0] ?? "#032117";
   const [open, setOpen] = useState(false);
   const current = getLanguageOption(language);
 
@@ -142,7 +149,7 @@ function LanguageDropdown() {
           alignItems: "center",
           paddingVertical: 14,
           paddingHorizontal: 20,
-          backgroundColor: selected ? "rgba(212,175,55,0.12)" : "transparent",
+          backgroundColor: selected ? `${accent.base}20` : "transparent",
         }}
       >
         <Text style={{ fontSize: 20, marginRight: 12 }}>{item.flag}</Text>
@@ -150,11 +157,11 @@ function LanguageDropdown() {
           <Text style={{ color: selected ? "#E8D5A3" : "#fff", fontSize: 15, fontWeight: selected ? "600" : "400" }}>
             {item.label}
           </Text>
-          <Text style={{ color: selected ? "rgba(212,175,55,0.7)" : "rgba(255,255,255,0.4)", fontSize: 12 }}>
+          <Text style={{ color: selected ? accent.base : "rgba(255,255,255,0.4)", fontSize: 12, opacity: selected ? 0.9 : 1 }}>
             {item.nativeLabel}
           </Text>
         </View>
-        {selected && <Ionicons name="checkmark" size={18} color="#D4AF37" />}
+        {selected && <Ionicons name="checkmark" size={18} color={accent.base} />}
       </Pressable>
     );
   };
@@ -172,7 +179,7 @@ function LanguageDropdown() {
             alignItems: "center",
             backgroundColor: "rgba(255,255,255,0.05)",
             borderWidth: 1,
-            borderColor: "rgba(212,175,55,0.25)",
+            borderColor: `${accent.base}40`,
             borderRadius: 14,
             paddingHorizontal: 14,
             paddingVertical: 12,
@@ -191,12 +198,12 @@ function LanguageDropdown() {
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
           <View
             style={{
-              backgroundColor: "#032117",
+              backgroundColor: sheetBg,
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
               maxHeight: "70%",
               borderTopWidth: 1,
-              borderColor: "rgba(212,175,55,0.2)",
+              borderColor: `${accent.base}33`,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
@@ -224,6 +231,8 @@ function LanguageDropdown() {
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   const { completeFirstVisit } = useLanguage();
   const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
   const [micGranted, setMicGranted] = useState<boolean | null>(null);
@@ -283,7 +292,7 @@ export default function OnboardingScreen() {
   const bothAnswered = locationGranted !== null && micGranted !== null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top", "bottom"]}>
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "space-between" }}>
         <View>
           <View style={{ alignItems: "center", marginTop: 16, marginBottom: 24 }}>
@@ -292,13 +301,13 @@ export default function OnboardingScreen() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: "rgba(212,175,55,0.12)",
+                backgroundColor: `${accent.base}20`,
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: 12,
               }}
             >
-              <Ionicons name="shield-checkmark" size={28} color="#D4AF37" />
+              <Ionicons name="shield-checkmark" size={28} color={accent.base} />
             </View>
             <Text style={{ color: "#fff", fontSize: 24, fontWeight: "700", textAlign: "center", marginBottom: 6 }}>
               Quick Setup
@@ -343,7 +352,7 @@ export default function OnboardingScreen() {
           {bothAnswered ? (
             <Pressable onPress={finishOnboarding}>
               <LinearGradient
-                colors={["#D4AF37", "#b8944d"]}
+                colors={[accent.base, accent.hover]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -355,8 +364,8 @@ export default function OnboardingScreen() {
                   gap: 8,
                 }}
               >
-                <Text style={{ color: "#032117", fontSize: 17, fontWeight: "700" }}>Continue to Aqala</Text>
-                <Ionicons name="arrow-forward" size={20} color="#032117" />
+                <Text style={{ color: "white", fontSize: 17, fontWeight: "700" }}>Continue to Aqala</Text>
+                <Ionicons name="arrow-forward" size={20} color="white" />
               </LinearGradient>
             </Pressable>
           ) : (
@@ -376,6 +385,6 @@ export default function OnboardingScreen() {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

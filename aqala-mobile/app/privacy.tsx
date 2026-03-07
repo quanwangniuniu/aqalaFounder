@@ -1,13 +1,16 @@
 import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export default function PrivacyPolicyScreen() {
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <View
         style={{
           flexDirection: "row",
@@ -35,32 +38,27 @@ export default function PrivacyPolicyScreen() {
       >
         <View style={{ maxWidth: 500, alignSelf: "center", width: "100%", gap: 24 }}>
           <View>
-            <Text style={{ color: "#D4AF37", fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
+            <Text style={{ color: accent.base, fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
               Last Updated: February 2026
             </Text>
           </View>
 
           <Section title="1. Information We Collect">
-            <BulletItem text="Account information: Email address, display name, username, and profile photo when you create an account." />
-            <BulletItem text="Usage data: Room participation, message history, and app interactions to improve the service." />
+            <BulletItem text="Account information: Email address and display name when you create an account." />
+            <BulletItem text="Usage data: App interactions to improve the service." />
             <BulletItem text="Device data: Device type, OS version, and app version for troubleshooting and analytics." />
             <BulletItem text="Location data: Only when you grant permission, used for prayer times and Qibla direction." />
-            <BulletItem text="Audio data: Microphone access only during live room sessions for real-time translation (never stored)." />
           </Section>
 
           <Section title="2. How We Use Your Data">
             <BulletItem text="Providing and improving the Aqala service" />
             <BulletItem text="Calculating accurate prayer times based on your location" />
-            <BulletItem text="Real-time speech-to-text translation in rooms (audio is processed in real-time and not stored)" />
-            <BulletItem text="Sending notifications about rooms and messages" />
-            <BulletItem text="Content moderation to maintain community safety" />
+            <BulletItem text="Qibla direction" />
           </Section>
 
           <Section title="3. Third-Party Services">
             <BulletItem text="Firebase (Google): Authentication, database, and analytics" />
-            <BulletItem text="Cloudinary: Profile photo hosting" />
-            <BulletItem text="Soniox: Real-time speech-to-text (audio streamed, not stored)" />
-            <BulletItem text="Google AdMob: Advertising (for non-premium users)" />
+            <BulletItem text="Google AdMob: Advertising (where applicable)" />
           </Section>
 
           <Section title="4. Data Retention & Deletion">
@@ -98,13 +96,13 @@ export default function PrivacyPolicyScreen() {
                 marginTop: 8,
               }}
             >
-              <Ionicons name="mail-outline" size={18} color="#D4AF37" />
-              <Text style={{ color: "#D4AF37", fontSize: 14 }}>info@aqala.org</Text>
+              <Ionicons name="mail-outline" size={18} color={accent.base} />
+              <Text style={{ color: accent.base, fontSize: 14 }}>info@aqala.org</Text>
             </TouchableOpacity>
           </Section>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
 
@@ -118,9 +116,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function BulletItem({ text }: { text: string }) {
+  const { getAccentColor } = usePreferences();
+  const color = getAccentColor().base;
   return (
     <View style={{ flexDirection: "row", gap: 8, paddingLeft: 4 }}>
-      <Text style={{ color: "#D4AF37", fontSize: 14, lineHeight: 20 }}>{"\u2022"}</Text>
+      <Text style={{ color, fontSize: 14, lineHeight: 20 }}>{"\u2022"}</Text>
       <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 20, flex: 1 }}>
         {text}
       </Text>

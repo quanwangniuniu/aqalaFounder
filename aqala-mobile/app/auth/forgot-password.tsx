@@ -10,8 +10,9 @@ import {
   Platform,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ForgotPasswordScreen() {
@@ -21,6 +22,8 @@ export default function ForgotPasswordScreen() {
   const [isSuccess, setIsSuccess] = useState(false);
   const { sendPasswordReset, error: authError } = useAuth();
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
 
   const handleSubmit = async () => {
     setLocalError(null);
@@ -54,7 +57,7 @@ export default function ForgotPasswordScreen() {
   const displayError = localError || (authError && !isSuccess ? authError : null);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#021a12]">
+    <WallpaperBackground edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -74,7 +77,7 @@ export default function ForgotPasswordScreen() {
             {/* Header */}
             <View className="items-center mb-6">
               <View className="w-14 h-14 rounded-full bg-white/5 border border-white/10 items-center justify-center mb-4">
-                <Ionicons name="key-outline" size={28} color="#D4AF37" />
+                <Ionicons name="key-outline" size={28} color={accent.base} />
               </View>
               <Text className="text-2xl font-bold text-white mb-2">Reset Password</Text>
               <Text className="text-white/60 text-sm text-center">
@@ -91,9 +94,9 @@ export default function ForgotPasswordScreen() {
                   </Text>
                 </View>
                 <Link href="/auth/login" asChild>
-                  <TouchableOpacity className="w-full rounded-xl py-3.5 bg-[#D4AF37] items-center justify-center flex-row gap-2">
-                    <Ionicons name="arrow-back" size={20} color="#021a12" />
-                    <Text className="text-[#021a12] font-semibold text-base">Back to Sign In</Text>
+                  <TouchableOpacity className="w-full rounded-xl py-3.5 items-center justify-center flex-row gap-2" style={{ backgroundColor: accent.base }}>
+                    <Ionicons name="arrow-back" size={20} color="white" />
+                    <Text className="text-white font-semibold text-base">Back to Sign In</Text>
                   </TouchableOpacity>
                 </Link>
               </View>
@@ -127,16 +130,15 @@ export default function ForgotPasswordScreen() {
                 <TouchableOpacity
                   onPress={handleSubmit}
                   disabled={isLoading}
-                  className={`w-full rounded-xl py-3.5 items-center justify-center flex-row gap-2 ${
-                    isLoading ? "bg-[#D4AF37]/50" : "bg-[#D4AF37]"
-                  }`}
+                  style={{ backgroundColor: isLoading ? `${accent.base}80` : accent.base }}
+                  className="w-full rounded-xl py-3.5 items-center justify-center flex-row gap-2"
                 >
                   {isLoading ? (
-                    <ActivityIndicator color="#021a12" />
+                    <ActivityIndicator color="white" />
                   ) : (
                     <>
-                      <Ionicons name="mail-outline" size={20} color="#021a12" />
-                      <Text className="text-[#021a12] font-semibold text-base">Send Reset Link</Text>
+                      <Ionicons name="mail-outline" size={20} color="white" />
+                      <Text className="text-white font-semibold text-base">Send Reset Link</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -146,7 +148,7 @@ export default function ForgotPasswordScreen() {
                   <Text className="text-sm text-white/50">Remember your password? </Text>
                   <Link href="/auth/login" asChild>
                     <TouchableOpacity>
-                      <Text className="text-sm text-[#D4AF37] font-medium mt-1">Sign in</Text>
+                      <Text className="text-sm font-medium mt-1" style={{ color: accent.base }}>Sign in</Text>
                     </TouchableOpacity>
                   </Link>
                 </View>
@@ -164,6 +166,6 @@ export default function ForgotPasswordScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

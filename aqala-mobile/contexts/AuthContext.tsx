@@ -5,6 +5,7 @@ import { signUpWithEmail, signInWithEmail, signInWithGoogleCredential, signInWit
 import { createOrUpdateUserProfile, getPartnerDetails, getUserProfile, updateUserProfileFields } from "@/lib/firebase/users";
 import { AuthContextType, User, PartnerInfo, mapFirebaseUser } from "@/types/auth";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -143,17 +144,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const handleSignInWithGoogle = async (): Promise<void> => {
+    const expoGoMessage =
+      "Google Sign-In is not available in Expo Go. Use a custom dev build (npx expo run:ios) or sign in with email.";
+
+    if (Constants.appOwnership === "expo") {
+      setError(expoGoMessage);
+      throw new Error(expoGoMessage);
+    }
+
     try {
       setError(null);
-      // @react-native-google-signin requires native code — not available in Expo Go
       let GoogleSignin: any;
       try {
-        // Use require() so it fails at call-time, not bundle-time
         GoogleSignin = require("@react-native-google-signin/google-signin").GoogleSignin;
       } catch {
-        throw new Error(
-          "Google Sign-In is not available in Expo Go. Use a custom dev build (npx expo run:ios) or sign in with email."
-        );
+        setError(expoGoMessage);
+        throw new Error(expoGoMessage);
       }
 
       GoogleSignin.configure({
@@ -171,9 +177,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       await signInWithGoogleCredential(idToken);
     } catch (err: any) {
-      const errorMessage = err.message || "Failed to sign in with Google";
+      const msg = err?.message ?? "";
+      const isNativeModuleMissing =
+        msg.includes("RNGoogleSignin") || msg.includes("could not be found");
+      const errorMessage = isNativeModuleMissing ? expoGoMessage : (err.message || "Failed to sign in with Google");
       setError(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     }
   };
 

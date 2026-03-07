@@ -8,6 +8,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { auth } from "@/lib/firebase/config";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  getRecordingPermissionsAsync,
+  requestRecordingPermissionsAsync,
+} from "expo-audio";
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
 
@@ -23,12 +27,24 @@ export default function ListenScreen() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [pageTitle, setPageTitle] = useState("Listen & Translate");
   const [micError, setMicError] = useState(false);
+  const [micReady, setMicReady] = useState(false);
 
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
+    (async () => {
+      const { granted } = await getRecordingPermissionsAsync();
+      if (granted) {
+        setMicReady(true);
+      } else {
+        const result = await requestRecordingPermissionsAsync();
+        setMicReady(result.granted);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     const getToken = async () => {
-      // Use Firebase auth.currentUser which has getIdToken()
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
         try {
@@ -213,11 +229,33 @@ export default function ListenScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Mic error banner */}
+      {/* Mic permission denied */}
+      {!micReady && !loading && (
+        <View className="px-4 py-3 bg-red-900/30 border-b border-red-500/30">
+          <Text className="text-red-300 text-xs mb-2">
+            Microphone access is required for live translation.
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === "ios") {
+                Linking.openURL("app-settings:");
+              } else {
+                Linking.openSettings();
+              }
+            }}
+            className="flex-row items-center gap-2 bg-white/10 rounded-lg py-2 px-3 self-start"
+          >
+            <Ionicons name="settings-outline" size={14} color="#D4AF37" />
+            <Text className="text-[#D4AF37] text-xs font-medium">Open Settings</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Mic error banner (WebView-level) */}
       {micError && (
         <View className="px-4 py-3 bg-red-900/30 border-b border-red-500/30">
           <Text className="text-red-300 text-xs mb-2">
-            ⚠️ Microphone access requires HTTPS. The WebView can't access the mic over HTTP.
+            Microphone access requires HTTPS. The WebView can't access the mic over HTTP.
           </Text>
           <TouchableOpacity
             onPress={() => Linking.openURL(`${WEB_URL}/listen`)}
@@ -231,20 +269,24 @@ export default function ListenScreen() {
 
       {/* WebView */}
       <View className="flex-1">
-        {loading && (
+        {(loading || !micReady) && (
           <View className="absolute inset-0 z-10 items-center justify-center">
             <View className="items-center gap-4">
               <View className="w-16 h-16 rounded-full bg-[#D4AF37]/20 items-center justify-center">
                 <Ionicons name="mic" size={28} color="#D4AF37" />
               </View>
-              <Text className="text-white font-semibold text-lg">Loading listener...</Text>
+              <Text className="text-white font-semibold text-lg">
+                {micReady ? "Loading listener..." : "Requesting microphone..."}
+              </Text>
               <ActivityIndicator size="large" color="#D4AF37" />
-              <Text className="text-white/40 text-xs">Connecting to Aqala</Text>
+              <Text className="text-white/40 text-xs">
+                {micReady ? "Connecting to Aqala" : "Microphone is needed for live translation"}
+              </Text>
             </View>
           </View>
         )}
 
-        <WebView
+        {micReady && <WebView
           ref={webViewRef}
           source={{ uri: `${WEB_URL}/listen` }}
           style={{ flex: 1, backgroundColor: gradientColors[0] }}
@@ -316,7 +358,7 @@ export default function ListenScreen() {
               </TouchableOpacity>
             </View>
           )}
-        />
+        />}
       </View>
     </WallpaperBackground>
   );

@@ -9,6 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { usePrayer } from "@/contexts/PrayerContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import {
   CALCULATION_METHODS,
   CalculationMethod,
@@ -33,6 +34,8 @@ const ADJUSTMENT_PRAYERS = [
 
 export default function PrayerSettingsScreen() {
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   const {
     settings,
     location,
@@ -77,7 +80,7 @@ export default function PrayerSettingsScreen() {
         >
           {/* ── Calculation Section ── */}
           <View>
-            <Text className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: accent.base }}>
               Calculation
             </Text>
 
@@ -113,15 +116,13 @@ export default function PrayerSettingsScreen() {
                           setMethod(method.id as CalculationMethod);
                           setShowMethodPicker(false);
                         }}
-                        className={`flex-row items-center justify-between px-4 py-3.5 ${
-                          isSelected ? "bg-[#D4AF37]/10" : ""
-                        }`}
+                        className={`flex-row items-center justify-between px-4 py-3.5 ${isSelected ? "" : ""}`}
+                        style={isSelected ? { backgroundColor: `${accent.base}20` } : undefined}
                         activeOpacity={0.7}
                       >
                         <Text
-                          className={`text-sm ${
-                            isSelected ? "text-[#D4AF37] font-medium" : "text-white"
-                          }`}
+                          className={`text-sm ${isSelected ? "font-medium" : ""}`}
+                          style={{ color: isSelected ? accent.base : "white" }}
                         >
                           {method.name}
                         </Text>
@@ -129,7 +130,7 @@ export default function PrayerSettingsScreen() {
                           <Ionicons
                             name="checkmark"
                             size={20}
-                            color="#D4AF37"
+                            color={accent.base}
                           />
                         )}
                       </TouchableOpacity>
@@ -152,17 +153,13 @@ export default function PrayerSettingsScreen() {
                       <TouchableOpacity
                         key={option.value}
                         onPress={() => setSchool(option.value)}
-                        className={`flex-1 p-3 rounded-lg border ${
-                          isSelected
-                            ? "bg-[#D4AF37]/10 border-[#D4AF37]/30"
-                            : "border-white/10"
-                        }`}
+                        className={`flex-1 p-3 rounded-lg border ${!isSelected ? "border-white/10" : ""}`}
+                        style={isSelected ? { backgroundColor: `${accent.base}20`, borderColor: `${accent.base}50` } : undefined}
                         activeOpacity={0.7}
                       >
                         <Text
-                          className={`font-medium text-sm ${
-                            isSelected ? "text-[#D4AF37]" : "text-white"
-                          }`}
+                          className={`font-medium text-sm ${!isSelected ? "text-white" : ""}`}
+                          style={isSelected ? { color: accent.base } : undefined}
                         >
                           {option.label}
                         </Text>
@@ -253,7 +250,7 @@ export default function PrayerSettingsScreen() {
 
           {/* ── Location Section ── */}
           <View>
-            <Text className="text-sm font-medium text-[#D4AF37] mb-3 uppercase tracking-wider">
+            <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: accent.base }}>
               Location
             </Text>
 
@@ -287,24 +284,24 @@ export default function PrayerSettingsScreen() {
           </View>
 
           {/* ── Info Section ── */}
-          <View className="bg-[#D4AF37]/5 rounded-xl border border-[#D4AF37]/10 p-4">
+          <View className="rounded-xl border p-4" style={{ backgroundColor: `${accent.base}0D`, borderColor: `${accent.base}20` }}>
             <View className="flex-row gap-3">
               <Ionicons
                 name="information-circle-outline"
                 size={20}
-                color="#D4AF37"
+                color={accent.base}
                 style={{ marginTop: 2, flexShrink: 0 }}
               />
               <View className="flex-1">
                 <Text className="text-sm text-white/60 mb-2">
-                  <Text className="text-[#D4AF37] font-semibold">
+                  <Text className="font-semibold" style={{ color: accent.base }}>
                     Calculation Methods
                   </Text>{" "}
                   differ based on the angle of the sun used to determine Fajr
                   and Isha times. Choose the method used in your region.
                 </Text>
                 <Text className="text-sm text-white/60">
-                  <Text className="text-[#D4AF37] font-semibold">
+                  <Text className="font-semibold" style={{ color: accent.base }}>
                     School
                   </Text>{" "}
                   affects Asr timing: Standard (Shafi&apos;i) calculates when

@@ -1,25 +1,14 @@
 import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What is Aqala?",
-    a: "Aqala is a community platform for Muslims that provides live audio rooms with real-time translation, prayer times, Qibla compass, and social features to connect the global Muslim community.",
-  },
-  {
-    q: "How does real-time translation work?",
-    a: "When a speaker talks in a room, their speech is converted to text in real-time using AI speech recognition. The text is then displayed in the room for all participants. Note: translations are automated and intended as a learning aid.",
-  },
-  {
-    q: "How do I report a user?",
-    a: "Go to the user's profile, tap the three-dot menu, and select 'Report User'. Choose a reason and add any details. Our moderation team reviews all reports.",
-  },
-  {
-    q: "How do I block a user?",
-    a: "Go to the user's profile, tap the three-dot menu, and select 'Block User'. Blocked users won't be able to message you.",
+    a: "Aqala is an app for Muslims that provides prayer times, Qibla direction, and related spiritual tools.",
   },
   {
     q: "How do I delete my account?",
@@ -27,20 +16,22 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What data does Aqala collect?",
-    a: "We collect your account info (email, name, photo), usage data, and with your permission, location for prayer times. Audio in rooms is processed in real-time and never stored. See our Privacy Policy for full details.",
+    a: "We collect your account info (email, name) and, with your permission, location for prayer times and Qibla. See our Privacy Policy for full details.",
   },
   {
     q: "Is Aqala free?",
-    a: "Yes, Aqala is free to use. We offer an optional premium subscription to remove ads and unlock additional features.",
+    a: "Yes, Aqala is free to use. We may offer optional premium features in the future.",
   },
 ];
 
 export default function SupportScreen() {
   const router = useRouter();
   const [expanded, setExpanded] = useState<number | null>(null);
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       <View
         style={{
           flexDirection: "row",
@@ -69,7 +60,7 @@ export default function SupportScreen() {
         <View style={{ maxWidth: 500, alignSelf: "center", width: "100%", gap: 32 }}>
           {/* Contact */}
           <View style={{ gap: 12 }}>
-            <Text style={{ color: "#D4AF37", fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
+            <Text style={{ color: accent.base, fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
               Contact Us
             </Text>
 
@@ -92,12 +83,12 @@ export default function SupportScreen() {
                   width: 40,
                   height: 40,
                   borderRadius: 12,
-                  backgroundColor: "rgba(212,175,55,0.1)",
                   alignItems: "center",
                   justifyContent: "center",
+                  backgroundColor: `${accent.base}20`,
                 }}
               >
-                <Ionicons name="mail-outline" size={20} color="#D4AF37" />
+                <Ionicons name="mail-outline" size={20} color={accent.base} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: "white", fontSize: 14, fontWeight: "500" }}>Email Support</Text>
@@ -125,12 +116,12 @@ export default function SupportScreen() {
                   width: 40,
                   height: 40,
                   borderRadius: 12,
-                  backgroundColor: "rgba(212,175,55,0.1)",
                   alignItems: "center",
                   justifyContent: "center",
+                  backgroundColor: `${accent.base}20`,
                 }}
               >
-                <Ionicons name="logo-instagram" size={20} color="#D4AF37" />
+                <Ionicons name="logo-instagram" size={20} color={accent.base} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: "white", fontSize: 14, fontWeight: "500" }}>Instagram</Text>
@@ -142,7 +133,7 @@ export default function SupportScreen() {
 
           {/* FAQs */}
           <View style={{ gap: 12 }}>
-            <Text style={{ color: "#D4AF37", fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
+            <Text style={{ color: accent.base, fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
               Frequently Asked Questions
             </Text>
 
@@ -154,7 +145,7 @@ export default function SupportScreen() {
                   backgroundColor: "rgba(255,255,255,0.05)",
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: expanded === index ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.05)",
+                  borderColor: expanded === index ? `${accent.base}40` : "rgba(255,255,255,0.05)",
                   overflow: "hidden",
                 }}
               >
@@ -197,7 +188,7 @@ export default function SupportScreen() {
 
           {/* Legal Links */}
           <View style={{ gap: 12 }}>
-            <Text style={{ color: "#D4AF37", fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
+            <Text style={{ color: accent.base, fontSize: 12, fontWeight: "500", textTransform: "uppercase", letterSpacing: 1 }}>
               Legal
             </Text>
 
@@ -247,6 +238,6 @@ export default function SupportScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

@@ -3,20 +3,23 @@ import {
   View, Text, ScrollView, TouchableOpacity, Image,
   TextInput, ActivityIndicator, Alert, Switch, KeyboardAvoidingView, Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { getUserProfile, isUsernameAvailable } from "@/lib/firebase/users";
 import { subscribeToUserCounts } from "@/lib/firebase/follows";
 import { uploadProfileImage } from "@/lib/firebase/storage";
 import { validateUsername } from "@/utils/profanityFilter";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
   const { user, loading: authLoading, updateUserProfile } = useAuth();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
 
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
@@ -206,11 +209,11 @@ export default function ProfileEditScreen() {
 
   if (authLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#D4AF37" />
+          <ActivityIndicator size="large" color={accent.base} />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
@@ -225,7 +228,7 @@ export default function ProfileEditScreen() {
     privateFollowers !== initialSettings.privateFollowers;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -293,7 +296,7 @@ export default function ProfileEditScreen() {
                         justifyContent: "center",
                       }}
                     >
-                      <Text style={{ fontSize: 36, fontWeight: "600", color: "#D4AF37" }}>
+                      <Text style={{ fontSize: 36, fontWeight: "600", color: accent.base }}>
                         {(user.username || user.displayName || user.email || "U").charAt(0).toUpperCase()}
                       </Text>
                     </LinearGradient>
@@ -330,7 +333,7 @@ export default function ProfileEditScreen() {
                     width: 36,
                     height: 36,
                     borderRadius: 18,
-                    backgroundColor: "#D4AF37",
+                    backgroundColor: accent.base,
                     alignItems: "center",
                     justifyContent: "center",
                     shadowColor: "#000",
@@ -340,7 +343,7 @@ export default function ProfileEditScreen() {
                     elevation: 4,
                   }}
                 >
-                  <Ionicons name="camera" size={16} color="#0a1f16" />
+                  <Ionicons name="camera" size={16} color="white" />
                 </TouchableOpacity>
               </View>
 
@@ -508,7 +511,7 @@ export default function ProfileEditScreen() {
                 <Switch
                   value={privateHistory}
                   onValueChange={setPrivateHistory}
-                  trackColor={{ false: "rgba(255,255,255,0.2)", true: "#D4AF37" }}
+                  trackColor={{ false: "rgba(255,255,255,0.2)", true: accent.base }}
                   thumbColor="white"
                 />
               </View>
@@ -535,7 +538,7 @@ export default function ProfileEditScreen() {
                 <Switch
                   value={privateFollowers}
                   onValueChange={setPrivateFollowers}
-                  trackColor={{ false: "rgba(255,255,255,0.2)", true: "#D4AF37" }}
+                  trackColor={{ false: "rgba(255,255,255,0.2)", true: accent.base }}
                   thumbColor="white"
                 />
               </View>
@@ -588,7 +591,7 @@ export default function ProfileEditScreen() {
               style={{ opacity: isSaving || !!usernameError || checkingUsername || !hasChanges ? 0.5 : 1 }}
             >
               <LinearGradient
-                colors={["#D4AF37", "#c9a431"]}
+                colors={[accent.base, accent.hover]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -603,17 +606,17 @@ export default function ProfileEditScreen() {
               >
                 {isSaving ? (
                   <>
-                    <ActivityIndicator size="small" color="#021a12" />
-                    <Text style={{ color: "#021a12", fontWeight: "600", fontSize: 16 }}>Saving...</Text>
+                    <ActivityIndicator size="small" color="white" />
+                    <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Saving...</Text>
                   </>
                 ) : (
-                  <Text style={{ color: "#021a12", fontWeight: "600", fontSize: 16 }}>Save Changes</Text>
+                  <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Save Changes</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
