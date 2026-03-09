@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
-  Image,
   Linking,
   Alert,
 } from "react-native";
@@ -18,7 +17,9 @@ import { useInterstitialAd } from "@/contexts/InterstitialAdContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import WallpaperBackground from "@/components/WallpaperBackground";
+import TafsirModal from "@/components/TafsirModal";
 import { getDailyTadabbur, DailyTadabbur } from "@/lib/quran/tadabbur";
+import { getTafsirForVerse } from "@/lib/quran/tafsir";
 import {
   saveInsight,
   subscribeInsights,
@@ -41,6 +42,17 @@ export default function ListenHomeScreen() {
 
   const [insightSaved, setInsightSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [tadabburCollapsed, setTadabburCollapsed] = useState(false);
+  const [insightsCollapsed, setInsightsCollapsed] = useState(true);
+
+  const [tafsirModalVisible, setTafsirModalVisible] = useState(false);
+  const [tafsirLoading, setTafsirLoading] = useState(false);
+  const [tafsirText, setTafsirText] = useState<string | null>(null);
+  const [tafsirResourceName, setTafsirResourceName] = useState<string | null>(
+    null,
+  );
+  const [tafsirError, setTafsirError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +144,31 @@ export default function ListenHomeScreen() {
     Linking.openURL(`https://quran.com/${ch}/${v}`);
   };
 
+  const handleOpenTafsir = async () => {
+    if (!tadabbur) return;
+    setTafsirModalVisible(true);
+    setTafsirLoading(true);
+    setTafsirError(null);
+    setTafsirText(null);
+    setTafsirResourceName(null);
+    try {
+      const result = await getTafsirForVerse(tadabbur.verseKey, language);
+      setTafsirText(result.text);
+      setTafsirResourceName(result.resourceName);
+    } catch (err: any) {
+      setTafsirError(err?.message || t("listen.couldNotLoadVerse"));
+    } finally {
+      setTafsirLoading(false);
+    }
+  };
+
+  const handleCloseTafsirModal = () => {
+    setTafsirModalVisible(false);
+    setTafsirText(null);
+    setTafsirResourceName(null);
+    setTafsirError(null);
+  };
+
   const formatInsightDate = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -152,84 +189,44 @@ export default function ListenHomeScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top bar */}
-        <View className="w-full px-4 pt-4 pb-2">
-          <View
-            className="flex-row items-center justify-between"
-            style={{ maxWidth: 554, alignSelf: "center", width: "100%" }}
-          >
-            {/* Logo */}
-            <Image
-              source={require("@/assets/aqala-logo.png")}
-              style={{ width: 56, height: 56, tintColor: "white" }}
-              resizeMode="contain"
-            />
-
-            {/* Sign In / Profile indicator */}
-            {!authLoading &&
-              (user ? (
-                isPremium ? (
-                  <View className="px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30">
-                    <Text className="text-xs font-medium text-[#D4AF37]">
-                      {t("listen.premium")}
-                    </Text>
-                  </View>
-                ) : null
-              ) : (
-                <Link href="/auth/login" asChild>
-                  <TouchableOpacity
-                    style={{
-                      shadowColor: "#D4AF37",
-                      shadowOffset: { width: 0, height: 6 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 12,
-                      elevation: 6,
-                    }}
-                  >
-                    <LinearGradient
-                      colors={["#D4AF37", "#b8944d"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        paddingHorizontal: 16,
-                        paddingVertical: 10,
-                        borderRadius: 9999,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#021a12",
-                          fontSize: 14,
-                          fontWeight: "500",
-                        }}
-                      >
-                        {t("listen.signIn")}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </Link>
-              ))}
-          </View>
-        </View>
-
-        <View className="flex-1 px-5 pb-6">
+        <View className="flex-1 px-5 pt-2 pb-6">
           <View
             className="w-full flex-1"
             style={{ maxWidth: 554, alignSelf: "center" }}
           >
+            {/* Premium / Sign In badge */}
+            {!authLoading && (
+              <View className="flex-row justify-end mb-1">
+                {user ? (
+                  isPremium ? (
+                    <View className="px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30">
+                      <Text className="text-[11px] font-medium text-[#D4AF37]">
+                        {t("listen.premium")}
+                      </Text>
+                    </View>
+                  ) : null
+                ) : (
+                  <Link href="/auth/login" asChild>
+                    <TouchableOpacity className="px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30">
+                      <Text className="text-[11px] font-medium text-[#D4AF37]">
+                        Sign In
+                      </Text>
+                    </TouchableOpacity>
+                  </Link>
+                )}
+              </View>
+            )}
+
             {/* Hero Section */}
-            <View className="mt-6 mb-8">
-              <Text className="text-4xl font-bold tracking-tight text-white leading-tight">
+            <View className="mt-8 mb-6 items-center">
+              <Text className="text-4xl font-bold tracking-tight text-white leading-tight text-center">
                 {t("home.headline1")}
                 {"\n"}
                 <Text className="text-[#D4AF37]">{t("home.headline2")}</Text>
               </Text>
 
               <Text
-                className="text-sm text-white/60 leading-relaxed mt-3"
+                className="text-sm text-white/60 leading-relaxed mt-3 text-center"
                 style={{ maxWidth: 320 }}
               >
                 {t("listen.subheadline")}
@@ -240,7 +237,7 @@ export default function ListenHomeScreen() {
                 onPress={handleBeginListening}
                 className="mt-6"
                 style={{
-                  alignSelf: "flex-start",
+                  alignSelf: "center",
                   shadowColor: "#D4AF37",
                   shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.3,
@@ -298,25 +295,34 @@ export default function ListenHomeScreen() {
             </View>
 
             {/* Today's Tadabbur */}
-            <View className="rounded-2xl bg-white/5 border border-white/10 p-5 mb-4">
-              <View className="flex-row items-center gap-3 mb-4">
-                <View className="w-9 h-9 rounded-full bg-[#D4AF37]/15 items-center justify-center">
-                  <Ionicons name="moon" size={18} color="#D4AF37" />
+            <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-4">
+              <TouchableOpacity
+                onPress={() => setTadabburCollapsed((c) => !c)}
+                className={`flex-row items-center gap-2.5 ${tadabburCollapsed ? "mb-0" : "mb-2"}`}
+                activeOpacity={0.7}
+              >
+                <View className="w-8 h-8 rounded-full bg-[#D4AF37]/15 items-center justify-center">
+                  <Ionicons name="moon" size={16} color="#D4AF37" />
                 </View>
-                <Text className="text-base font-semibold text-white">
+                <Text className="text-sm font-semibold text-white flex-1">
                   {t("listen.todaysTadabbur")}
                 </Text>
-              </View>
+                <Ionicons
+                  name={tadabburCollapsed ? "chevron-down" : "chevron-up"}
+                  size={18}
+                  color="rgba(255,255,255,0.6)"
+                />
+              </TouchableOpacity>
 
-              {tadabburLoading ? (
-                <View className="items-center py-6">
+              {!tadabburCollapsed && (tadabburLoading ? (
+                <View className="items-center py-3">
                   <ActivityIndicator size="small" color="#D4AF37" />
                   <Text className="text-xs text-white/40 mt-2">
                     {t("listen.loadingVerse")}
                   </Text>
                 </View>
               ) : tadabburError ? (
-                <View className="py-4">
+                <View className="py-2">
                   <Text className="text-sm text-white/50 text-center">
                     {t(tadabburError)}
                   </Text>
@@ -324,18 +330,18 @@ export default function ListenHomeScreen() {
               ) : tadabbur ? (
                 <>
                   <Text
-                    className="text-base text-white/90 leading-relaxed mb-1"
+                    className="text-xs text-white/90 leading-relaxed mb-0.5"
                     style={{ fontStyle: "italic" }}
                   >
                     &ldquo;{tadabbur.translationText}&rdquo;
                   </Text>
-                  <Text className="text-xs text-white/40 mb-4">
+                  <Text className="text-[11px] text-white/40 mb-1.5">
                     ({tadabbur.verseReference})
                   </Text>
 
                   {tadabbur.arabicText ? (
                     <Text
-                      className="text-lg text-white/70 text-right leading-loose mb-4"
+                      className="text-sm text-white/70 text-right leading-loose mb-2"
                       style={{ fontFamily: undefined }}
                     >
                       {tadabbur.arabicText}
@@ -343,14 +349,24 @@ export default function ListenHomeScreen() {
                   ) : null}
 
                   {/* Action buttons */}
-                  <View className="flex-row items-center gap-4 flex-wrap">
+                  <View className="flex-row items-center gap-2.5 flex-wrap">
+                    <TouchableOpacity
+                      onPress={handleOpenTafsir}
+                      className="flex-row items-center gap-1"
+                    >
+                      <Ionicons name="play-circle" size={12} color="#D4AF37" />
+                      <Text className="text-xs text-[#D4AF37]">
+                        {t("listen.oneMinuteExplanation")}
+                      </Text>
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                       onPress={handleOpenVerse}
-                      className="flex-row items-center gap-1.5"
+                      className="flex-row items-center gap-1"
                     >
                       <Ionicons
-                        name="play-circle"
-                        size={14}
+                        name="book-outline"
+                        size={12}
                         color="rgba(255,255,255,0.5)"
                       />
                       <Text className="text-xs text-white/50">
@@ -361,11 +377,11 @@ export default function ListenHomeScreen() {
                     <TouchableOpacity
                       onPress={handleSaveInsight}
                       disabled={saving || insightSaved}
-                      className="flex-row items-center gap-1.5"
+                      className="flex-row items-center gap-1"
                     >
                       <Ionicons
                         name={insightSaved ? "star" : "star-outline"}
-                        size={14}
+                        size={12}
                         color={
                           insightSaved ? "#D4AF37" : "rgba(255,255,255,0.5)"
                         }
@@ -384,28 +400,37 @@ export default function ListenHomeScreen() {
                     </TouchableOpacity>
                   </View>
                 </>
-              ) : null}
+              ) : null)}
             </View>
 
             {/* My Insights */}
-            <View className="rounded-2xl bg-white/5 border border-white/10 p-5 mb-4">
-              <View className="flex-row items-center gap-3 mb-1">
-                <View className="w-9 h-9 rounded-full bg-[#D4AF37]/15 items-center justify-center">
+            <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-4">
+              <TouchableOpacity
+                onPress={() => setInsightsCollapsed((c) => !c)}
+                className="flex-row items-center gap-2.5 mb-0"
+                activeOpacity={0.7}
+              >
+                <View className="w-8 h-8 rounded-full bg-[#D4AF37]/15 items-center justify-center">
                   <Ionicons name="bookmark" size={16} color="#D4AF37" />
                 </View>
-                <View>
-                  <Text className="text-base font-semibold text-white">
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-white">
                     {t("listen.myInsights")}
                   </Text>
-                  <Text className="text-xs text-white/40">
+                  <Text className="text-[11px] text-white/40">
                     {t("listen.myInsightsDesc")}
                   </Text>
                 </View>
-              </View>
+                <Ionicons
+                  name={insightsCollapsed ? "chevron-down" : "chevron-up"}
+                  size={18}
+                  color="rgba(255,255,255,0.6)"
+                />
+              </TouchableOpacity>
 
-              {!user ? (
-                <View className="items-center py-6">
-                  <Text className="text-sm text-white/50 mb-3">
+              {!insightsCollapsed && (!user ? (
+                <View className="items-center py-4">
+                  <Text className="text-xs text-white/50 mb-2">
                     {t("listen.signInToSave")}
                   </Text>
                   <Link href="/auth/login" asChild>
@@ -417,14 +442,14 @@ export default function ListenHomeScreen() {
                   </Link>
                 </View>
               ) : insightsLoading ? (
-                <View className="items-center py-6">
+                <View className="items-center py-4">
                   <ActivityIndicator size="small" color="#D4AF37" />
                 </View>
               ) : insights.length === 0 ? (
-                <View className="items-center py-6">
+                <View className="items-center py-4">
                   <Ionicons
                     name="bookmark-outline"
-                    size={28}
+                    size={24}
                     color="rgba(255,255,255,0.15)"
                   />
                   <Text className="text-xs text-white/40 mt-2">
@@ -432,18 +457,18 @@ export default function ListenHomeScreen() {
                   </Text>
                 </View>
               ) : (
-                <View className="mt-3 gap-3">
+                <View className="mt-2 gap-2">
                   {insights.slice(0, 2).map((insight) => (
                     <View
                       key={insight.id}
-                      className="flex-row items-start gap-3"
+                      className="flex-row items-start gap-2.5"
                     >
-                      <View className="w-7 h-7 rounded-full bg-[#D4AF37]/10 items-center justify-center mt-0.5">
-                        <Ionicons name="chatbubble" size={12} color="#D4AF37" />
+                      <View className="w-6 h-6 rounded-full bg-[#D4AF37]/10 items-center justify-center mt-0.5">
+                        <Ionicons name="chatbubble" size={10} color="#D4AF37" />
                       </View>
                       <View className="flex-1 min-w-0">
                         <Text
-                          className="text-sm text-white/80"
+                          className="text-xs text-white/80"
                           numberOfLines={2}
                         >
                           &lsquo;
@@ -463,7 +488,7 @@ export default function ListenHomeScreen() {
 
                   {insights.length > 2 ? (
                     <Link href="/insights" asChild>
-                      <TouchableOpacity className="py-3 flex-row items-center justify-center gap-2">
+                      <TouchableOpacity className="py-2 flex-row items-center justify-center gap-2">
                         <Text className="text-sm font-medium text-[#D4AF37]">
                           {t("listen.viewMoreCount").replace(
                             "{count}",
@@ -479,7 +504,7 @@ export default function ListenHomeScreen() {
                     </Link>
                   ) : insights.length > 0 ? (
                     <Link href="/insights" asChild>
-                      <TouchableOpacity className="py-3 flex-row items-center justify-center gap-2">
+                      <TouchableOpacity className="py-2 flex-row items-center justify-center gap-2">
                         <Text className="text-sm font-medium text-[#D4AF37]">
                           {t("listen.viewMore")}
                         </Text>
@@ -492,21 +517,21 @@ export default function ListenHomeScreen() {
                     </Link>
                   ) : null}
                 </View>
-              )}
+              ))}
             </View>
 
             {/* Support Aqala */}
-            <View className="rounded-2xl bg-white/5 border border-white/10 p-5 mb-6">
+            <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-6">
               <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-3">
-                  <View className="w-9 h-9 rounded-full bg-[#D4AF37]/15 items-center justify-center">
+                <View className="flex-row items-center gap-2.5">
+                  <View className="w-8 h-8 rounded-full bg-[#D4AF37]/15 items-center justify-center">
                     <Ionicons name="heart" size={16} color="#D4AF37" />
                   </View>
                   <View>
-                    <Text className="text-base font-semibold text-white">
+                    <Text className="text-sm font-semibold text-white">
                       {t("listen.supportAqala")}
                     </Text>
-                    <Text className="text-xs text-white/40">
+                    <Text className="text-[11px] text-white/40">
                       {t("listen.helpKeepFree")}
                     </Text>
                   </View>
@@ -544,6 +569,18 @@ export default function ListenHomeScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <TafsirModal
+        visible={tafsirModalVisible}
+        onClose={handleCloseTafsirModal}
+        verseReference={tadabbur?.verseReference ?? ""}
+        tafsirText={tafsirText}
+        resourceName={tafsirResourceName}
+        loading={tafsirLoading}
+        error={tafsirError}
+        title={t("listen.oneMinuteExplanation")}
+        loadingText={t("listen.tafsirLoading")}
+      />
     </WallpaperBackground>
   );
 }

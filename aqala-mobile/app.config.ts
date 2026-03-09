@@ -25,11 +25,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         backgroundColor: "#000000",
     },
     ios: {
-        supportsTablet: true,
+        supportsTablet: false,
+        deploymentTarget: "15.1",
         bundleIdentifier: "com.aqala.app",
         googleServicesFile: "./GoogleService-Info.plist",
         infoPlist: {
             ITSAppUsesNonExemptEncryption: false,
+            CFBundleDisplayName: "Aqala",
+            CFBundleName: "Aqala",
             NSLocationWhenInUseUsageDescription:
                 "Aqala uses your location to calculate accurate prayer times for your area and to show the Qibla direction. Your location data is processed on-device and is not stored on our servers.",
             NSMicrophoneUsageDescription:

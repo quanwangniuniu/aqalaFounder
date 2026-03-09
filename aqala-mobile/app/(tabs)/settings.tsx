@@ -233,7 +233,7 @@ export default function SettingsScreen() {
                     </View>
                   </View>
                   <TouchableOpacity
-                    onPress={() => router.push("/subscription/index")}
+                    onPress={() => router.push("/subscription")}
                     activeOpacity={0.85}
                   >
                     <LinearGradient
