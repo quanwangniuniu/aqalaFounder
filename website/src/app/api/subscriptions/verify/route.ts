@@ -4,9 +4,11 @@ import { createOrUpdateSubscriptionServer } from "@/lib/firebase/subscriptions-s
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-02-24.acacia",
-});
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  return new Stripe(key, { apiVersion: "2025-02-24.acacia" });
+}
 
 // This endpoint verifies payment directly from Stripe and updates Firebase
 // Useful when webhook doesn't fire properly
@@ -22,6 +24,7 @@ export async function POST(req: Request) {
     }
 
     // Retrieve the checkout session from Stripe
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (!session) {

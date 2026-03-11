@@ -3,9 +3,11 @@ import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-02-24.acacia",
-});
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  return new Stripe(key, { apiVersion: "2025-02-24.acacia" });
+}
 
 export async function POST(req: Request) {
   try {
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
     origin = origin || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     // Create Checkout Session
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],

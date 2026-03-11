@@ -40,5 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# cursor
-.cursor
+# cursor (rules committed for team sharing)
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/*

@@ -4,9 +4,11 @@ import { getSubscriptionServer, createOrUpdateSubscriptionServer } from "@/lib/f
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-02-24.acacia",
-});
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  return new Stripe(key, { apiVersion: "2025-02-24.acacia" });
+}
 
 // Map price IDs to plan IDs (use server-side env vars)
 const PRICE_ID_TO_PLAN: Record<string, "free" | "premium"> = {
@@ -88,6 +90,7 @@ export async function POST(req: Request) {
       customerId = existingSubscription.stripeCustomerId;
     } else {
       // Create new Stripe customer
+      const stripe = getStripe();
       const customer = await stripe.customers.create({
         metadata: {
           userId: userId,
@@ -144,6 +147,7 @@ export async function POST(req: Request) {
       }),
     };
 
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url });

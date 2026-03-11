@@ -1,0 +1,29 @@
+---
+description: Next.js website conventions — path aliases, API routes, Server/Client Components
+globs: website/**/*
+alwaysApply: false
+---
+
+# Website Conventions
+
+## Path Alias
+
+- `@/*` maps to `./src/*` (e.g. `import { X } from "@/lib/firebase/admin"`)
+
+## API Routes
+
+- API routes live in `src/app/api/`
+- Use lazy Stripe initialization (`getStripe()`) to avoid build-time env errors — never `new Stripe(...)` at module top level
+
+## Server vs Client Components
+
+- Prefer Server Components (default). Add `"use client"` only when needed (hooks, event handlers, browser APIs).
+- Do not export `metadata` from Client Components — metadata is Server-only.
+
+## Scripts
+
+- `scripts/` folder is excluded from the build. Use for standalone migration scripts (e.g. `npx tsx scripts/sync-premium-users.ts`).
+
+## Environment
+
+- Copy root `.env` into `website/.env` or `website/.env.local` for local development.
