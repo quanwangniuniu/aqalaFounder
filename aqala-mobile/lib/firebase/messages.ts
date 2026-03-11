@@ -2,6 +2,7 @@ import {
   collection, doc, addDoc, getDoc, getDocs, query, where, orderBy, limit, onSnapshot, serverTimestamp, updateDoc,
 } from "firebase/firestore";
 import { db } from "./config";
+import { filterProfanity } from "@/utils/profanityFilter";
 
 export interface Message {
   id: string;
@@ -47,8 +48,9 @@ export async function getOrCreateConversation(
 }
 
 export async function sendMessage(conversationId: string, senderId: string, text: string): Promise<void> {
+  const filteredText = filterProfanity(text);
   const messagesRef = collection(db, "conversations", conversationId, "messages");
-  await addDoc(messagesRef, { senderId, text, createdAt: serverTimestamp(), read: false });
+  await addDoc(messagesRef, { senderId, text: filteredText, createdAt: serverTimestamp(), read: false });
 
   const conversationRef = doc(db, "conversations", conversationId);
   const conversationSnap = await getDoc(conversationRef);
@@ -57,7 +59,7 @@ export async function sendMessage(conversationId: string, senderId: string, text
     const data = conversationSnap.data();
     const otherUserId = data.participants.find((p: string) => p !== senderId);
     await updateDoc(conversationRef, {
-      lastMessage: text, lastMessageAt: serverTimestamp(), lastSenderId: senderId,
+      lastMessage: filteredText, lastMessageAt: serverTimestamp(), lastSenderId: senderId,
       [`unreadCount.${otherUserId}`]: (data.unreadCount?.[otherUserId] || 0) + 1,
     });
   }

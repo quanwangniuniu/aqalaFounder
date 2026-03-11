@@ -10,8 +10,9 @@ import {
   Platform,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { isUsernameAvailable } from "@/lib/firebase/users";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -26,6 +27,8 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { signUp, signInWithGoogle, signInWithApple, error: authError } = useAuth();
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
 
   // Debounced username validation
   useEffect(() => {
@@ -148,7 +151,7 @@ export default function RegisterScreen() {
   const displayError = localError || authError;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#021a12]">
+    <WallpaperBackground edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -265,15 +268,14 @@ export default function RegisterScreen() {
             <TouchableOpacity
               onPress={handleSignUp}
               disabled={isLoading || !!usernameError || checkingUsername}
-              className={`w-full rounded-xl py-3.5 items-center justify-center ${
-                isLoading || usernameError || checkingUsername ? "bg-[#D4AF37]/50" : "bg-[#D4AF37]"
-              }`}
+              style={{ backgroundColor: (isLoading || usernameError || checkingUsername) ? `${accent.base}80` : accent.base }}
+              className="w-full rounded-xl py-3.5 items-center justify-center"
             >
-              {isLoading ? (
-                <ActivityIndicator color="#021a12" />
-              ) : (
-                <Text className="text-[#021a12] font-semibold text-base">Create Account</Text>
-              )}
+                {isLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white font-semibold text-base">Create Account</Text>
+                )}
             </TouchableOpacity>
 
             {/* Divider */}
@@ -310,9 +312,9 @@ export default function RegisterScreen() {
             <View className="mt-6 pt-6 border-t border-white/10 items-center">
               <Text className="text-sm text-white/50">Already have an account? </Text>
               <Link href="/auth/login" asChild>
-                <TouchableOpacity>
-                  <Text className="text-sm text-[#D4AF37] font-medium mt-1">Sign in</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity>
+                    <Text className="text-sm font-medium mt-1" style={{ color: accent.base }}>Sign in</Text>
+                  </TouchableOpacity>
               </Link>
             </View>
           </View>
@@ -327,6 +329,6 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

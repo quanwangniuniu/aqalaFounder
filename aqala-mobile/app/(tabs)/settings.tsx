@@ -1,19 +1,33 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Switch, Alert, Linking, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { usePreferences, WALLPAPERS, WallpaperId } from "@/contexts/PreferencesContext";
 import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
+
+const WALLPAPER_KEYS: Record<string, string> = {
+  mosque: "settings.wallpaper.mosque",
+  emerald: "settings.wallpaper.emerald",
+  "golden-hour": "settings.wallpaper.goldenHour",
+  midnight: "settings.wallpaper.midnight",
+  desert: "settings.wallpaper.desert",
+  "deep-ocean": "settings.wallpaper.deepOcean",
+};
+import { usePrivacyConsent } from "@/contexts/PrivacyConsentContext";
 import { getUserInitials } from "@/utils/userDisplay";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Defs, Rect, Stop, RadialGradient as SvgRadialGradient, LinearGradient as SvgLinearGradient, Path } from "react-native-svg";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 export default function SettingsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isPremium } = useSubscription();
   const { wallpaper, setWallpaper } = usePreferences();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
+  const { consent, updateConsent } = usePrivacyConsent();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -27,35 +41,35 @@ export default function SettingsScreen() {
 
   if (authLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-white text-xl font-semibold mb-2">Sign in required</Text>
+          <Text className="text-white text-xl font-semibold mb-2">{t("settings.signInRequired")}</Text>
           <Text className="text-white/50 text-sm text-center mb-6">
-            Please sign in to access settings
+            {t("settings.signInPrompt")}
           </Text>
           <TouchableOpacity
             onPress={() => router.push("/auth/login")}
             className="bg-[#D4AF37] rounded-xl py-3.5 px-8"
           >
-            <Text className="text-[#021a12] font-semibold text-base">Sign In</Text>
+            <Text className="text-[#021a12] font-semibold text-base">{t("settings.signIn")}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#032117]" edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View className="px-5 py-6 border-b border-white/5">
         <View className="flex-row items-center gap-3" style={{ maxWidth: 500, alignSelf: 'center', width: '100%' }}>
@@ -64,7 +78,7 @@ export default function SettingsScreen() {
               <Ionicons name="chevron-back" size={18} color="white" />
             </TouchableOpacity>
           </Link>
-          <Text className="text-xl font-semibold text-white">Account Settings</Text>
+          <Text className="text-xl font-semibold text-white">{t("settings.title")}</Text>
         </View>
       </View>
 
@@ -77,7 +91,7 @@ export default function SettingsScreen() {
           {/* Profile Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Profile
+              {t("settings.profile")}
             </Text>
             <View className="bg-white/5 rounded-2xl p-5 border border-white/5">
               <View className="flex-row items-center gap-4">
@@ -107,14 +121,14 @@ export default function SettingsScreen() {
                 </View>
                 <View className="flex-1 min-w-0">
                   <Text className="text-lg font-medium text-white" numberOfLines={1}>
-                    {user.displayName || "User"}
+                    {user.displayName || t("settings.user")}
                   </Text>
                   <Text className="text-sm text-white/50" numberOfLines={1}>{user.email}</Text>
                   <Text className="text-xs mt-1">
                     {isPremium ? (
-                      <Text className="text-[#D4AF37]">✨ Premium Member</Text>
+                      <Text className="text-[#D4AF37]">✨ {t("settings.premiumMember")}</Text>
                     ) : (
-                      <Text className="text-white/40">Free Plan</Text>
+                      <Text className="text-white/40">{t("settings.freePlan")}</Text>
                     )}
                   </Text>
                 </View>
@@ -125,7 +139,7 @@ export default function SettingsScreen() {
           {/* Language Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Language
+              {t("settings.language")}
             </Text>
             <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
               <ScrollView className="max-h-48">
@@ -152,9 +166,9 @@ export default function SettingsScreen() {
           {/* Wallpaper Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Wallpaper
+              {t("settings.wallpaper")}
             </Text>
-            <View className="flex-row flex-wrap gap-3">
+            <View style={styles.wallpaperGrid}>
               {WALLPAPERS.map((wp) => (
                 <TouchableOpacity
                   key={wp.id}
@@ -164,21 +178,16 @@ export default function SettingsScreen() {
                       ? "border-[#D4AF37]"
                       : "border-white/10"
                   }`}
-                  style={{ width: '30%', aspectRatio: 4/3 }}
+                  style={styles.wallpaperThumb}
                 >
-                  <LinearGradient
-                    colors={wp.gradientColors}
-                    className="absolute inset-0"
-                  />
+                  <WallpaperPreviewSvg id={wp.id} width={THUMB_WIDTH} height={THUMB_HEIGHT} />
                   
-                  {/* Label */}
                   <View className="absolute inset-x-0 bottom-0 bg-black/80 p-2">
                     <Text className="text-[10px] font-medium text-white/90 leading-tight">
-                      {wp.name}
+                      {t(WALLPAPER_KEYS[wp.id] ?? wp.name)}
                     </Text>
                   </View>
                   
-                  {/* Selected checkmark */}
                   {wallpaper === wp.id && (
                     <View className="absolute top-2 right-2 w-5 h-5 bg-[#D4AF37] rounded-full items-center justify-center">
                       <Ionicons name="checkmark" size={12} color="#032117" />
@@ -188,32 +197,29 @@ export default function SettingsScreen() {
               ))}
             </View>
             <Text className="text-xs text-white/40 mt-3">
-              Choose a wallpaper for your home screen
+              {t("settings.wallpaperHint")}
             </Text>
           </View>
 
           {/* Plan Section */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Plan
+              {t("settings.plan")}
             </Text>
             <View className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
               {isPremium ? (
                 <View className="p-5">
                   <View className="flex-row items-center gap-3 mb-3">
                     <View className="w-10 h-10 rounded-full bg-[#D4AF37]/20 items-center justify-center">
-                      <Text className="text-[#D4AF37] text-lg">⭐</Text>
+                      <Svg width={20} height={20} viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </Svg>
                     </View>
                     <View>
-                      <Text className="font-medium text-white">Premium Active</Text>
-                      <Text className="text-xs text-white/50">Ad-free experience enabled</Text>
+                      <Text className="font-medium text-white">{t("settings.premiumActive")}</Text>
+                      <Text className="text-xs text-white/50">{t("settings.adFreeEnabled")}</Text>
                     </View>
                   </View>
-                  <Link href="/subscription/manage" asChild>
-                    <TouchableOpacity className="w-full items-center py-2.5 bg-white/5 rounded-xl">
-                      <Text className="text-sm text-white/70">Manage Subscription</Text>
-                    </TouchableOpacity>
-                  </Link>
                 </View>
               ) : (
                 <View className="p-5">
@@ -222,44 +228,162 @@ export default function SettingsScreen() {
                       <Ionicons name="star-outline" size={20} color="rgba(255,255,255,0.5)" />
                     </View>
                     <View>
-                      <Text className="font-medium text-white">Free Plan</Text>
-                      <Text className="text-xs text-white/50">Upgrade to remove ads</Text>
+                      <Text className="font-medium text-white">{t("settings.freePlan")}</Text>
+                      <Text className="text-xs text-white/50">{t("settings.upgradeToRemoveAds")}</Text>
                     </View>
                   </View>
-                  <Link href="/subscription/index" asChild>
-                    <TouchableOpacity>
-                      <LinearGradient
-                        colors={["#D4AF37", "#c9a431"]}
-                        className="w-full items-center py-3 rounded-xl"
-                      >
-                        <Text className="text-sm font-semibold text-[#032117]">
-                          Go Ad-Free • $15 one-time
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </Link>
+                  <TouchableOpacity
+                    onPress={() => router.push("/subscription")}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={["#D4AF37", "#c9a431"]}
+                      style={{
+                        borderRadius: 12,
+                        paddingVertical: 14,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text className="text-base font-semibold text-[#032117]">
+                        {t("settings.goAdFreeForever")}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
               )}
+            </View>
+          </View>
+
+          {/* Privacy Preferences */}
+          <View>
+            <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
+              {t("settings.privacy")}
+            </Text>
+            <View className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden">
+              <View className="flex-row items-center justify-between p-4 border-b border-white/5">
+                <View className="flex-1 mr-3">
+                  <Text className="font-medium text-white text-sm">{t("settings.analytics")}</Text>
+                  <Text className="text-xs text-white/50 mt-0.5">{t("settings.analyticsDesc")}</Text>
+                </View>
+                <Switch
+                  value={consent?.analytics ?? false}
+                  onValueChange={(value) => updateConsent({ analytics: value })}
+                  trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(212,175,55,0.3)" }}
+                  thumbColor={consent?.analytics ? "#D4AF37" : "#666"}
+                />
+              </View>
+              <View className="flex-row items-center justify-between p-4">
+                <View className="flex-1 mr-3">
+                  <Text className="font-medium text-white text-sm">{t("settings.personalisedAds")}</Text>
+                  <Text className="text-xs text-white/50 mt-0.5">{t("settings.personalisedAdsDesc")}</Text>
+                </View>
+                <Switch
+                  value={consent?.personalizedAds ?? false}
+                  onValueChange={(value) => updateConsent({ personalizedAds: value })}
+                  trackColor={{ false: "rgba(255,255,255,0.1)", true: "rgba(212,175,55,0.3)" }}
+                  thumbColor={consent?.personalizedAds ? "#D4AF37" : "#666"}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Support & Legal */}
+          <View>
+            <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
+              {t("settings.supportLegal")}
+            </Text>
+            <View className="gap-2">
+              <Link href="/support" asChild>
+                <TouchableOpacity className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-white/5">
+                  <View className="w-10 h-10 rounded-full bg-[#D4AF37]/10 items-center justify-center">
+                    <Ionicons name="help-circle-outline" size={20} color="#D4AF37" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-medium text-white">{t("settings.helpSupport")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.helpSupportDesc")}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              </Link>
+
+              <Link href="/privacy" asChild>
+                <TouchableOpacity className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-white/5">
+                  <View className="w-10 h-10 rounded-full bg-[#D4AF37]/10 items-center justify-center">
+                    <Ionicons name="shield-checkmark-outline" size={20} color="#D4AF37" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-medium text-white">{t("settings.privacyPolicy")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.privacyPolicyDesc")}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              </Link>
+
+              <Link href="/terms" asChild>
+                <TouchableOpacity className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-white/5">
+                  <View className="w-10 h-10 rounded-full bg-[#D4AF37]/10 items-center justify-center">
+                    <Ionicons name="document-text-outline" size={20} color="#D4AF37" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-medium text-white">{t("settings.terms")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.termsDesc")}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              </Link>
             </View>
           </View>
 
           {/* Account Actions */}
           <View>
             <Text className="text-sm font-medium text-[#D4AF37] mb-4 uppercase tracking-wider">
-              Account
+              {t("settings.account")}
             </Text>
-            <TouchableOpacity
-              onPress={handleSignOut}
-              className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-white/5"
-            >
-              <View className="w-10 h-10 rounded-full bg-red-500/10 items-center justify-center">
-                <Ionicons name="log-out-outline" size={20} color="#f87171" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-medium text-white">Sign Out</Text>
-                <Text className="text-xs text-white/50">Log out of your account</Text>
-              </View>
-            </TouchableOpacity>
+            <View className="gap-2">
+              <TouchableOpacity
+                onPress={handleSignOut}
+                className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-white/5"
+              >
+                <View className="w-10 h-10 rounded-full bg-red-500/10 items-center justify-center">
+                  <Ionicons name="log-out-outline" size={20} color="#f87171" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium text-white">{t("settings.signOut")}</Text>
+                  <Text className="text-xs text-white/50">{t("settings.signOutDesc")}</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    "Delete Account",
+                    "Are you sure you want to delete your account? This action is permanent and all your data will be erased. To proceed, we'll open an email to our support team.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete Account",
+                        style: "destructive",
+                        onPress: () => {
+                          Linking.openURL(
+                            `mailto:info@aqala.org?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20Aqala%20account.%0A%0AEmail:%20${encodeURIComponent(user?.email || "")}%0AUser%20ID:%20${encodeURIComponent(user?.uid || "")}`
+                          );
+                        },
+                      },
+                    ]
+                  );
+                }}
+                className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-red-500/10"
+              >
+                <View className="w-10 h-10 rounded-full bg-red-500/10 items-center justify-center">
+                  <Ionicons name="trash-outline" size={20} color="#f87171" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium text-red-400">{t("settings.deleteAccount")}</Text>
+                  <Text className="text-xs text-white/50">{t("settings.deleteAccountDesc")}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* App Info */}
@@ -269,6 +393,113 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }
+
+function WallpaperPreviewSvg({ id, width, height }: { id: string; width: number; height: number }) {
+  return (
+    <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <Defs>
+        {/* Mosque at Night */}
+        <SvgLinearGradient id="mosque-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#021a12" />
+          <Stop offset="0.15" stopColor="#032117" />
+          <Stop offset="0.4" stopColor="#042d1d" />
+          <Stop offset="0.7" stopColor="#032117" />
+          <Stop offset="1" stopColor="#021a12" />
+        </SvgLinearGradient>
+        <SvgRadialGradient id="mosque-glow-top" cx="50%" cy="0%" rx="60%" ry="50%">
+          <Stop offset="0" stopColor="#0a5c3e" stopOpacity={0.8} />
+          <Stop offset="0.5" stopColor="#0a5c3e" stopOpacity={0.3} />
+          <Stop offset="1" stopColor="#0a5c3e" stopOpacity={0} />
+        </SvgRadialGradient>
+        <SvgRadialGradient id="mosque-glow-br" cx="80%" cy="100%" rx="50%" ry="45%">
+          <Stop offset="0" stopColor="#06402b" stopOpacity={0.6} />
+          <Stop offset="0.5" stopColor="#06402b" stopOpacity={0.2} />
+          <Stop offset="1" stopColor="#06402b" stopOpacity={0} />
+        </SvgRadialGradient>
+
+        {/* Emerald — 135deg diagonal */}
+        <SvgLinearGradient id="emerald-base" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#032117" />
+          <Stop offset="0.5" stopColor="#064d33" />
+          <Stop offset="1" stopColor="#032117" />
+        </SvgLinearGradient>
+
+        {/* Golden Hour */}
+        <SvgLinearGradient id="golden-hour-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#1a1510" />
+          <Stop offset="0.3" stopColor="#2d2418" />
+          <Stop offset="0.6" stopColor="#1a1510" />
+          <Stop offset="1" stopColor="#0d0a07" />
+        </SvgLinearGradient>
+
+        {/* Midnight Blue */}
+        <SvgLinearGradient id="midnight-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#0a0f1a" />
+          <Stop offset="0.3" stopColor="#151e30" />
+          <Stop offset="0.7" stopColor="#0d1422" />
+          <Stop offset="1" stopColor="#080c14" />
+        </SvgLinearGradient>
+
+        {/* Desert Sand */}
+        <SvgLinearGradient id="desert-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#1f1a14" />
+          <Stop offset="0.3" stopColor="#2d261e" />
+          <Stop offset="0.7" stopColor="#1a1510" />
+          <Stop offset="1" stopColor="#100d09" />
+        </SvgLinearGradient>
+
+        {/* Deep Ocean */}
+        <SvgLinearGradient id="deep-ocean-base" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#071318" />
+          <Stop offset="0.3" stopColor="#0c2633" />
+          <Stop offset="0.7" stopColor="#082028" />
+          <Stop offset="1" stopColor="#040d11" />
+        </SvgLinearGradient>
+      </Defs>
+
+      {id === "mosque" && (
+        <>
+          <Rect width={width} height={height} fill="url(#mosque-base)" />
+          <Rect width={width} height={height} fill="url(#mosque-glow-top)" />
+          <Rect width={width} height={height} fill="url(#mosque-glow-br)" />
+        </>
+      )}
+      {id === "emerald" && (
+        <Rect width={width} height={height} fill="url(#emerald-base)" />
+      )}
+      {id === "golden-hour" && (
+        <Rect width={width} height={height} fill="url(#golden-hour-base)" />
+      )}
+      {id === "midnight" && (
+        <Rect width={width} height={height} fill="url(#midnight-base)" />
+      )}
+      {id === "desert" && (
+        <Rect width={width} height={height} fill="url(#desert-base)" />
+      )}
+      {id === "deep-ocean" && (
+        <Rect width={width} height={height} fill="url(#deep-ocean-base)" />
+      )}
+    </Svg>
+  );
+}
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const GRID_PADDING = 20;
+const GRID_GAP = 12;
+const THUMB_WIDTH = (SCREEN_WIDTH - GRID_PADDING * 2 - GRID_GAP * 2) / 3;
+const THUMB_HEIGHT = THUMB_WIDTH * (3 / 4);
+
+const styles = StyleSheet.create({
+  wallpaperGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: GRID_GAP,
+  },
+  wallpaperThumb: {
+    width: THUMB_WIDTH,
+    height: THUMB_HEIGHT,
+  },
+});

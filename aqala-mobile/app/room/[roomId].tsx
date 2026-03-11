@@ -11,9 +11,9 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { useRooms } from "@/contexts/RoomsContext";
 import {
   subscribeRoomMembers,
@@ -29,6 +29,7 @@ import {
 } from "@/lib/firebase/rooms";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import { auth } from "@/lib/firebase/config";
@@ -42,6 +43,8 @@ export default function RoomDetailScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const router = useRouter();
   const { user, partnerInfo } = useAuth();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   const {
     rooms,
     joinRoom: contextJoinRoom,
@@ -255,19 +258,19 @@ export default function RoomDetailScreen() {
   // --- Loading ---
   if (roomLoading || (!room && !roomFromContext)) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size="large" color="#D4AF37" />
+          <ActivityIndicator size="large" color={accent.base} />
           <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, marginTop: 16 }}>Loading room...</Text>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   // --- Not found ---
   if (!room) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 16 }}>
           <View
             style={{
@@ -304,14 +307,14 @@ export default function RoomDetailScreen() {
             <Text style={{ color: "white", fontSize: 14, fontWeight: "500" }}>Back to rooms</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   // --- Chat overlay ---
   if (showChat && room.chatEnabled) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
+      <WallpaperBackground edges={["top", "bottom"]}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -412,13 +415,13 @@ export default function RoomDetailScreen() {
                   width: 36,
                   height: 36,
                   borderRadius: 18,
-                  backgroundColor: "#D4AF37",
+                  backgroundColor: accent.base,
                   alignItems: "center",
                   justifyContent: "center",
                   opacity: !chatInput.trim() || chatSending ? 0.5 : 1,
                 }}
               >
-                <Ionicons name="send" size={16} color="#021a12" />
+                <Ionicons name="send" size={16} color="white" />
               </TouchableOpacity>
             </View>
           ) : (
@@ -436,13 +439,13 @@ export default function RoomDetailScreen() {
             </View>
           )}
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   // --- Main Room View ---
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -490,7 +493,7 @@ export default function RoomDetailScreen() {
                     borderColor: "rgba(212,175,55,0.2)",
                   }}
                 >
-                  <Text style={{ fontSize: 9, fontWeight: "700", color: "#D4AF37" }}>OFFICIAL</Text>
+                  <Text style={{ fontSize: 9, fontWeight: "700", color: accent.base }}>OFFICIAL</Text>
                 </View>
               )}
             </View>
@@ -609,7 +612,7 @@ export default function RoomDetailScreen() {
               />
             ) : (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                <ActivityIndicator size="small" color="#D4AF37" />
+                <ActivityIndicator size="small" color={accent.base} />
               </View>
             )}
           </View>
@@ -683,7 +686,7 @@ export default function RoomDetailScreen() {
                 </Text>
                 <TouchableOpacity onPress={handleClaimReciter} style={{ borderRadius: 12, overflow: "hidden" }}>
                   <LinearGradient
-                    colors={["#D4AF37", "#B8963A"]}
+                    colors={[accent.base, accent.hover]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={{
@@ -694,8 +697,8 @@ export default function RoomDetailScreen() {
                       paddingVertical: 14,
                     }}
                   >
-                    <Ionicons name="mic" size={18} color="#0a1f16" />
-                    <Text style={{ fontWeight: "600", fontSize: 15, color: "#0a1f16" }}>
+                    <Ionicons name="mic" size={18} color="white" />
+                    <Text style={{ fontWeight: "600", fontSize: 15, color: "white" }}>
                       Start Session
                     </Text>
                   </LinearGradient>
@@ -737,6 +740,6 @@ export default function RoomDetailScreen() {
           </TouchableOpacity>
         </View>
       )}
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

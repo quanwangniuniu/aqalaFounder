@@ -22,10 +22,13 @@ if (getApps().length === 0) {
   app = getApps()[0];
 }
 
-// Use React Native persistence for auth
-auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch {
+  auth = getAuth(app);
+}
 
 db = getFirestore(app);
 

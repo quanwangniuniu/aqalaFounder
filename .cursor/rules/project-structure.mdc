@@ -1,0 +1,32 @@
+---
+description: Aqala monorepo structure — website vs mobile separation, deployment, and layout
+alwaysApply: true
+---
+
+# Aqala Project Structure
+
+## Monorepo Layout
+
+This repo contains two separate applications in different folders:
+
+| Folder | Stack | Purpose |
+|--------|-------|---------|
+| `website/` | Next.js 16 | Web app — Vercel deployment |
+| `aqala-mobile/` | Expo React Native | Mobile app — EAS Build (iOS/Android) |
+
+## Key Rules
+
+- **Never mix website and mobile code.** Each app has its own `package.json`, `node_modules`, and tooling.
+- **website/** — Next.js App Router (`src/app/`), deployed to Vercel
+- **aqala-mobile/** — Expo Router (`app/`), built with EAS for App Store / Play Store
+
+## Shared at Root
+
+- `.env` — copy to `website/.env` or `website/.env.local` for local web dev
+- `firebase.json`, `firestore.rules` — Firebase config shared by both apps
+
+## Deployment
+
+- **Vercel:** Set Root Directory to `website`. Do not use repo root or `aqala-mobile`.
+- **Website build:** Uses `next build --webpack` (Turbopack disabled for production build).
+- **Mobile:** Use EAS Build from `aqala-mobile/` directory.

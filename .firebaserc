@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "dev": "aqala-dev",
+    "prod": "aqala-de71b"
+  },
+  "default": "aqala-dev"
+}

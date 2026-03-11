@@ -14,6 +14,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./config";
+import { filterProfanity } from "@/utils/profanityFilter";
 
 const COLLECTION = "mosques";
 
@@ -392,8 +393,9 @@ export async function sendChatMessage(
   options?: { userPhoto?: string; isAdmin?: boolean; isPartner?: boolean; isPremium?: boolean; isDonation?: boolean; donationAmount?: number }
 ): Promise<ChatMessage> {
   const chatRef = collection(db, COLLECTION, roomId, "chat");
+  const filteredText = filterProfanity(text.trim());
   const messageData = {
-    text: text.trim(), userId, userName,
+    text: filteredText, userId, userName,
     userPhoto: options?.userPhoto || null, isAdmin: options?.isAdmin || false,
     isPartner: options?.isPartner || false, isPremium: options?.isPremium || false,
     isDonation: options?.isDonation || false, donationAmount: options?.donationAmount || null,
@@ -402,7 +404,7 @@ export async function sendChatMessage(
 
   const docRef = await addDoc(chatRef, messageData);
   return {
-    id: docRef.id, text: text.trim(), userId, userName,
+    id: docRef.id, text: filteredText, userId, userName,
     userPhoto: options?.userPhoto, isAdmin: options?.isAdmin, isPartner: options?.isPartner,
     isDonation: options?.isDonation, donationAmount: options?.donationAmount, createdAt: new Date(),
   };

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import WallpaperBackground from "@/components/WallpaperBackground";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeToConversations, Conversation } from "@/lib/firebase/messages";
+import { getBlockedUserIds } from "@/lib/firebase/moderation";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -32,6 +33,7 @@ export default function MessagesScreen() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   // Redirect if not logged in
@@ -40,6 +42,12 @@ export default function MessagesScreen() {
       router.replace("/auth/login");
     }
   }, [user, authLoading, router]);
+
+  // Load blocked user IDs
+  useEffect(() => {
+    if (!user) return;
+    getBlockedUserIds(user.uid).then((ids) => setBlockedIds(new Set(ids))).catch(() => {});
+  }, [user]);
 
   // Subscribe to conversations
   useEffect(() => {
@@ -55,18 +63,18 @@ export default function MessagesScreen() {
 
   if (authLoading || loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+      <WallpaperBackground edges={["top"]}>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color="#D4AF37" />
         </View>
-      </SafeAreaView>
+      </WallpaperBackground>
     );
   }
 
   if (!user) return null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         style={{
@@ -84,7 +92,7 @@ export default function MessagesScreen() {
           <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: "600", color: "white" }}>Messages</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/search")}>
           <Ionicons name="create-outline" size={24} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
       </View>
@@ -114,9 +122,14 @@ export default function MessagesScreen() {
             </Text>
           </View>
         ) : (
-          conversations.map((conversation) => {
-            const otherUserId = conversation.participants.find((p) => p !== user.uid);
-            const otherUser = otherUserId ? conversation.participantInfo[otherUserId] : null;
+          conversations
+            .filter((conversation) => {
+              const otherUserId = conversation.participants.find((p) => p !== user.uid);
+              return otherUserId && !blockedIds.has(otherUserId);
+            })
+            .map((conversation) => {
+            const otherUserId = conversation.participants.find((p) => p !== user.uid)!;
+            const otherUser = conversation.participantInfo[otherUserId] ?? null;
             const unread = conversation.unreadCount[user.uid] || 0;
             const isLastSender = conversation.lastSenderId === user.uid;
             const displayName = otherUser?.displayName || otherUser?.username || "User";
@@ -212,6 +225,6 @@ export default function MessagesScreen() {
           })
         )}
       </ScrollView>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

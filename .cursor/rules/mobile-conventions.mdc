@@ -1,0 +1,21 @@
+---
+description: Expo mobile app conventions — routing, EAS build
+globs: aqala-mobile/**/*
+alwaysApply: false
+---
+
+# Mobile Conventions
+
+## Routing
+
+- Expo Router: file-based routing in `app/` directory
+- Use `(tabs)` for tab navigation layouts
+
+## Build
+
+- iOS: `eas build --platform ios` (or `npm run build:ios`)
+- Android: `eas build --platform android` (or `npm run build:android`)
+
+## Deployment
+
+- Do not use `aqala-mobile` as Vercel project root. Vercel is for the web app only; mobile uses EAS.

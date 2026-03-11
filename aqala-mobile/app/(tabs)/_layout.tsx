@@ -1,16 +1,25 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform } from "react-native";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+const TAB_BAR_ICON_SIZE = 20;
 
 export default function TabsLayout() {
+  const { getGradientColors, getAccentColor } = usePreferences();
+  const { t } = useLanguage();
+  const gradientColors = getGradientColors();
+  const tabBarBg = gradientColors[0] ?? "#021a12";
+  const accent = getAccentColor();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#D4AF37",
+        tabBarActiveTintColor: accent.base,
         tabBarInactiveTintColor: "rgba(255,255,255,0.35)",
         tabBarStyle: {
-          backgroundColor: "#021a12",
+          backgroundColor: tabBarBg,
           borderTopColor: "rgba(255,255,255,0.08)",
           borderTopWidth: 1,
           height: Platform.OS === "ios" ? 88 : 64,
@@ -18,56 +27,54 @@ export default function TabsLayout() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: "500",
         },
       }}
     >
+      {/* Primary tabs */}
       <Tabs.Screen
-        name="index"
+        name="listen"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="rooms"
-        options={{
-          title: "Rooms",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+          title: t("nav.listen"),
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="headset-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="prayer"
         options={{
-          title: "Prayer",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="moon-outline" size={size} color={color} />
+          title: t("nav.prayer"),
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="moon-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="qibla"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          title: t("nav.qibla"),
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="compass-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+          title: t("nav.settings"),
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
+
+      {/* Hidden tabs — kept for routing but removed from tab bar */}
+      <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen name="home" options={{ href: null }} />
+      <Tabs.Screen name="rooms" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 }

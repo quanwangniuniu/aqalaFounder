@@ -1,4 +1,13 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
+import path from "path";
+
+// Local dev (npx expo start): prefer .env.development (aqala-dev) so we don't touch production
+if (process.env.NODE_ENV === "development") {
+  require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+  require("dotenv").config({ path: path.resolve(__dirname, ".env.development") });
+} else {
+  require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+}
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
@@ -7,37 +16,46 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     scheme: "aqala",
     version: "1.0.0",
     orientation: "portrait",
-    // icon: "./assets/icon.png", // TODO: Add app icon (1024x1024 PNG)
+    icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
     newArchEnabled: true,
     splash: {
-        // image: "./assets/splash-icon.png", // TODO: Add splash screen image
+        image: "./assets/splash.png",
         resizeMode: "contain",
-        backgroundColor: "#021a12",
+        backgroundColor: "#000000",
     },
     ios: {
-        supportsTablet: true,
+        supportsTablet: false,
+        deploymentTarget: "15.1",
         bundleIdentifier: "com.aqala.app",
-        // googleServicesFile: "./GoogleService-Info.plist", // TODO: Add GoogleService-Info.plist for Firebase
+        googleServicesFile: "./GoogleService-Info.plist",
         infoPlist: {
+            ITSAppUsesNonExemptEncryption: false,
+            CFBundleDisplayName: "Aqala",
+            CFBundleName: "Aqala",
             NSLocationWhenInUseUsageDescription:
-                "Aqala needs your location to show accurate prayer times and Qibla direction.",
+                "Aqala uses your location to calculate accurate prayer times for your area and to show the Qibla direction. Your location data is processed on-device and is not stored on our servers.",
             NSMicrophoneUsageDescription:
-                "Aqala needs microphone access for live translation broadcasting.",
+                "Aqala uses microphone access to capture live speech for real-time Quran translation broadcasting in audio rooms. Audio is streamed for speech-to-text processing and is not permanently recorded.",
             NSCameraUsageDescription:
-                "Aqala needs camera access to take profile photos.",
-        },
-        config: {
-            googleSignIn: {
-                reservedClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "",
-            },
+                "Aqala uses camera access to let you take a new profile photo directly from the app.",
+            NSPhotoLibraryUsageDescription:
+                "Aqala uses photo library access to let you choose an existing photo as your profile picture.",
+            NSUserTrackingUsageDescription:
+                "Aqala uses this permission to deliver personalised ads. You can choose to opt out and still use the app with non-personalised ads.",
+            CFBundleURLTypes: [
+                {
+                    CFBundleTypeRole: "Editor",
+                    CFBundleURLSchemes: ["com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih"],
+                },
+            ],
         },
     },
     android: {
-        // adaptiveIcon: {
-        //     foregroundImage: "./assets/adaptive-icon.png", // TODO: Add adaptive icon (1024x1024 PNG)
-        //     backgroundColor: "#021a12",
-        // },
+        adaptiveIcon: {
+            foregroundImage: "./assets/adaptive-icon.png",
+            backgroundColor: "#021a12",
+        },
         package: "com.aqala.app",
         // googleServicesFile: "./google-services.json", // TODO: Add google-services.json for Firebase
         permissions: [
@@ -48,25 +66,38 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
     },
     plugins: [
+        [
+            "@react-native-google-signin/google-signin",
+            {
+                iosUrlScheme: "com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih",
+            },
+        ],
         "expo-router",
         "expo-asset",
         "expo-font",
         "expo-secure-store",
         "expo-apple-authentication",
         [
+            "expo-tracking-transparency",
+            {
+                userTrackingPermission:
+                    "Aqala uses this permission to deliver personalised ads. You can choose to opt out and still use the app with non-personalised ads.",
+            },
+        ],
+        [
             "expo-location",
             {
                 locationWhenInUsePermission:
-                    "Aqala needs your location to show accurate prayer times and Qibla direction.",
+                    "Aqala uses your location to calculate accurate prayer times for your area and to show the Qibla direction. Your location data is processed on-device and is not stored on our servers.",
             },
         ],
         [
             "expo-image-picker",
             {
                 photosPermission:
-                    "Aqala needs access to your photos to set a profile picture.",
+                    "Aqala uses photo library access to let you choose an existing photo as your profile picture.",
                 cameraPermission:
-                    "Aqala needs camera access to take profile photos.",
+                    "Aqala uses camera access to let you take a new profile photo directly from the app.",
             },
         ],
         [
@@ -76,20 +107,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 color: "#0a5c3e",
             },
         ],
+        "expo-iap",
         [
             "react-native-google-mobile-ads",
             {
-                androidAppId: process.env.EXPO_PUBLIC_ADMOB_APP_ID_ANDROID || "ca-app-pub-xxxxxxxx~xxxxxxxx",
-                iosAppId: process.env.EXPO_PUBLIC_ADMOB_APP_ID_IOS || "ca-app-pub-xxxxxxxx~xxxxxxxx",
+                androidAppId: "ca-app-pub-3882364799598893~5390694213",
+                iosAppId: "ca-app-pub-3882364799598893~5227042684",
             },
         ],
     ],
     experiments: {
         typedRoutes: true,
     },
-    extra: {
-        eas: {
-            projectId: "your-eas-project-id",
-        },
-    },
+    "extra": {
+      "eas": {
+        "projectId": "79f93fd7-00d8-4803-81e4-e4661d5342fd"
+      }
+    }
 });

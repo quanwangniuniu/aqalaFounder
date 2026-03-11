@@ -1,0 +1,161 @@
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+import { getSubscriptionServer, createOrUpdateSubscriptionServer } from "@/lib/firebase/subscriptions-server";
+
+export const runtime = "nodejs";
+
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  return new Stripe(key, { apiVersion: "2025-02-24.acacia" });
+}
+
+// Map price IDs to plan IDs (use server-side env vars)
+const PRICE_ID_TO_PLAN: Record<string, "free" | "premium"> = {
+  [process.env.STRIPE_PRICE_ID_FREE || ""]: "free",
+  [process.env.STRIPE_PRICE_ID_PREMIUM || ""]: "premium",
+};
+
+export async function POST(req: Request) {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: "Stripe secret key is not configured" },
+        { status: 500 }
+      );
+    }
+
+    const { userId, userEmail, userName, priceId, referrerId } = await req.json();
+
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!priceId || typeof priceId !== "string") {
+      return NextResponse.json(
+        { error: "Price ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate priceId matches one of our plans
+    const planId = PRICE_ID_TO_PLAN[priceId];
+    if (!planId) {
+      return NextResponse.json(
+        { error: "Invalid price ID" },
+        { status: 400 }
+      );
+    }
+
+    // Free plan doesn't need Stripe checkout
+    if (planId === "free") {
+      await createOrUpdateSubscriptionServer(userId, {
+        stripeCustomerId: userId, // Use userId as placeholder for free plan
+        plan: "free",
+        status: "active",
+      });
+      return NextResponse.json({ success: true, plan: "free" });
+    }
+
+    // Validate referrer and determine if invite coupon applies
+    let applyCoupon = false;
+    if (
+      referrerId &&
+      typeof referrerId === "string" &&
+      planId === "premium" &&
+      referrerId !== userId
+    ) {
+      const [referrerSub, inviteeSub] = await Promise.all([
+        getSubscriptionServer(referrerId),
+        getSubscriptionServer(userId),
+      ]);
+      if (
+        referrerSub?.plan === "premium" &&
+        (inviteeSub?.plan === "free" || !inviteeSub) &&
+        !inviteeSub?.purchasedAt &&
+        process.env.STRIPE_COUPON_INVITE_10
+      ) {
+        applyCoupon = true;
+      }
+    }
+
+    // Get or create Stripe customer
+    let customerId: string;
+    const existingSubscription = await getSubscriptionServer(userId);
+
+    if (existingSubscription?.stripeCustomerId && existingSubscription.stripeCustomerId !== userId) {
+      customerId = existingSubscription.stripeCustomerId;
+    } else {
+      // Create new Stripe customer
+      const stripe = getStripe();
+      const customer = await stripe.customers.create({
+        metadata: {
+          userId: userId,
+        },
+      });
+      customerId = customer.id;
+
+      // Store customer ID in Firestore with user info
+      await createOrUpdateSubscriptionServer(userId, {
+        email: userEmail || null,
+        displayName: userName || null,
+        stripeCustomerId: customerId,
+        plan: "free",
+        status: "active",
+      });
+    }
+
+    // Get origin for redirect URLs
+    let origin = req.headers.get("origin");
+    if (!origin) {
+      const referer = req.headers.get("referer");
+      if (referer) {
+        try {
+          const url = new URL(referer);
+          origin = `${url.protocol}//${url.host}`;
+        } catch {
+          // Invalid referer
+        }
+      }
+    }
+    origin = origin || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+    // Create checkout session
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+      mode: "payment",
+      customer: customerId,
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      success_url: `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/subscription`,
+      metadata: {
+        userId: userId,
+        userEmail: userEmail || "",
+        userName: userName || "",
+        type: "premium_one_time",
+      },
+      ...(applyCoupon && {
+        discounts: [{ coupon: process.env.STRIPE_COUPON_INVITE_10! }],
+      }),
+    };
+
+    const stripe = getStripe();
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+
+    return NextResponse.json({ url: session.url });
+  } catch (error: any) {
+    console.error("Stripe subscription checkout error:", error);
+    return NextResponse.json(
+      { error: "Failed to create checkout session", detail: error?.message },
+      { status: 500 }
+    );
+  }
+}

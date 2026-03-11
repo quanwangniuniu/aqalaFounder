@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, Platform, Linking } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, Pressable, Platform, Linking, Modal, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { requestRecordingPermissionsAsync, getRecordingPermissionsAsync } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLanguage, LANGUAGE_OPTIONS, type LanguageOption } from "@/contexts/LanguageContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import WallpaperBackground from "@/components/WallpaperBackground";
 
 const ONBOARDING_KEY = "aqala_permissions_onboarded";
 
@@ -21,30 +23,31 @@ interface PermissionCardProps {
 }
 
 function PermissionCard({ icon, title, reason, detail, granted, onRequest, loading }: PermissionCardProps) {
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
   return (
     <View
       style={{
         backgroundColor: "rgba(255,255,255,0.05)",
         borderWidth: 1,
-        borderColor: granted ? "rgba(212,175,55,0.3)" : "rgba(255,255,255,0.1)",
+        borderColor: granted ? `${accent.base}4D` : "rgba(255,255,255,0.1)",
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
       }}
     >
-      {/* Icon + Title + Status + Action — single row layout */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 }}>
         <View
           style={{
             width: 40,
             height: 40,
             borderRadius: 12,
-            backgroundColor: granted ? "rgba(212,175,55,0.15)" : "rgba(255,255,255,0.08)",
+            backgroundColor: granted ? `${accent.base}26` : "rgba(255,255,255,0.08)",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Ionicons name={icon} size={20} color={granted ? "#D4AF37" : "rgba(255,255,255,0.6)"} />
+          <Ionicons name={icon} size={20} color={granted ? accent.base : "rgba(255,255,255,0.6)"} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>{title}</Text>
@@ -62,11 +65,10 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
           )}
         </View>
 
-        {/* Inline action */}
         {granted === null && (
           <Pressable onPress={onRequest} disabled={loading}>
             <LinearGradient
-              colors={["#D4AF37", "#b8944d"]}
+              colors={[accent.base, accent.hover]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={{
@@ -76,7 +78,7 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
                 opacity: loading ? 0.6 : 1,
               }}
             >
-              <Text style={{ color: "#032117", fontSize: 13, fontWeight: "600" }}>
+              <Text style={{ color: "white", fontSize: 13, fontWeight: "600" }}>
                 {loading ? "..." : "Allow"}
               </Text>
             </LinearGradient>
@@ -114,12 +116,10 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
         )}
       </View>
 
-      {/* Reason */}
       <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 19 }}>
         {reason}
       </Text>
 
-      {/* Detail */}
       <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, lineHeight: 16, marginTop: 4 }}>
         {detail}
       </Text>
@@ -127,13 +127,117 @@ function PermissionCard({ icon, title, reason, detail, granted, onRequest, loadi
   );
 }
 
+function LanguageDropdown() {
+  const { language, setLanguage, getLanguageOption } = useLanguage();
+  const { getAccentColor, getGradientColors } = usePreferences();
+  const accent = getAccentColor();
+  const gradientColors = getGradientColors();
+  const sheetBg = gradientColors[0] ?? "#032117";
+  const [open, setOpen] = useState(false);
+  const current = getLanguageOption(language);
+
+  const renderItem = ({ item }: { item: LanguageOption }) => {
+    const selected = item.code === language;
+    return (
+      <Pressable
+        onPress={() => {
+          setLanguage(item.code);
+          setOpen(false);
+        }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 14,
+          paddingHorizontal: 20,
+          backgroundColor: selected ? `${accent.base}20` : "transparent",
+        }}
+      >
+        <Text style={{ fontSize: 20, marginRight: 12 }}>{item.flag}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: selected ? "#E8D5A3" : "#fff", fontSize: 15, fontWeight: selected ? "600" : "400" }}>
+            {item.label}
+          </Text>
+          <Text style={{ color: selected ? accent.base : "rgba(255,255,255,0.4)", fontSize: 12, opacity: selected ? 0.9 : 1 }}>
+            {item.nativeLabel}
+          </Text>
+        </View>
+        {selected && <Ionicons name="checkmark" size={18} color={accent.base} />}
+      </Pressable>
+    );
+  };
+
+  return (
+    <>
+      <View style={{ marginBottom: 16 }}>
+        <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: "500", marginBottom: 6, letterSpacing: 0.5 }}>
+          PREFERRED LANGUAGE
+        </Text>
+        <Pressable
+          onPress={() => setOpen(true)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "rgba(255,255,255,0.05)",
+            borderWidth: 1,
+            borderColor: `${accent.base}40`,
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+          }}
+        >
+          <Text style={{ fontSize: 18, marginRight: 10 }}>{current?.flag}</Text>
+          <Text style={{ color: "#fff", fontSize: 15, fontWeight: "500", flex: 1 }}>{current?.label}</Text>
+          <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.4)" />
+        </Pressable>
+        <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 4 }}>
+          You can change this anytime in settings
+        </Text>
+      </View>
+
+      <Modal visible={open} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
+          <View
+            style={{
+              backgroundColor: sheetBg,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              maxHeight: "70%",
+              borderTopWidth: 1,
+              borderColor: `${accent.base}33`,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
+              <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600" }}>Select Language</Text>
+              <Pressable onPress={() => setOpen(false)} hitSlop={12}>
+                <Ionicons name="close" size={22} color="rgba(255,255,255,0.5)" />
+              </Pressable>
+            </View>
+            <FlatList
+              data={LANGUAGE_OPTIONS}
+              keyExtractor={(item) => item.code}
+              renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.05)", marginHorizontal: 20 }} />
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { getAccentColor } = usePreferences();
+  const accent = getAccentColor();
+  const { completeFirstVisit } = useLanguage();
   const [locationGranted, setLocationGranted] = useState<boolean | null>(null);
   const [micGranted, setMicGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
-  // Pre-check current permission status on mount
   useEffect(() => {
     (async () => {
       try {
@@ -144,9 +248,9 @@ export default function OnboardingScreen() {
         if (locStatus.granted) setLocationGranted(true);
         if (micStatus.granted) setMicGranted(true);
 
-        // If both already granted, auto-finish
         if (locStatus.granted && micStatus.granted) {
           await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+          completeFirstVisit();
           router.replace("/(tabs)");
         }
       } catch (e) {
@@ -181,30 +285,29 @@ export default function OnboardingScreen() {
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    completeFirstVisit();
     router.replace("/(tabs)");
   };
 
   const bothAnswered = locationGranted !== null && micGranted !== null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#032117" }} edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top", "bottom"]}>
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "space-between" }}>
-        {/* Top content */}
         <View>
-          {/* Header */}
           <View style={{ alignItems: "center", marginTop: 16, marginBottom: 24 }}>
             <View
               style={{
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: "rgba(212,175,55,0.12)",
+                backgroundColor: `${accent.base}20`,
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: 12,
               }}
             >
-              <Ionicons name="shield-checkmark" size={28} color="#D4AF37" />
+              <Ionicons name="shield-checkmark" size={28} color={accent.base} />
             </View>
             <Text style={{ color: "#fff", fontSize: 24, fontWeight: "700", textAlign: "center", marginBottom: 6 }}>
               Quick Setup
@@ -218,11 +321,12 @@ export default function OnboardingScreen() {
                 maxWidth: 300,
               }}
             >
-              Aqala needs a couple of permissions to give you the best experience. Here's exactly why:
+              Pick your language and grant a couple of permissions to get the best experience.
             </Text>
           </View>
 
-          {/* Permission Cards */}
+          <LanguageDropdown />
+
           <PermissionCard
             icon="location-outline"
             title="Location"
@@ -244,12 +348,11 @@ export default function OnboardingScreen() {
           />
         </View>
 
-        {/* Bottom button — pinned */}
         <View style={{ paddingBottom: 8 }}>
           {bothAnswered ? (
             <Pressable onPress={finishOnboarding}>
               <LinearGradient
-                colors={["#D4AF37", "#b8944d"]}
+                colors={[accent.base, accent.hover]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -261,8 +364,8 @@ export default function OnboardingScreen() {
                   gap: 8,
                 }}
               >
-                <Text style={{ color: "#032117", fontSize: 17, fontWeight: "700" }}>Continue to Aqala</Text>
-                <Ionicons name="arrow-forward" size={20} color="#032117" />
+                <Text style={{ color: "white", fontSize: 17, fontWeight: "700" }}>Continue to Aqala</Text>
+                <Ionicons name="arrow-forward" size={20} color="white" />
               </LinearGradient>
             </Pressable>
           ) : (
@@ -282,6 +385,6 @@ export default function OnboardingScreen() {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </WallpaperBackground>
   );
 }

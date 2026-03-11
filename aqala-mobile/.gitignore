@@ -12,6 +12,7 @@ android/
 .env
 .env.local
 .env.production
+.env.development
 
 # OS
 .DS_Store

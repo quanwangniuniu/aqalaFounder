@@ -1,73 +1,161 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  ReactNode,
+} from "react";
 import { useRouter } from "expo-router";
+import { Platform } from "react-native";
 import { useSubscription } from "./SubscriptionContext";
 
-interface InterstitialAdContextType {
-  isAdVisible: boolean;
-  pendingDestination: string | null;
-  showAd: (destination: string) => void;
-  closeAd: () => void;
-  skipAd: () => void;
+let InterstitialAd: any = null;
+let AdEventType: any = null;
+let TestIds: any = null;
+
+try {
+  const ads = require("react-native-google-mobile-ads");
+  InterstitialAd = ads.InterstitialAd;
+  AdEventType = ads.AdEventType;
+  TestIds = ads.TestIds;
+} catch {
+  // Native module not available (e.g. running in Expo Go)
 }
 
-const InterstitialAdContext = createContext<InterstitialAdContextType | undefined>(undefined);
+const adUnitId =
+  !InterstitialAd || __DEV__
+    ? TestIds?.INTERSTITIAL ?? "ca-app-pub-3940256099942544/1033173712"
+    : Platform.select({
+        ios:
+          process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_IOS ??
+          TestIds?.INTERSTITIAL,
+        android:
+          process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ANDROID ??
+          TestIds?.INTERSTITIAL,
+      }) ?? TestIds?.INTERSTITIAL;
+
+interface InterstitialAdContextType {
+  showAdBeforeNavigation: (destination: string) => void;
+  isAdLoaded: boolean;
+}
+
+const InterstitialAdContext = createContext<
+  InterstitialAdContextType | undefined
+>(undefined);
 
 export const useInterstitialAd = () => {
-  const context = useContext(InterstitialAdContext);
-  if (context === undefined) {
-    throw new Error("useInterstitialAd must be used within an InterstitialAdProvider");
-  }
-  return context;
+  const ctx = useContext(InterstitialAdContext);
+  if (!ctx)
+    throw new Error(
+      "useInterstitialAd must be used within InterstitialAdProvider"
+    );
+  return ctx;
 };
 
-interface InterstitialAdProviderProps {
-  children: ReactNode;
-}
-
-export const InterstitialAdProvider: React.FC<InterstitialAdProviderProps> = ({ children }) => {
+export const InterstitialAdProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const router = useRouter();
   const { showAds } = useSubscription();
-  const [isAdVisible, setIsAdVisible] = useState(false);
-  const [pendingDestination, setPendingDestination] = useState<string | null>(null);
+  const [isAdLoaded, setIsAdLoaded] = useState(false);
 
-  const showAd = useCallback(
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
+  const pendingRef = useRef<string | null>(null);
+  const adRef = useRef<any>(null);
+  const listenersRef = useRef<(() => void)[]>([]);
+
+  const removeListeners = useCallback(() => {
+    listenersRef.current.forEach((unsub) => unsub());
+    listenersRef.current = [];
+  }, []);
+
+  const loadNewAd = useCallback(() => {
+    if (!InterstitialAd || !AdEventType) return;
+
+    removeListeners();
+    setIsAdLoaded(false);
+
+    const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
+      requestNonPersonalizedAdsOnly: true,
+    });
+
+    const unsubLoaded = interstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        setIsAdLoaded(true);
+      }
+    );
+
+    const unsubClosed = interstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        setIsAdLoaded(false);
+        if (pendingRef.current) {
+          routerRef.current.push(pendingRef.current as any);
+          pendingRef.current = null;
+        }
+        setTimeout(() => loadNewAd(), 500);
+      }
+    );
+
+    const unsubError = interstitial.addAdEventListener(
+      AdEventType.ERROR,
+      (error: any) => {
+        console.warn("Interstitial ad error:", error);
+        setIsAdLoaded(false);
+        if (pendingRef.current) {
+          routerRef.current.push(pendingRef.current as any);
+          pendingRef.current = null;
+        }
+      }
+    );
+
+    listenersRef.current = [unsubLoaded, unsubClosed, unsubError];
+    adRef.current = interstitial;
+    interstitial.load();
+  }, [removeListeners]);
+
+  useEffect(() => {
+    if (!showAds || !InterstitialAd) {
+      removeListeners();
+      adRef.current = null;
+      setIsAdLoaded(false);
+      return;
+    }
+    loadNewAd();
+    return () => removeListeners();
+  }, [showAds, loadNewAd, removeListeners]);
+
+  const showAdBeforeNavigation = useCallback(
     (destination: string) => {
-      // If user has premium, skip ad and navigate directly
-      if (!showAds) {
+      if (!showAds || !InterstitialAd) {
         router.push(destination as any);
         return;
       }
 
-      // Show the interstitial ad
-      setPendingDestination(destination);
-      setIsAdVisible(true);
+      if (isAdLoaded && adRef.current) {
+        pendingRef.current = destination;
+        adRef.current.show().catch(() => {
+          pendingRef.current = null;
+          router.push(destination as any);
+        });
+        return;
+      }
+
+      router.push(destination as any);
     },
-    [showAds, router]
+    [showAds, isAdLoaded, router]
   );
 
-  const closeAd = useCallback(() => {
-    setIsAdVisible(false);
-    if (pendingDestination) {
-      router.push(pendingDestination as any);
-      setPendingDestination(null);
-    }
-  }, [pendingDestination, router]);
-
-  const skipAd = useCallback(() => {
-    setIsAdVisible(false);
-    if (pendingDestination) {
-      router.push(pendingDestination as any);
-      setPendingDestination(null);
-    }
-  }, [pendingDestination, router]);
-
-  const value: InterstitialAdContextType = {
-    isAdVisible,
-    pendingDestination,
-    showAd,
-    closeAd,
-    skipAd,
-  };
-
-  return <InterstitialAdContext.Provider value={value}>{children}</InterstitialAdContext.Provider>;
+  return (
+    <InterstitialAdContext.Provider
+      value={{ showAdBeforeNavigation, isAdLoaded }}
+    >
+      {children}
+    </InterstitialAdContext.Provider>
+  );
 };

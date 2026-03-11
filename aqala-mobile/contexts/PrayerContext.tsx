@@ -206,7 +206,13 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  // Computed values
+  // Tick every 60s to keep next/current prayer fresh
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   const nextPrayer = prayerTimes ? getNextPrayer(prayerTimes) : null;
   const currentPrayer = prayerTimes ? getCurrentPrayer(prayerTimes) : "";
   const timeUntilNext = prayerTimes ? getTimeUntilNextPrayer(prayerTimes) : "";

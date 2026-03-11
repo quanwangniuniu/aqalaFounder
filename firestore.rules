@@ -25,7 +25,20 @@ service cloud.firestore {
     // Subscriptions
     match /subscriptions/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.plan == "premium"
+        && request.resource.data.status == "active";
+      allow delete: if false;
+    }
+
+    // Reports (user reports for moderation)
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+        && request.resource.data.reporterId == request.auth.uid;
+      allow read, update: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
+      allow delete: if false;
     }
 
     // Users
@@ -40,6 +53,11 @@ service cloud.firestore {
             || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followerCount', 'followingCount']));
       
       match /translations/{translationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Blocked users subcollection (blocker's list)
+      match /blockedUsers/{blockedId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
       
@@ -64,6 +82,15 @@ service cloud.firestore {
         allow read: if true;
         allow create: if request.auth != null && request.auth.uid == userId;
         allow update, delete: if false;
+      }
+      
+      // Insights subcollection (saved tadabbur / reflections)
+      match /insights/{insightId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if request.auth != null && request.auth.uid == userId;
       }
     }
 
