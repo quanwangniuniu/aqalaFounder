@@ -44,7 +44,7 @@ export default function UpgradePrompt({
             href={href}
             className="text-[#D4AF37] text-xs font-medium hover:text-[#D4AF37]/80 transition-colors"
           >
-            $15 one-time →
+            $19.95 one-time →
           </Link>
         </div>
       </div>
@@ -59,7 +59,7 @@ export default function UpgradePrompt({
       >
         <span className="text-[#D4AF37]">✨</span>
         <span className="text-white/70 text-sm">Go ad-free forever</span>
-        <span className="text-[#D4AF37] text-sm font-medium ml-auto">$15</span>
+        <span className="text-[#D4AF37] text-sm font-medium ml-auto">$19.95</span>
       </Link>
     );
   }
@@ -86,7 +86,7 @@ export default function UpgradePrompt({
           </div>
           <div>
             <p className="text-white text-sm font-medium mb-1">Support Aqala</p>
-            <p className="text-white/60 text-xs mb-3">Remove all ads forever with a one-time $15 payment.</p>
+            <p className="text-white/60 text-xs mb-3">Remove all ads forever with a one-time $19.95 payment.</p>
             <Link
               href={href}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#D4AF37] text-[#032117] text-xs font-semibold rounded-full hover:bg-[#D4AF37]/90 transition-colors"

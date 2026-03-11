@@ -43,7 +43,7 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
   premium: {
     id: "premium",
     name: "Ad-Free Forever",
-    price: 15,
+    price: 19.95,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PREMIUM || "",
     currency: "USD",
     isOneTime: true,

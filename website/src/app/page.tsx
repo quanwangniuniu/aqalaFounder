@@ -232,7 +232,7 @@ export default function Page() {
                     
                     <p className="text-xs text-[#D4AF37]/70 mb-0.5">Go Premium</p>
                     <p className="text-sm font-medium text-white">Remove Ads</p>
-                    <p className="text-xs text-[#D4AF37]">$15 one-time</p>
+                    <p className="text-xs text-[#D4AF37]">$19.95 one-time</p>
                   </div>
                 </Link>
               ) : (
