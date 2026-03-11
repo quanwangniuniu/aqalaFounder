@@ -164,7 +164,7 @@ function SubscriptionPageContent() {
               </p>
             </div>
             <p className="text-sm text-white/60">
-              Pay only $5 instead of $15 for your first purchase
+              Pay only $9.95 instead of $19.95 for your first purchase
             </p>
           </div>
         )}

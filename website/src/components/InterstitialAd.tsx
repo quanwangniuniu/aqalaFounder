@@ -229,7 +229,7 @@ export default function InterstitialAd() {
                 d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
               />
             </svg>
-            Remove Ads Forever - $15
+            Remove Ads Forever - $19.95
           </Link>
           <p className="text-white/30 text-xs mt-2">One-time payment, no subscription</p>
         </div>

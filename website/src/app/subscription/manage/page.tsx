@@ -128,7 +128,7 @@ export default function ManageSubscriptionPage() {
             </div>
             
             <p className="text-sm text-white/60 mb-4">
-              Share your invite link. When friends upgrade for the first time, they&apos;ll pay only $5 instead of $15.
+              Share your invite link. When friends upgrade for the first time, they&apos;ll pay only $9.95 instead of $19.95.
             </p>
             
             <div className="flex gap-2">

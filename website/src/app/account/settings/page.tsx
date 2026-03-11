@@ -219,7 +219,7 @@ export default function AccountSettingsPage() {
                   href="/subscription"
                   className="block w-full text-center py-3 text-sm font-semibold text-[#032117] bg-gradient-to-r from-[#D4AF37] to-[#c9a431] hover:from-[#E8D5A3] hover:to-[#D4AF37] rounded-xl transition-all shadow-lg shadow-[#D4AF37]/20"
                 >
-                  Go Ad-Free • $15 one-time
+                  Go Ad-Free • $19.95 one-time
                 </Link>
               </div>
             )}
