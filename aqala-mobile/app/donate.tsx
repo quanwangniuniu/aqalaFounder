@@ -1,11 +1,13 @@
-import { View, Text, Linking, TouchableOpacity } from "react-native";
-import { Link } from "expo-router";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export default function DonateScreen() {
   const { getAccentColor } = usePreferences();
   const accent = getAccentColor();
+  const router = useRouter();
+
   return (
     <WallpaperBackground edges={["top"]}>
       <View className="flex-1 items-center justify-center px-6">
@@ -14,18 +16,19 @@ export default function DonateScreen() {
         </View>
         <Text className="text-white text-xl font-semibold mb-2">Support Aqala</Text>
         <Text className="text-white/50 text-sm text-center mb-6 leading-5">
-          Your donation helps provide free access to Islamic knowledge and real-time translations worldwide.
+          Your support helps provide free access to Islamic knowledge and real-time translations worldwide.
+          Go ad-free with a one-time purchase.
         </Text>
         <TouchableOpacity
-          onPress={() => Linking.openURL("https://aqala.io/donate")}
+          onPress={() => router.replace("/subscription")}
           className="px-6 py-3 rounded-xl mb-4"
           style={{ backgroundColor: accent.base }}
         >
-          <Text className="text-white font-semibold text-base">Donate via Web</Text>
+          <Text className="text-white font-semibold text-base">Go Ad-Free</Text>
         </TouchableOpacity>
-        <Link href="/(tabs)" asChild>
+        <TouchableOpacity onPress={() => router.back()}>
           <Text className="text-white/50 text-sm">Go back</Text>
-        </Link>
+        </TouchableOpacity>
       </View>
     </WallpaperBackground>
   );

@@ -8,7 +8,9 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 interface TafsirModalProps {
   visible: boolean;
@@ -96,7 +98,7 @@ export default function TafsirModal({
   resourceName,
   loading,
   error,
-  title = "1-minute explanation",
+  title = "Tafsir",
   loadingText = "Loading explanation...",
 }: TafsirModalProps) {
   const contentBlocks = useMemo(
@@ -104,14 +106,18 @@ export default function TafsirModal({
     [tafsirText]
   );
 
+  const { getGradientColors, getAccentColor } = usePreferences();
+  const gradientColors = getGradientColors() as [string, string, ...string[]];
+  const accent = getAccentColor();
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
 
-        <View
+        <LinearGradient
+          colors={gradientColors}
           style={{
-            backgroundColor: "#0a1a14",
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             borderWidth: 1,
@@ -149,12 +155,12 @@ export default function TafsirModal({
                 width: 40,
                 height: 40,
                 borderRadius: 12,
-                backgroundColor: "rgba(212,175,55,0.15)",
+                backgroundColor: `${accent.base}26`,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Ionicons name="book" size={20} color="#D4AF37" />
+              <Ionicons name="book" size={20} color={accent.base} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 18, fontWeight: "600", color: "white" }}>
@@ -183,7 +189,7 @@ export default function TafsirModal({
           {/* Content */}
           {loading ? (
             <View style={{ paddingVertical: 56, alignItems: "center" }}>
-              <ActivityIndicator size="large" color="#D4AF37" />
+              <ActivityIndicator size="large" color={accent.base} />
               <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>
                 {loadingText}
               </Text>
@@ -216,7 +222,7 @@ export default function TafsirModal({
                     style={{
                       fontSize: 16,
                       fontWeight: "700",
-                      color: "#D4AF37",
+                      color: "white",
                       marginTop: i === 0 ? 0 : 24,
                       marginBottom: 10,
                       lineHeight: 22,
@@ -240,7 +246,7 @@ export default function TafsirModal({
               )}
             </ScrollView>
           ) : null}
-        </View>
+        </LinearGradient>
       </View>
     </Modal>
   );

@@ -200,9 +200,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         AppleAuthentication = require("expo-apple-authentication");
         Crypto = require("expo-crypto");
-      } catch {
+      } catch (e) {
+        console.error("Apple Sign-In native module unavailable:", e);
         throw new Error(
-          "Apple Sign-In is not available in this environment. Please use a custom dev build or sign in with email."
+          "Apple Sign-In is currently unavailable. Please try again later or sign in with email."
         );
       }
 

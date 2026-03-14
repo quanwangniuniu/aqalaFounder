@@ -32,6 +32,8 @@ interface IAPContextType {
   purchasePremium: () => void;
   restorePurchases: () => void;
   premiumProduct: any | null;
+  fetchError: string | null;
+  retryFetchProducts: () => Promise<void>;
 }
 
 const IAPContext = createContext<IAPContextType | undefined>(undefined);
@@ -47,6 +49,7 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
   const { refreshSubscription } = useSubscription();
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const handlePurchaseSuccess = useCallback(
     async (purchase: any) => {
@@ -62,13 +65,9 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
           status: "active",
           purchasedAt: new Date(),
           source: isApple ? "apple" : "google",
-          appleTransactionId: isApple
-            ? purchase.transactionId || null
-            : null,
+          appleTransactionId: isApple ? purchase.transactionId || null : null,
           appleProductId: isApple ? purchase.productId || null : null,
-          googleOrderId: !isApple
-            ? purchase.transactionId || null
-            : null,
+          googleOrderId: !isApple ? purchase.transactionId || null : null,
           googleProductId: !isApple ? purchase.productId || null : null,
         });
 
@@ -80,15 +79,18 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
         setIsPurchasing(false);
         Alert.alert(
           "Welcome to Premium!",
-          "Ads have been removed. Thank you for supporting Aqala."
+          "Ads have been removed. Thank you for supporting Aqala.",
         );
       } catch (err) {
         console.error("Error processing purchase:", err);
         setIsPurchasing(false);
-        Alert.alert("Error", "Purchase succeeded but failed to activate. Please tap Restore Purchases.");
+        Alert.alert(
+          "Error",
+          "Purchase succeeded but failed to activate. Please tap Restore Purchases.",
+        );
       }
     },
-    [user, refreshSubscription]
+    [user, refreshSubscription],
   );
 
   const handlePurchaseError = useCallback((error: any) => {
@@ -96,9 +98,23 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
     if (error?.code === ErrorCode?.UserCancelled) return;
     Alert.alert(
       "Purchase Failed",
-      error?.message || "Something went wrong. Please try again."
+      error?.message || "Something went wrong. Please try again.",
     );
   }, []);
+
+  const retryFetchProducts = useCallback(async () => {
+    setFetchError(null);
+    try {
+      await fetchProducts({
+        skus: [PREMIUM_PRODUCT_ID],
+        type: "in-app",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to load product";
+      setFetchError(msg);
+      console.warn("IAP fetchProducts error:", err);
+    }
+  }, [fetchProducts]);
 
   const {
     connected,
@@ -111,24 +127,32 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
   } = useIAP({
     onPurchaseSuccess: handlePurchaseSuccess,
     onPurchaseError: handlePurchaseError,
+    onError: (err) => {
+      setFetchError(err?.message ?? "An error occurred");
+      console.warn("IAP onError:", err);
+    },
   });
 
   useEffect(() => {
     if (connected) {
-      fetchProducts({
-        skus: [PREMIUM_PRODUCT_ID],
-        type: "in-app",
-      });
+      retryFetchProducts();
+    } else {
+      setFetchError(null);
     }
-  }, [connected, fetchProducts]);
+  }, [connected, retryFetchProducts]);
 
-  const premiumProduct = products.find(
-    (p: any) => p.id === PREMIUM_PRODUCT_ID || p.productId === PREMIUM_PRODUCT_ID
-  ) || null;
+  const premiumProduct =
+    products.find(
+      (p: any) =>
+        p.id === PREMIUM_PRODUCT_ID || p.productId === PREMIUM_PRODUCT_ID,
+    ) || null;
 
   const purchasePremium = useCallback(() => {
     if (!premiumProduct) {
-      Alert.alert("Not Available", "Unable to load product. Please try again later.");
+      Alert.alert(
+        "Not Available",
+        "Unable to load product. Please try again later.",
+      );
       return;
     }
     setIsPurchasing(true);
@@ -152,7 +176,10 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Restore error:", err);
       setIsRestoring(false);
-      Alert.alert("Restore Failed", "Unable to restore purchases. Please try again.");
+      Alert.alert(
+        "Restore Failed",
+        "Unable to restore purchases. Please try again.",
+      );
     }
   }, [user, getAvailablePurchases]);
 
@@ -162,7 +189,7 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
 
     const hasPremium = availablePurchases?.some(
       (p: any) =>
-        p.productId === PREMIUM_PRODUCT_ID || p.id === PREMIUM_PRODUCT_ID
+        p.productId === PREMIUM_PRODUCT_ID || p.id === PREMIUM_PRODUCT_ID,
     );
 
     if (hasPremium) {
@@ -187,7 +214,10 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
         });
     } else {
       setIsRestoring(false);
-      Alert.alert("No Purchases Found", "No previous premium purchase was found for this account.");
+      Alert.alert(
+        "No Purchases Found",
+        "No previous premium purchase was found for this account.",
+      );
     }
   }, [availablePurchases, isRestoring, user, refreshSubscription]);
 
@@ -201,6 +231,8 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
         purchasePremium,
         restorePurchases,
         premiumProduct,
+        fetchError,
+        retryFetchProducts,
       }}
     >
       {children}
@@ -217,10 +249,18 @@ function IAPProviderFallback({ children }: { children: ReactNode }) {
         isRestoring: false,
         isConnected: false,
         purchasePremium: () =>
-          Alert.alert("Not Available", "In-app purchases are not available in this build."),
+          Alert.alert(
+            "Not Available",
+            "In-app purchases are not available in this build.",
+          ),
         restorePurchases: () =>
-          Alert.alert("Not Available", "In-app purchases are not available in this build."),
+          Alert.alert(
+            "Not Available",
+            "In-app purchases are not available in this build.",
+          ),
         premiumProduct: null,
+        fetchError: null,
+        retryFetchProducts: async () => {},
       }}
     >
       {children}

@@ -82,7 +82,6 @@ export default function ClientApp({
   const arFinalSeen = useRef<Set<string>>(new Set());
   const [isListening, setIsListening] = useState(false);
   const [hasStopped, setHasStopped] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   // Ref to track stopped state synchronously (avoids stale closures)
   const stoppedRef = useRef<boolean>(false);
   // Flag to prevent Firestore from loading ANY translations until session starts
@@ -342,25 +341,6 @@ export default function ClientApp({
       }
     };
   }, [mosqueId, disconnectLiveKit, user]);
-
-  // Standalone listen page: tick elapsed timer every second while listening
-  useEffect(() => {
-    if (!isListening || mosqueId) {
-      setElapsedSeconds(0);
-      return;
-    }
-    const id = setInterval(() => {
-      if (standaloneSessionStartRef.current) {
-        setElapsedSeconds(
-          Math.floor((Date.now() - standaloneSessionStartRef.current) / 1000)
-        );
-      }
-    }, 1000);
-    return () => {
-      clearInterval(id);
-      setElapsedSeconds(0);
-    };
-  }, [isListening, mosqueId]);
 
   // Sync refs with state for live stream broadcast (avoids stale closures in setInterval)
   useEffect(() => {
@@ -1700,17 +1680,6 @@ ${translatedText || "(No translation recorded)"}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isListening && !mosqueId && (
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20"
-                  aria-label="Session time"
-                >
-                  <span className="text-[9px] text-[#D4AF37] font-semibold tabular-nums">
-                    {Math.floor(elapsedSeconds / 60)}:
-                    {(elapsedSeconds % 60).toString().padStart(2, "0")}
-                  </span>
-                </div>
-              )}
               {isListening && (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D4AF37]/10">
                   <span className="relative flex h-1.5 w-1.5">
@@ -1900,6 +1869,7 @@ ${translatedText || "(No translation recorded)"}
         open={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         content={getEmailContent()}
+        userEmail={user?.email}
         onSuccess={() => {
           setToast({ message: t("share.emailSent"), type: "success" });
         }}

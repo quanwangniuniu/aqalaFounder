@@ -65,8 +65,17 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Resend API error:", errorData);
+      let errorMessage = errorData.message || "Failed to send email";
+      // Resend sandbox mode only allows sending to the verified account email
+      if (
+        typeof errorMessage === "string" &&
+        errorMessage.toLowerCase().includes("you can only send testing emails")
+      ) {
+        errorMessage =
+          "To send to other addresses, verify a domain at resend.com. For now, use your own email address.";
+      }
       return NextResponse.json(
-        { error: errorData.message || "Failed to send email" },
+        { error: errorMessage },
         { status: 500 }
       );
     }

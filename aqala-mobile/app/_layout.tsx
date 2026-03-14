@@ -17,7 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 import * as Location from "expo-location";
 import { getRecordingPermissionsAsync } from "expo-audio";
-import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
+import { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { useFonts } from "expo-font";
 import { Platform, View, Text } from "react-native";
 import "../global.css";
@@ -75,6 +75,7 @@ function ThemedStack() {
       <Stack.Screen name="room/[roomId]" />
       <Stack.Screen name="user/[userId]" />
       <Stack.Screen name="privacy" />
+      <Stack.Screen name="how-it-works" />
       <Stack.Screen name="terms" />
       <Stack.Screen name="support" />
       <Stack.Screen name="insights" />
@@ -133,13 +134,16 @@ export default function RootLayout() {
     })();
   }, []);
 
-  // Request App Tracking Transparency permission (iOS only, required for AdMob)
+  // Fallback ATT request for returning users who completed onboarding but were never prompted
   useEffect(() => {
     if (!onboardingChecked || needsOnboarding) return;
     if (Platform.OS === "ios") {
       (async () => {
         try {
-          await requestTrackingPermissionsAsync();
+          const { status } = await getTrackingPermissionsAsync();
+          if (status === "undetermined") {
+            await requestTrackingPermissionsAsync();
+          }
         } catch {}
       })();
     }

@@ -108,7 +108,7 @@ export default function SettingsScreen() {
                       className="w-16 h-16 rounded-full items-center justify-center"
                       style={{ width: 64, height: 64, borderRadius: 32 }}
                     >
-                      <Text className="text-[#D4AF37] text-xl font-semibold">
+                      <Text className="text-[#D4AF37] text-xl font-semibold m-auto">
                         {getUserInitials(user)}
                       </Text>
                     </LinearGradient>
@@ -302,6 +302,19 @@ export default function SettingsScreen() {
                   <View className="flex-1">
                     <Text className="font-medium text-white">{t("settings.helpSupport")}</Text>
                     <Text className="text-xs text-white/50">{t("settings.helpSupportDesc")}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              </Link>
+
+              <Link href="/how-it-works" asChild>
+                <TouchableOpacity className="flex-row items-center gap-3 w-full p-4 bg-white/5 rounded-xl border border-white/5">
+                  <View className="w-10 h-10 rounded-full bg-[#D4AF37]/10 items-center justify-center">
+                    <Ionicons name="information-circle-outline" size={20} color="#D4AF37" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-medium text-white">{t("settings.howItWorks")}</Text>
+                    <Text className="text-xs text-white/50">{t("settings.howItWorksDesc")}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" />
                 </TouchableOpacity>

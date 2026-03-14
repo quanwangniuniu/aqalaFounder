@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Pressable,
+  Image,
   ActivityIndicator,
   Linking,
   Alert,
@@ -49,9 +50,7 @@ export default function ListenHomeScreen() {
   const [tafsirModalVisible, setTafsirModalVisible] = useState(false);
   const [tafsirLoading, setTafsirLoading] = useState(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
-  const [tafsirResourceName, setTafsirResourceName] = useState<string | null>(
-    null,
-  );
+  const [tafsirResourceName, setTafsirResourceName] = useState<string | null>(null);
   const [tafsirError, setTafsirError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -194,10 +193,26 @@ export default function ListenHomeScreen() {
             className="w-full flex-1"
             style={{ maxWidth: 554, alignSelf: "center" }}
           >
-            {/* Premium / Sign In badge */}
-            {!authLoading && (
-              <View className="flex-row justify-end mb-1">
-                {user ? (
+            {/* Top bar with centered logo */}
+            <View className="flex-row items-center justify-center mb-1" style={{ position: "relative" }}>
+              <Link href="/(tabs)" asChild>
+                <Pressable>
+                  <Image
+                    source={require("@/assets/aqala-logo.png")}
+                    style={{
+                      width: 84,
+                      height: 44,
+                      tintColor: "white",
+                    }}
+                    resizeMode="contain"
+                  />
+                </Pressable>
+              </Link>
+
+              {/* Premium / Sign In badge - absolutely positioned right */}
+              {!authLoading && (
+                <View style={{ position: "absolute", right: 0, top: 0, bottom: 0, justifyContent: "center" }}>
+                  {user ? (
                   isPremium ? (
                     <View className="px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30">
                       <Text className="text-[11px] font-medium text-[#D4AF37]">
@@ -214,8 +229,9 @@ export default function ListenHomeScreen() {
                     </TouchableOpacity>
                   </Link>
                 )}
-              </View>
-            )}
+                </View>
+              )}
+            </View>
 
             {/* Hero Section */}
             <View className="mt-8 mb-6 items-center">

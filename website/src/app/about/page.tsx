@@ -38,6 +38,16 @@ export default function AboutPage() {
             <p className="text-white/80 text-sm leading-relaxed mt-3">
               Our mission is to make knowledge and connection accessible across languages, with a focus on serving communities that benefit from instant, accurate translation in both speech and text.
             </p>
+            <Link
+              href="/how-it-works"
+              className="inline-flex items-center gap-2 mt-3 text-[#D4AF37] hover:underline font-medium text-sm"
+            >
+              How Aqala Works
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <p className="text-white/50 text-xs mt-1">Sources, AI transparency, and methodology.</p>
           </section>
 
           <section>
