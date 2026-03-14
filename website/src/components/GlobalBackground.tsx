@@ -1,10 +1,17 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export default function GlobalBackground() {
+  const pathname = usePathname();
   const { getWallpaperStyle } = usePreferences();
   const wallpaperStyle = getWallpaperStyle();
+
+  // Muslim Pro demo uses its own light theme
+  if (pathname?.startsWith("/muslimpro-demo")) {
+    return <div className="fixed inset-0 z-0 pointer-events-none bg-white" />;
+  }
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">

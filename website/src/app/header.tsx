@@ -35,8 +35,8 @@ export default function Header() {
     return () => unsubscribe();
   }, [user]);
 
-  // Hide header on landing page
-  if (pathname === "/") return null;
+  // Hide header on landing page and Muslim Pro demo (all demo routes)
+  if (pathname === "/" || pathname?.startsWith("/muslimpro-demo")) return null;
 
   return (
     <header className="relative z-50">

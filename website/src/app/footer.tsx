@@ -26,8 +26,8 @@ export default function Footer() {
     }
   }, [showLangMenu]);
 
-  // Hide footer on listen page and messages pages - they have their own controls
-  if (pathname === "/listen" || pathname?.startsWith("/messages")) {
+  // Hide footer on listen, messages, and Muslim Pro demo pages
+  if (pathname === "/listen" || pathname?.startsWith("/messages") || pathname?.startsWith("/muslimpro-demo")) {
     return null;
   }
 
