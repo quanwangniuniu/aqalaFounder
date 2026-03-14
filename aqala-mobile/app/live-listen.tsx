@@ -12,10 +12,13 @@ import {
   getRecordingPermissionsAsync,
   requestRecordingPermissionsAsync,
 } from "expo-audio";
+import { useKeepAwake } from "expo-keep-awake";
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
 
 export default function ListenScreen() {
+  // Prevent screen from sleeping while listening/translating
+  useKeepAwake();
   const { user } = useAuth();
   const { language } = useLanguage();
   const { getGradientColors } = usePreferences();

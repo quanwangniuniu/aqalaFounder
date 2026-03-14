@@ -36,12 +36,19 @@ export default function Footer() {
       
       <div className="relative mx-auto max-w-[600px] px-6 py-5">
         {/* Policy / site info links */}
-        <div className="flex items-center justify-center gap-4 mb-4 text-sm">
+        <div className="flex items-center justify-center gap-4 mb-4 text-sm flex-wrap">
           <Link
             href="/privacy"
             className="text-white/60 hover:text-[#D4AF37] transition-colors duration-200"
           >
             Privacy
+          </Link>
+          <span className="w-1 h-1 rounded-full bg-white/20" aria-hidden />
+          <Link
+            href="/how-it-works"
+            className="text-white/60 hover:text-[#D4AF37] transition-colors duration-200"
+          >
+            How it works
           </Link>
           <span className="w-1 h-1 rounded-full bg-white/20" aria-hidden />
           <Link

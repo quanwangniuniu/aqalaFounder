@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { requestRecordingPermissionsAsync, getRecordingPermissionsAsync } from "expo-audio";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage, LANGUAGE_OPTIONS, type LanguageOption } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -250,6 +251,9 @@ export default function OnboardingScreen() {
 
         if (locStatus.granted && micStatus.granted) {
           await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+          if (Platform.OS === "ios") {
+            try { await requestTrackingPermissionsAsync(); } catch {}
+          }
           completeFirstVisit();
           router.replace("/(tabs)");
         }
@@ -285,6 +289,9 @@ export default function OnboardingScreen() {
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    if (Platform.OS === "ios") {
+      try { await requestTrackingPermissionsAsync(); } catch {}
+    }
     completeFirstVisit();
     router.replace("/(tabs)");
   };
