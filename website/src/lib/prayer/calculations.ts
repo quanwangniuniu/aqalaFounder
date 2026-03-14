@@ -197,6 +197,15 @@ function parseTime(timeStr: string, date: Date): Date {
 }
 
 /**
+ * Imsak is typically 10 minutes before Fajr (fasting begins)
+ */
+export function getImsakTime(fajr: Date): Date {
+    const imsak = new Date(fajr);
+    imsak.setMinutes(imsak.getMinutes() - 10);
+    return imsak;
+}
+
+/**
  * Format time as HH:MM AM/PM
  */
 export function formatPrayerTime(date: Date): string {

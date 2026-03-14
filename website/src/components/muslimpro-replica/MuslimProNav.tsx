@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
+const SCROLL_HIDE_AFTER = 900;
+
 const NAV_LINKS = [
   { label: "About Us", href: "/muslimpro-demo/about" },
   {
@@ -11,7 +13,7 @@ const NAV_LINKS = [
     href: "/muslimpro-demo/features",
     dropdown: [
       { label: "Core Features", href: "/muslimpro-demo/features" },
-      { label: "Hijri Calendar", href: "/muslimpro-demo/features" },
+      { label: "Hijri Calendar", href: "/muslimpro-demo/islamic-calendar" },
       { label: "Ummah Pro", href: "/muslimpro-demo/ummah-pro" },
       { label: "Academy", href: "/muslimpro-demo/academy" },
     ],
@@ -34,6 +36,7 @@ const NAV_LINKS = [
     href: "/subscription",
     dropdown: [
       { label: "Get Premium", href: "/subscription" },
+      { label: "Special Offer", href: "/muslimpro-demo/special-offer" },
       { label: "Gift Premium", href: "/subscription" },
       { label: "Redeem Premium", href: "/subscription" },
     ],
@@ -57,6 +60,8 @@ export default function MuslimProNav() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
   const navRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,8 +76,33 @@ export default function MuslimProNav() {
     }
   }, [openDropdown]);
 
+  useEffect(() => {
+    function handleScroll() {
+      const y = window.scrollY;
+      const last = lastScrollYRef.current;
+      setNavVisible(y <= SCROLL_HIDE_AFTER || y < last);
+      lastScrollYRef.current = y;
+    }
+    let ticking = false;
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <nav className="sticky top-[42px] left-0 right-0 z-50 bg-[#0a5c3e]">
+    <nav
+      className={`sticky top-[42px] left-0 right-0 z-50 bg-[#0a5c3e] transition-transform duration-300 ease-out ${
+        navVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 md:h-16">
           {/* Logo - Muslim Pro / Qalbox from clone */}
@@ -104,7 +134,7 @@ export default function MuslimProNav() {
                     </svg>
                   </button>
                   {openDropdown === link.label && (
-                    <div className="absolute top-full left-0 mt-1 w-48 py-2 bg-[#0a5c3e] border border-white/10 rounded-lg shadow-xl">
+                    <div data-mp-dropdown className="absolute top-full left-0 mt-1 w-48 py-2 bg-[#0a5c3e] border border-white/10 rounded-lg">
                       {link.dropdown.map((d) => (
                         <Link
                           key={d.label}

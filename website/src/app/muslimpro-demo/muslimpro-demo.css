@@ -1,0 +1,57 @@
+/* Muslim Pro Demo - typography & effects from Muslimpro_v2 clone
+ * Body: system-ui stack (matches www.muslimpro.com)
+ * Headings/Arabic: Poppins + Edu NSW ACT Foundation
+ */
+html {
+  scroll-behavior: smooth;
+}
+.muslimpro-demo-root {
+  --mp-transition-duration: 0.3s;
+  --mp-dropdown-shadow: 0 50px 100px -20px rgba(50, 50, 93, 0.25),
+    0 30px 60px -30px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-muslimpro-sans), system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.muslimpro-demo-root [dir="rtl"],
+.muslimpro-demo-arabic {
+  font-family: var(--font-muslimpro-arabic), var(--font-muslimpro-sans),
+    system-ui, sans-serif;
+}
+
+/* Transitions - match Breakdance menu/link timing */
+.muslimpro-demo-root a,
+.muslimpro-demo-root button {
+  transition: color var(--mp-transition-duration) ease,
+    background-color var(--mp-transition-duration) ease,
+    border-color var(--mp-transition-duration) ease,
+    opacity var(--mp-transition-duration) ease,
+    transform var(--mp-transition-duration) ease;
+}
+
+/* Dropdown shadow - match Muslim Pro breakdance-dropdown-body */
+.muslimpro-demo-root [data-mp-dropdown] {
+  box-shadow: var(--mp-dropdown-shadow);
+  transition: opacity var(--mp-transition-duration) ease,
+    visibility var(--mp-transition-duration) ease,
+    transform var(--mp-transition-duration) ease;
+}
+
+/* Card hover - scale + shadow */
+.muslimpro-demo-root .mp-card-hover {
+  transition: transform var(--mp-transition-duration) ease,
+    box-shadow var(--mp-transition-duration) ease;
+}
+.muslimpro-demo-root .mp-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12),
+    0 8px 16px -8px rgba(0, 0, 0, 0.08);
+}
+
+/* Image hover - subtle scale */
+.muslimpro-demo-root .mp-img-hover img {
+  transition: transform var(--mp-transition-duration) ease;
+}
+.muslimpro-demo-root .mp-img-hover:hover img {
+  transform: scale(1.05);
+}

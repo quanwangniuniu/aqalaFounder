@@ -35,6 +35,7 @@ interface PrayerContextType {
   setAdjustment: (prayer: keyof PrayerSettings['adjustments'], minutes: number) => void;
   refreshLocation: () => Promise<void>;
   setManualLocation: (lat: number, lng: number) => void;
+  setLocationFromSearch: (lat: number, lng: number, city?: string, country?: string) => void;
   refreshPrayerTimes: () => Promise<void>;
 }
 
@@ -157,6 +158,11 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     setLocation({ latitude: lat, longitude: lng });
   }, []);
 
+  // Set location from search (with city/country)
+  const setLocationFromSearch = useCallback((lat: number, lng: number, city?: string, country?: string) => {
+    setLocation({ latitude: lat, longitude: lng, city, country });
+  }, []);
+
   // Fetch prayer times when location or settings change
   useEffect(() => {
     if (location) {
@@ -226,6 +232,7 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
         setAdjustment,
         refreshLocation,
         setManualLocation,
+        setLocationFromSearch,
         refreshPrayerTimes,
       }}
     >

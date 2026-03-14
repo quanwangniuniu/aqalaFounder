@@ -34,13 +34,13 @@ export default function MuslimProFeaturesGrid() {
             <Link
               key={f.title}
               href={f.href}
-              className="group flex flex-col items-center text-center"
+              className="group mp-card-hover flex flex-col items-center text-center p-4 rounded-xl bg-white border border-gray-100"
             >
-              <div className="w-24 h-24 md:w-32 md:h-32 mb-3 flex items-center justify-center overflow-hidden rounded-lg">
+              <div className="mp-img-hover w-24 h-24 md:w-32 md:h-32 mb-3 flex items-center justify-center overflow-hidden rounded-lg">
                 <img
                   src={`/muslimpro-demo/icons/${f.icon}`}
                   alt={f.title}
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <span className="text-sm font-medium text-gray-900 group-hover:text-[#00a651] transition-colors">

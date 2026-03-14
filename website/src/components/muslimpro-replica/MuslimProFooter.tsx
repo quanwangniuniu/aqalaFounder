@@ -15,6 +15,7 @@ const WHAT_WE_DO = [
 const FOR_USERS = [
   { label: "Gift Premium", href: "/subscription" },
   { label: "Redeem Premium", href: "/subscription" },
+  { label: "Giving by Muslim Pro", href: "/muslimpro-demo/giving" },
   { label: "Contact Us", href: "/support" },
 ];
 
@@ -25,6 +26,7 @@ const FOR_BUSINESS = [
 
 const LEGAL = [
   { label: "Help Center", href: "/support" },
+  { label: "Contact Support", href: "/support" },
   { label: "Contact Press", href: "#" },
   { label: "Cookies Policy", href: "/privacy" },
   { label: "Privacy Policy", href: "/privacy" },
@@ -33,20 +35,20 @@ const LEGAL = [
 ];
 
 const languages = [
-  { code: "id", label: "Bahasa Indonesia" },
-  { code: "ms", label: "Bahasa Malay" },
-  { code: "fr", label: "Français" },
-  { code: "ar", label: "العربية" },
-  { code: "ru", label: "русский" },
-  { code: "bn", label: "বাংলা" },
-  { code: "zh", label: "中文" },
-  { code: "de", label: "Deutsch" },
-  { code: "es", label: "Español" },
-  { code: "fa", label: "فارسی" },
-  { code: "hi", label: "हिन्दी" },
-  { code: "tr", label: "Türkçe" },
-  { code: "ur", label: "اردو" },
-  { code: "en", label: "English" },
+  { code: "en", flag: "🇬🇧", label: "English" },
+  { code: "id", flag: "🇮🇩", label: "Bahasa Indonesia" },
+  { code: "ms", flag: "🇲🇾", label: "Bahasa Malay" },
+  { code: "fr", flag: "🇫🇷", label: "Français" },
+  { code: "ar", flag: "🇸🇦", label: "العربية" },
+  { code: "ru", flag: "🇷🇺", label: "русский" },
+  { code: "bn", flag: "🇧🇩", label: "বাংলা" },
+  { code: "zh", flag: "🇨🇳", label: "中文" },
+  { code: "de", flag: "🇩🇪", label: "Deutsch" },
+  { code: "es", flag: "🇪🇸", label: "Español" },
+  { code: "fa", flag: "🇮🇷", label: "فارسی" },
+  { code: "hi", flag: "🇮🇳", label: "हिन्दी" },
+  { code: "tr", flag: "🇹🇷", label: "Türkçe" },
+  { code: "ur", flag: "🇵🇰", label: "اردو" },
 ];
 
 function FooterColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
@@ -114,15 +116,16 @@ export default function MuslimProFooter() {
 
         {/* Language selector */}
         <div className="mt-8 pt-6 border-t border-gray-800">
-          <p className="text-gray-500 text-xs mb-3">en_US English</p>
+          <p className="text-gray-500 text-xs mb-3">🇬🇧 English</p>
           <div className="flex flex-wrap gap-2">
             {languages.map((lang) => (
               <Link
                 key={lang.code}
                 href={`?lang=${lang.code}`}
-                className="text-gray-400 hover:text-white text-xs transition-colors"
+                className="text-gray-400 hover:text-white text-xs transition-colors inline-flex items-center gap-1"
               >
-                {lang.label}
+                <span>{lang.flag}</span>
+                <span>{lang.label}</span>
               </Link>
             ))}
           </div>

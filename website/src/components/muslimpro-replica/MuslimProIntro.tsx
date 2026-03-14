@@ -6,7 +6,7 @@ export default function MuslimProIntro() {
   return (
     <section className="py-16 md:py-24 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2" dir="rtl">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 muslimpro-demo-arabic" dir="rtl">
           إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ
         </h1>
         <p className="text-lg text-gray-600 mb-6">

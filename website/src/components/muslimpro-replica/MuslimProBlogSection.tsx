@@ -81,7 +81,7 @@ export default function MuslimProBlogSection() {
           {MOCK_POSTS.map((post) => (
             <article
               key={post.slug}
-              className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-[#00a651]/30 transition-all duration-300"
+              className="group mp-card-hover border border-gray-200 rounded-2xl overflow-hidden hover:border-[#00a651]/30"
             >
               <div className="h-40 bg-gradient-to-br from-[#00a651]/10 to-emerald-500/10 flex items-center justify-center">
                 <span className="text-4xl text-[#00a651]/30">﴾</span>
