@@ -7,6 +7,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CharityModal from "./charity-modal";
 import VerseModal from "@/components/VerseModal";
@@ -17,6 +18,7 @@ import {
   subscribeTranslations,
   TranslationEntry,
 } from "@/lib/firebase/translationHistory";
+import { savePastTranslation } from "@/lib/firebase/userPastTranslations";
 import { updateBroadcastActivity } from "@/lib/firebase/rooms";
 import {
   startListeningSession,
@@ -178,6 +180,8 @@ export default function ClientApp({
   >([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const [savingPastTranslation, setSavingPastTranslation] = useState(false);
+  const [pastTranslationSaved, setPastTranslationSaved] = useState(false);
   const summaryScrollRef = useRef<HTMLDivElement>(null);
   const qaEndRef = useRef<HTMLDivElement>(null);
   // Track loaded translation IDs to avoid duplicates
@@ -1461,34 +1465,79 @@ export default function ClientApp({
     const sourceLangLabel = detectedLang
       ? LANG_OPTIONS.find((l) => l.code === detectedLang)?.label || detectedLang
       : "Unknown";
+    const escape = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const safeSource = (sourceText || "(No source text recorded)")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/\n/g, "<br>");
+    const safeTranslation = (translatedText || "(No translation recorded)")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/\n/g, "<br>");
+    const safeSourceLang = escape(sourceLangLabel);
+    const safeLang = escape(langLabel);
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#f5f5f5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:24px 0;">
+<tr><td align="center" style="padding:0 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+<tr><td style="padding:32px 32px 24px;border-bottom:1px solid #eee;">
+<h1 style="margin:0;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:-0.02em;">Quran Translation Record</h1>
+<p style="margin:12px 0 0;font-size:14px;color:#666;">${new Date().toLocaleString()}</p>
+<p style="margin:8px 0 0;font-size:14px;color:#666;"><strong>Source:</strong> ${safeSourceLang} &nbsp;|&nbsp; <strong>Translation:</strong> ${safeLang}</p>
+</td></tr>
+<tr><td style="padding:24px 32px;">
+<p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.05em;">Original Text</p>
+<p style="margin:0;padding:16px;background:#f9f9f9;border-radius:6px;font-size:16px;line-height:1.8;color:#333;border-left:3px solid #D4AF37;">${safeSource}</p>
+</td></tr>
+<tr><td style="padding:0 32px 24px;">
+<p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.05em;">Translation</p>
+<p style="margin:0;padding:16px;background:#f9f9f9;border-radius:6px;font-size:15px;line-height:1.8;color:#333;border-left:3px solid #D4AF37;">${safeTranslation}</p>
+</td></tr>
+<tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #eee;text-align:center;">
+<p style="margin:0;font-size:13px;color:#888;">Powered by <strong style="color:#1a1a1a;">Aqala</strong></p>
+<p style="margin:4px 0 0;"><a href="https://aqala.org" style="color:#D4AF37;text-decoration:none;font-weight:500;">aqala.org</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 
     return {
-      subject: `Quran Translation - ${new Date().toLocaleDateString()}`,
-      body: `
-══════════════════════════════════════
-       QURAN TRANSLATION RECORD
-══════════════════════════════════════
+      subject: `Quran Translation – ${new Date().toLocaleDateString()}`,
+      body: `QURAN TRANSLATION RECORD
 
-📅 Date: ${new Date().toLocaleString()}
-🌐 Source Language: ${sourceLangLabel}
-🔄 Translation Language: ${langLabel}
+Date: ${new Date().toLocaleString()}
+Source Language: ${sourceLangLabel}
+Translation Language: ${langLabel}
 
-──────────────────────────────────────
-           ORIGINAL TEXT
-──────────────────────────────────────
+---
+
+ORIGINAL TEXT
 
 ${sourceText || "(No source text recorded)"}
 
-──────────────────────────────────────
-          TRANSLATION
-──────────────────────────────────────
+---
+
+TRANSLATION
 
 ${translatedText || "(No translation recorded)"}
 
-══════════════════════════════════════
-      Powered by Aqala - aqala.io
-══════════════════════════════════════
-`.trim(),
+---
+
+Powered by Aqala
+https://aqala.org
+`,
+      html,
     };
   }, [srcStable, refinedParagraphs, targetLang, detectedLang, LANG_OPTIONS]);
 
@@ -1578,6 +1627,27 @@ ${translatedText || "(No translation recorded)"}
       setIsAskingQuestion(false);
     }
   }, [currentQuestion, summaryText, refinedParagraphs, summaryConversation, targetLang, isAskingQuestion]);
+
+  const handleSavePastTranslation = useCallback(async () => {
+    if (!user?.uid || savingPastTranslation || pastTranslationSaved || refinedParagraphs.length === 0) return;
+    setSavingPastTranslation(true);
+    try {
+      await savePastTranslation(user.uid, {
+        sourceText: srcStable,
+        translatedParagraphs: refinedParagraphs,
+        verseReferences: verseReferences.length ? verseReferences : [],
+        sourceLang: detectedLang ?? "en",
+        targetLang,
+      });
+      setPastTranslationSaved(true);
+      setToast({ message: t("listen.translationSaved") ?? "Translation saved", type: "success" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save";
+      setToast({ message, type: "error" });
+    } finally {
+      setSavingPastTranslation(false);
+    }
+  }, [user?.uid, savingPastTranslation, pastTranslationSaved, refinedParagraphs, srcStable, verseReferences, detectedLang, targetLang, t]);
 
   // Auto-scroll to show new Q&A messages
   useEffect(() => {
@@ -2356,10 +2426,36 @@ ${translatedText || "(No translation recorded)"}
                 </svg>
                 {t("share.email")}
               </button>
+              {user && (
+                <button
+                  onClick={handleSavePastTranslation}
+                  disabled={savingPastTranslation || pastTranslationSaved}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white rounded-full hover:bg-white/15 active:scale-[0.98] transition-all border border-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {savingPastTranslation ? (t("listen.saving") ?? "Saving...") : pastTranslationSaved ? (t("listen.saved") ?? "Saved") : (t("listen.saveTranslation") ?? "Save translation")}
+                </button>
+              )}
             </div>
             
             {/* Secondary actions */}
             <div className="flex items-center justify-center gap-3 pt-2">
+              {user && (
+                <Link
+                  href="/listen/past"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  Past Translations
+                </Link>
+              )}
               <button
                 onClick={() => router.push("/")}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
