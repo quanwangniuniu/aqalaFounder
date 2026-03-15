@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   PrayerTimes,
   PrayerSettings,
@@ -35,6 +35,7 @@ interface PrayerContextType {
   setAdjustment: (prayer: keyof PrayerSettings['adjustments'], minutes: number) => void;
   refreshLocation: () => Promise<void>;
   setManualLocation: (lat: number, lng: number) => void;
+  setLocationFromSearch: (lat: number, lng: number, city?: string, country?: string) => void;
   refreshPrayerTimes: () => Promise<void>;
 }
 
@@ -42,6 +43,14 @@ const PrayerContext = createContext<PrayerContextType | undefined>(undefined);
 
 const STORAGE_KEY_SETTINGS = 'aqala_prayer_settings';
 const STORAGE_KEY_LOCATION = 'aqala_prayer_location';
+
+// Default location when user hasn't granted permission or on first load (Pasadena, United States)
+const DEFAULT_LOCATION: Location = {
+  latitude: 34.1478,
+  longitude: -118.1445,
+  city: 'Pasadena',
+  country: 'United States',
+};
 
 export function PrayerProvider({ children }: { children: React.ReactNode }) {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
@@ -87,24 +96,24 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [location]);
 
-  // Fetch prayer times from API
+  // Fetch prayer times from API (use default location when user location not yet available)
+  const effectiveLocation = location ?? DEFAULT_LOCATION;
+  const lat = effectiveLocation.latitude;
+  const lng = effectiveLocation.longitude;
+
   const refreshPrayerTimes = useCallback(async () => {
-    if (!location) return;
-    
     try {
-      const times = await fetchPrayerTimes(
-        new Date(),
-        location.latitude,
-        location.longitude,
-        settings
-      );
+      const times = await fetchPrayerTimes(new Date(), lat, lng, settings);
       setPrayerTimes(times);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch prayer times:', err);
       setError('Failed to load prayer times. Please try again.');
     }
-  }, [location, settings]);
+  }, [lat, lng, settings]);
+
+  const refreshPrayerTimesRef = useRef(refreshPrayerTimes);
+  refreshPrayerTimesRef.current = refreshPrayerTimes;
 
   // Get user's location
   const refreshLocation = useCallback(async () => {
@@ -157,32 +166,28 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     setLocation({ latitude: lat, longitude: lng });
   }, []);
 
-  // Fetch prayer times when location or settings change
-  useEffect(() => {
-    if (location) {
-      refreshPrayerTimes();
-    }
-  }, [location, settings, refreshPrayerTimes]);
+  // Set location from search (with city/country)
+  const setLocationFromSearch = useCallback((lat: number, lng: number, city?: string, country?: string) => {
+    setLocation({ latitude: lat, longitude: lng, city, country });
+  }, []);
 
-  // Auto-refresh location on mount if not saved
+  // Fetch prayer times when location or settings change, and refresh every minute
   useEffect(() => {
-    if (!location && typeof window !== 'undefined') {
-      refreshLocation();
-    } else {
-      setLoading(false);
-    }
-  }, [location, refreshLocation]);
-
-  // Update prayer times every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (location) {
-        refreshPrayerTimes();
-      }
-    }, 60000); // Every minute
-
+    const refresh = () => refreshPrayerTimesRef.current();
+    refresh();
+    const interval = setInterval(refresh, 60000);
     return () => clearInterval(interval);
-  }, [location, refreshPrayerTimes]);
+  }, [lat, lng, settings]);
+
+  // Auto-refresh location on mount if not saved (try geolocation, fallback to default)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (location) {
+      setLoading(false);
+      return;
+    }
+    refreshLocation().finally(() => setLoading(false));
+  }, [location, refreshLocation]);
 
   // Settings update functions
   const updateSettings = useCallback((newSettings: Partial<PrayerSettings>) => {
@@ -226,6 +231,7 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
         setAdjustment,
         refreshLocation,
         setManualLocation,
+        setLocationFromSearch,
         refreshPrayerTimes,
       }}
     >
