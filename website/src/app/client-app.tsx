@@ -1461,34 +1461,79 @@ export default function ClientApp({
     const sourceLangLabel = detectedLang
       ? LANG_OPTIONS.find((l) => l.code === detectedLang)?.label || detectedLang
       : "Unknown";
+    const escape = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const safeSource = (sourceText || "(No source text recorded)")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/\n/g, "<br>");
+    const safeTranslation = (translatedText || "(No translation recorded)")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/\n/g, "<br>");
+    const safeSourceLang = escape(sourceLangLabel);
+    const safeLang = escape(langLabel);
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#f5f5f5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:24px 0;">
+<tr><td align="center" style="padding:0 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+<tr><td style="padding:32px 32px 24px;border-bottom:1px solid #eee;">
+<h1 style="margin:0;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:-0.02em;">Quran Translation Record</h1>
+<p style="margin:12px 0 0;font-size:14px;color:#666;">${new Date().toLocaleString()}</p>
+<p style="margin:8px 0 0;font-size:14px;color:#666;"><strong>Source:</strong> ${safeSourceLang} &nbsp;|&nbsp; <strong>Translation:</strong> ${safeLang}</p>
+</td></tr>
+<tr><td style="padding:24px 32px;">
+<p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.05em;">Original Text</p>
+<p style="margin:0;padding:16px;background:#f9f9f9;border-radius:6px;font-size:16px;line-height:1.8;color:#333;border-left:3px solid #D4AF37;">${safeSource}</p>
+</td></tr>
+<tr><td style="padding:0 32px 24px;">
+<p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.05em;">Translation</p>
+<p style="margin:0;padding:16px;background:#f9f9f9;border-radius:6px;font-size:15px;line-height:1.8;color:#333;border-left:3px solid #D4AF37;">${safeTranslation}</p>
+</td></tr>
+<tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #eee;text-align:center;">
+<p style="margin:0;font-size:13px;color:#888;">Powered by <strong style="color:#1a1a1a;">Aqala</strong></p>
+<p style="margin:4px 0 0;"><a href="https://aqala.org" style="color:#D4AF37;text-decoration:none;font-weight:500;">aqala.org</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 
     return {
-      subject: `Quran Translation - ${new Date().toLocaleDateString()}`,
-      body: `
-══════════════════════════════════════
-       QURAN TRANSLATION RECORD
-══════════════════════════════════════
+      subject: `Quran Translation – ${new Date().toLocaleDateString()}`,
+      body: `QURAN TRANSLATION RECORD
 
-📅 Date: ${new Date().toLocaleString()}
-🌐 Source Language: ${sourceLangLabel}
-🔄 Translation Language: ${langLabel}
+Date: ${new Date().toLocaleString()}
+Source Language: ${sourceLangLabel}
+Translation Language: ${langLabel}
 
-──────────────────────────────────────
-           ORIGINAL TEXT
-──────────────────────────────────────
+---
+
+ORIGINAL TEXT
 
 ${sourceText || "(No source text recorded)"}
 
-──────────────────────────────────────
-          TRANSLATION
-──────────────────────────────────────
+---
+
+TRANSLATION
 
 ${translatedText || "(No translation recorded)"}
 
-══════════════════════════════════════
-      Powered by Aqala - aqala.io
-══════════════════════════════════════
-`.trim(),
+---
+
+Powered by Aqala
+https://aqala.org
+`,
+      html,
     };
   }, [srcStable, refinedParagraphs, targetLang, detectedLang, LANG_OPTIONS]);
 
