@@ -17,7 +17,7 @@ interface BlogPost {
 const MOCK_POSTS: BlogPost[] = [
   {
     slug: "ramadan-recharge-2026",
-    title: "Ramadan Re:Charge 2026 | Letter from Nafees, Muslim Pro CEO",
+    title: "Ramadan Re:Charge 2026 | Letter from the Aqala Team",
     excerpt: "As the weight of daily life continues, how do we stay present in our worship? Our CEO shares how Ramadan Re:Charge supports your journey through every sincere return.",
     date: "February 12, 2026",
     href: "#",
@@ -74,7 +74,7 @@ export default function MuslimProBlogSection() {
           Islamic Resources for Daily Inspiration
         </h2>
         <p className="text-lg text-gray-600 mb-12 max-w-3xl">
-          Besides the daily tools like prayer times and the holy Quran, Muslim Pro also produces and shares useful and beneficial Islamic articles, guides and infographics to inspire you to be a better Muslim every day.
+          Besides the daily tools like prayer times and the holy Quran, Aqala also produces and shares useful and beneficial Islamic articles, guides and infographics to inspire you to be a better Muslim every day.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -108,10 +108,10 @@ export default function MuslimProBlogSection() {
 
         <div className="mt-12 text-center">
           <Link
-            href="/muslimpro-demo/blog"
+            href="/app/blog"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors"
           >
-            Read The Muslim Pro Blog
+            Read The Aqala Blog
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>

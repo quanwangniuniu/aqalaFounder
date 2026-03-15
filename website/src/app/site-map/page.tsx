@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 const links: { href: string; label: string; description: string }[] = [
   { href: "/", label: "Home", description: "Main landing page and app entry." },
+  { href: "/landing", label: "Landing (Preview)", description: "New landing page design (preview)." },
   { href: "/privacy", label: "Privacy Policy", description: "How we collect, use, and protect your data." },
   { href: "/how-it-works", label: "How Aqala Works", description: "Our sources, AI transparency, and methodology." },
   { href: "/about", label: "About & Contact", description: "About Aqala and how to get in touch." },

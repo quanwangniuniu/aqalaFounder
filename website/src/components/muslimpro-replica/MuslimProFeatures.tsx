@@ -22,8 +22,8 @@ const features = [
     hover: "hover:border-rose-300",
   },
   {
-    title: "Upgrade to Muslim Pro Premium!",
-    desc: "Ads help us keep Muslim Pro running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app's growth.",
+    title: "Upgrade to Aqala Premium!",
+    desc: "Ads help us keep Aqala running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app's growth.",
     cta: "Upgrade to Premium",
     href: "/subscription",
     gradient: "from-[#00a651]/10 to-emerald-500/10",

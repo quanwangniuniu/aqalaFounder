@@ -9,7 +9,7 @@ export default function MuslimProAiDeenSection() {
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           <div className="flex-1">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Ask AiDeen - Muslim Pro&apos;s AI Islamic Chatbot
+              Real-time Translation - Aqala&apos;s AI-Powered Understanding
             </h2>
             <p className="text-lg text-gray-600 mb-6">
               Ask AiDeen is a companion in your journey of faith, offering you information about topics in Islam on-the-go. Ask AiDeen is trained to answer your Islamic queries based on the holy Quran and authentic hadiths.

@@ -9,7 +9,7 @@ export default function MuslimProHero() {
       {/* Background image (poster for video - Muslim Pro uses video) */}
       <div className="absolute inset-0">
         <Image
-          src="/muslimpro-demo/homepage/home_img.png"
+          src="/app/homepage/home_img.png"
           alt=""
           fill
           className="object-cover"
@@ -27,36 +27,32 @@ export default function MuslimProHero() {
           Practice Your Deen - Anytime, Anywhere
         </p>
 
-        {/* App Store + Google Play buttons - match Muslim Pro */}
+        {/* App Store + Google Play buttons - Aqala (link to web app until mobile apps available) */}
         <div className="flex flex-wrap justify-center gap-4">
-          <a
-            href="https://apps.apple.com/app/muslim-pro-azan-quran-qibla/id388389451"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/listen"
             className="inline-block hover:opacity-90 transition-opacity"
           >
             <img
-              src="/muslimpro-demo/homepage/appstore-200-69.png"
-              alt="Download on App Store"
+              src="/app/homepage/appstore-200-69.png"
+              alt="Open Aqala on App Store"
               width={200}
               height={69}
               className="h-[52px] w-auto"
             />
-          </a>
-          <a
-            href="https://play.google.com/store/apps/details?id=com.bitsmedia.android.muslimpro"
-            target="_blank"
-            rel="noopener noreferrer"
+          </Link>
+          <Link
+            href="/listen"
             className="inline-block hover:opacity-90 transition-opacity"
           >
             <img
-              src="/muslimpro-demo/homepage/play_store-200.png"
-              alt="Get it on Google Play"
+              src="/app/homepage/play_store-200.png"
+              alt="Open Aqala on Google Play"
               width={200}
               height={69}
               className="h-[52px] w-auto"
             />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

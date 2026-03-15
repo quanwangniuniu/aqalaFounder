@@ -9,7 +9,7 @@ export default function GlobalBackground() {
   const wallpaperStyle = getWallpaperStyle();
 
   // Muslim Pro demo uses its own light theme
-  if (pathname?.startsWith("/muslimpro-demo")) {
+  if (pathname?.startsWith("/app")) {
     return <div className="fixed inset-0 z-0 pointer-events-none bg-white" />;
   }
 

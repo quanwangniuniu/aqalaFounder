@@ -26,13 +26,16 @@ export default function Footer() {
     }
   }, [showLangMenu]);
 
-  // Hide footer on listen, messages, and Muslim Pro demo pages
-  if (pathname === "/listen" || pathname?.startsWith("/messages") || pathname?.startsWith("/muslimpro-demo")) {
+  // Hide footer on listen, messages, Muslim Pro demo pages
+  if (pathname === "/listen" || pathname?.startsWith("/messages") || pathname?.startsWith("/app")) {
     return null;
   }
 
+  // On "/": Landing (desktop) has its own footer; show root footer only on mobile (App home)
+  const hideOnDesktop = pathname === "/";
+
   return (
-    <footer className="mt-auto relative z-50 bg-black/20 backdrop-blur-md border-t border-white/5" dir={isRTL ? "rtl" : "ltr"}>
+    <footer className={`mt-auto relative z-50 bg-black/20 backdrop-blur-md border-t border-white/5 ${hideOnDesktop ? "md:hidden" : ""}`} dir={isRTL ? "rtl" : "ltr"}>
       
       <div className="relative mx-auto max-w-[600px] px-6 py-5">
         {/* Policy / site info links */}

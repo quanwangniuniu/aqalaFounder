@@ -23,7 +23,7 @@ export default function MuslimProQalboxHomeSection() {
             <p className="text-xl md:text-2xl font-bold mb-2">Watch Qalbox</p>
             <p className="text-2xl md:text-3xl font-bold mb-4">Muslim Films, TV Series & More</p>
             <p className="text-white/90 mb-6">
-              Qalbox is the dedicated video platform within Muslim Pro, offering educational and spiritually enriching content that helps Muslims deepen their faith and engage with topics that matter to them. It provides Quranic recitations, tafsir, hadith studies, Arabic lessons and expert-led discussions, making Islamic knowledge more accessible to a global audience.
+              Aqala offers real-time translation for Islamic content — Qur&apos;an, khutbahs, and lectures. Understand and engage with topics that matter to you, in your language. Making Islamic knowledge more accessible to a global audience.
             </p>
             <Link
               href="/rooms"
