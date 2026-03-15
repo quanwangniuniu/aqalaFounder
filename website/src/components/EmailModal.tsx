@@ -9,6 +9,7 @@ interface EmailModalProps {
   content: {
     subject: string;
     body: string;
+    html?: string;
   };
   onSuccess: () => void;
   onError: (message: string) => void;
@@ -85,6 +86,7 @@ export default function EmailModal({
           to: email,
           subject: content.subject,
           body: content.body,
+          html: content.html,
         }),
       });
 
