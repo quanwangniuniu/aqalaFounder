@@ -71,6 +71,10 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "listen.translateTo": "Translate to",
     "listen.translationWillAppear": "translation will appear here…",
     "listen.returnHome": "Return home",
+    "listen.saving": "Saving...",
+    "listen.saved": "Saved",
+    "listen.saveTranslation": "Save translation",
+    "listen.translationSaved": "Translation saved",
     // Language modal
     "modal.title": "Choose Your Language",
     "modal.subtitle": "Select your preferred language for translations",

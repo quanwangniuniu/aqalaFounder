@@ -26,6 +26,10 @@ import {
   subscribeInsights,
   Insight,
 } from "@/lib/firebase/insights";
+import {
+  subscribePastTranslations,
+  PastTranslation,
+} from "@/lib/firebase/userPastTranslations";
 
 export default function ListenHomeScreen() {
   const { t, language } = useLanguage();
@@ -47,6 +51,9 @@ export default function ListenHomeScreen() {
   const [tadabburCollapsed, setTadabburCollapsed] = useState(false);
   const [insightsCollapsed, setInsightsCollapsed] = useState(true);
 
+  const [pastTranslations, setPastTranslations] = useState<PastTranslation[]>([]);
+  const [pastTranslationsLoading, setPastTranslationsLoading] = useState(false);
+  const [pastTranslationsCollapsed, setPastTranslationsCollapsed] = useState(true);
   const [tafsirModalVisible, setTafsirModalVisible] = useState(false);
   const [tafsirLoading, setTafsirLoading] = useState(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
@@ -103,6 +110,24 @@ export default function ListenHomeScreen() {
 
     return () => unsub();
   }, [user?.uid, tadabbur?.verseKey, tadabbur?.dateKey]);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      setPastTranslations([]);
+      return;
+    }
+    setPastTranslationsLoading(true);
+    const unsub = subscribePastTranslations(
+      user.uid,
+      (items) => {
+        setPastTranslations(items);
+        setPastTranslationsLoading(false);
+      },
+      () => setPastTranslationsLoading(false),
+      10
+    );
+    return () => unsub();
+  }, [user?.uid]);
 
   const handleBeginListening = () => {
     showAdBeforeNavigation("/live-listen");
@@ -166,6 +191,19 @@ export default function ListenHomeScreen() {
     setTafsirText(null);
     setTafsirResourceName(null);
     setTafsirError(null);
+  };
+
+  const formatPastTranslationDate = (date: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return t("listen.today");
+    if (days === 1) return t("listen.yesterday");
+    if (days < 7) return t("listen.daysAgo").replace("{count}", String(days));
+    return date.toLocaleDateString(language === "ar" ? "ar" : undefined, {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const formatInsightDate = (date: Date) => {
@@ -535,6 +573,95 @@ export default function ListenHomeScreen() {
                 </View>
               ))}
             </View>
+
+            {/* Past Translations - only when logged in */}
+            {user && (
+              <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-4">
+                <TouchableOpacity
+                  onPress={() => setPastTranslationsCollapsed((c) => !c)}
+                  className="flex-row items-center gap-2.5 mb-0"
+                  activeOpacity={0.7}
+                >
+                  <View className="w-8 h-8 rounded-full bg-[#D4AF37]/15 items-center justify-center">
+                    <Ionicons name="document-text" size={16} color="#D4AF37" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-white">
+                      {t("listen.pastTranslations")}
+                    </Text>
+                    <Text className="text-[11px] text-white/40">
+                      {t("listen.pastTranslationsDesc")}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={pastTranslationsCollapsed ? "chevron-down" : "chevron-up"}
+                    size={18}
+                    color="rgba(255,255,255,0.6)"
+                  />
+                </TouchableOpacity>
+
+                {!pastTranslationsCollapsed && (pastTranslationsLoading ? (
+                  <View className="items-center py-4">
+                    <ActivityIndicator size="small" color="#D4AF37" />
+                  </View>
+                ) : pastTranslations.length === 0 ? (
+                  <View className="items-center py-4">
+                    <Ionicons
+                      name="document-text-outline"
+                      size={24}
+                      color="rgba(255,255,255,0.15)"
+                    />
+                    <Text className="text-xs text-white/40 mt-2">
+                      {t("listen.noPastTranslations")}
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="mt-2 gap-2">
+                    {pastTranslations.slice(0, 3).map((pt) => (
+                      <Link key={pt.id} href={`/past-translation/${pt.id}` as never} asChild>
+                        <TouchableOpacity
+                          className="flex-row items-start gap-2.5 py-2"
+                          activeOpacity={0.7}
+                        >
+                        <View className="w-6 h-6 rounded-full bg-[#D4AF37]/10 items-center justify-center mt-0.5">
+                          <Ionicons name="language" size={10} color="#D4AF37" />
+                        </View>
+                        <View className="flex-1 min-w-0">
+                          <Text
+                            className="text-xs text-white/80"
+                            numberOfLines={2}
+                          >
+                            {pt.translatedParagraphs[0]
+                              ? pt.translatedParagraphs[0].length > 80
+                                ? pt.translatedParagraphs[0].slice(0, 80) + "..."
+                                : pt.translatedParagraphs[0]
+                              : t("listen.emptyTranslation")}
+                          </Text>
+                          <Text className="text-[11px] text-white/30 mt-0.5">
+                            {formatPastTranslationDate(pt.createdAt)}
+                            {" · "}
+                            {pt.sourceLang} → {pt.targetLang}
+                          </Text>
+                        </View>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color="rgba(255,255,255,0.5)"
+                        />
+                        </TouchableOpacity>
+                      </Link>
+                    ))}
+                    {pastTranslations.length > 3 ? (
+                      <View className="py-2 flex-row items-center justify-center">
+                        <Text className="text-xs text-white/40">
+                          {t("listen.pastTranslationsCount").replace("{count}", String(pastTranslations.length))}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            )}
 
             {/* Support Aqala */}
             <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-6">

@@ -7,6 +7,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CharityModal from "./charity-modal";
 import VerseModal from "@/components/VerseModal";
@@ -17,6 +18,7 @@ import {
   subscribeTranslations,
   TranslationEntry,
 } from "@/lib/firebase/translationHistory";
+import { savePastTranslation } from "@/lib/firebase/userPastTranslations";
 import { updateBroadcastActivity } from "@/lib/firebase/rooms";
 import {
   startListeningSession,
@@ -178,6 +180,8 @@ export default function ClientApp({
   >([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const [savingPastTranslation, setSavingPastTranslation] = useState(false);
+  const [pastTranslationSaved, setPastTranslationSaved] = useState(false);
   const summaryScrollRef = useRef<HTMLDivElement>(null);
   const qaEndRef = useRef<HTMLDivElement>(null);
   // Track loaded translation IDs to avoid duplicates
@@ -1624,6 +1628,27 @@ https://aqala.org
     }
   }, [currentQuestion, summaryText, refinedParagraphs, summaryConversation, targetLang, isAskingQuestion]);
 
+  const handleSavePastTranslation = useCallback(async () => {
+    if (!user?.uid || savingPastTranslation || pastTranslationSaved || refinedParagraphs.length === 0) return;
+    setSavingPastTranslation(true);
+    try {
+      await savePastTranslation(user.uid, {
+        sourceText: srcStable,
+        translatedParagraphs: refinedParagraphs,
+        verseReferences: verseReferences.length ? verseReferences : [],
+        sourceLang: detectedLang ?? "en",
+        targetLang,
+      });
+      setPastTranslationSaved(true);
+      setToast({ message: t("listen.translationSaved") ?? "Translation saved", type: "success" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save";
+      setToast({ message, type: "error" });
+    } finally {
+      setSavingPastTranslation(false);
+    }
+  }, [user?.uid, savingPastTranslation, pastTranslationSaved, refinedParagraphs, srcStable, verseReferences, detectedLang, targetLang, t]);
+
   // Auto-scroll to show new Q&A messages
   useEffect(() => {
     if (summaryConversation.length > 0 && qaEndRef.current) {
@@ -2401,10 +2426,36 @@ https://aqala.org
                 </svg>
                 {t("share.email")}
               </button>
+              {user && (
+                <button
+                  onClick={handleSavePastTranslation}
+                  disabled={savingPastTranslation || pastTranslationSaved}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white/10 text-white rounded-full hover:bg-white/15 active:scale-[0.98] transition-all border border-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                  {savingPastTranslation ? (t("listen.saving") ?? "Saving...") : pastTranslationSaved ? (t("listen.saved") ?? "Saved") : (t("listen.saveTranslation") ?? "Save translation")}
+                </button>
+              )}
             </div>
             
             {/* Secondary actions */}
             <div className="flex items-center justify-center gap-3 pt-2">
+              {user && (
+                <Link
+                  href="/listen/past"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  Past Translations
+                </Link>
+              )}
               <button
                 onClick={() => router.push("/")}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
