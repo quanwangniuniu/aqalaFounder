@@ -79,6 +79,7 @@ function ThemedStack() {
       <Stack.Screen name="terms" />
       <Stack.Screen name="support" />
       <Stack.Screen name="insights" />
+      <Stack.Screen name="past-translation/[id]" />
       <Stack.Screen name="subscription" />
       <Stack.Screen name="donate" />
     </Stack>
