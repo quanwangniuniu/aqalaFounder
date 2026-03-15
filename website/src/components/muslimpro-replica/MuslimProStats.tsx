@@ -15,7 +15,7 @@ export default function MuslimProStats() {
           The Digital Home for All Things Muslim
         </h2>
         <p className="text-white/90 text-center mb-12 max-w-2xl mx-auto">
-          Muslim Pro received the Halal Digital Platform Excellence Award (International) at the World Halal Excellence Awards 2023
+          Aqala connects people through comprehension — real-time translation for Qur&apos;an, khutbahs, and Islamic lectures across 20+ languages.
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s, i) => (

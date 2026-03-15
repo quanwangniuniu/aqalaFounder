@@ -8,7 +8,7 @@ export default function MuslimProPremiumBanner() {
       {/* Background image - muslim-pro-features.jpg */}
       <div className="absolute inset-0">
         <img
-          src="/muslimpro-demo/muslim-pro-features.jpg"
+          src="/app/muslim-pro-features.jpg"
           alt=""
           className="w-full h-full object-cover"
           aria-hidden
@@ -27,11 +27,11 @@ export default function MuslimProPremiumBanner() {
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
         <h3 className="text-2xl md:text-3xl font-bold mb-4">
-          Upgrade to Muslim Pro Premium!
+          Upgrade to Aqala Premium!
         </h3>
         <p className="text-base md:text-lg opacity-95 mb-8 leading-relaxed">
-          Ads help us keep Muslim Pro running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app&apos;s growth and development. Upgrade to{" "}
-          <strong>Muslim Pro Premium</strong> today and enjoy an ad-free experience + unlock all features!
+          Ads help us keep Aqala running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app&apos;s growth and development. Upgrade to{" "}
+          <strong>Aqala Premium</strong> today and enjoy an ad-free experience + unlock all features!
         </p>
         <Link
           href="/subscription"

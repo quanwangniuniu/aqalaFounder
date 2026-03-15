@@ -3,19 +3,19 @@
 import Link from "next/link";
 
 const WHO_WE_ARE = [
-  { label: "About Us", href: "/muslimpro-demo/about" },
+  { label: "About Us", href: "/app/about" },
   { label: "Job Openings", href: "#" },
 ];
 
 const WHAT_WE_DO = [
-  { label: "Our Features", href: "/muslimpro-demo/features" },
+  { label: "Our Features", href: "/app/features" },
   { label: "Press Releases", href: "#" },
 ];
 
 const FOR_USERS = [
   { label: "Gift Premium", href: "/subscription" },
   { label: "Redeem Premium", href: "/subscription" },
-  { label: "Giving by Muslim Pro", href: "/muslimpro-demo/giving" },
+  { label: "Giving / Donate", href: "/app/giving" },
   { label: "Contact Us", href: "/support" },
 ];
 
@@ -86,13 +86,11 @@ export default function MuslimProFooter() {
         {/* Brand + tagline */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-8 border-b border-gray-800">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#00a651] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">M</span>
-            </div>
-            <span className="font-semibold text-white">Muslim Pro</span>
+            <img src="/aqala-logo.png" alt="Aqala" className="w-10 h-10 rounded-xl object-contain invert" />
+            <span className="font-semibold text-white">Aqala</span>
           </div>
           <p className="text-gray-400 text-sm max-w-md">
-            Muslim Pro is the essential Islamic app companion for Muslims. Now with Qalbox, we are the digital home for all things Muslim.
+            Aqala connects people through comprehension. Real-time translation and multilingual communication for Islamic content — Qur&apos;an, khutbahs, and lectures.
           </p>
         </div>
 
@@ -111,7 +109,7 @@ export default function MuslimProFooter() {
 
         {/* Copyright */}
         <div className="text-center text-sm text-gray-500">
-          Copyright © {new Date().getFullYear()} Bitsmedia Pte. Ltd. All rights reserved.
+          Copyright © {new Date().getFullYear()} Aqala. All rights reserved.
         </div>
 
         {/* Language selector */}

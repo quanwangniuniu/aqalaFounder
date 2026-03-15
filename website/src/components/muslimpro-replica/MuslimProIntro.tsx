@@ -13,7 +13,7 @@ export default function MuslimProIntro() {
           Innamal a&apos;malu binniyat (Indeed all actions are based on the intentions)
         </p>
         <p className="text-lg text-gray-600 leading-relaxed">
-          At Muslim Pro, we provide religious tools and a personalised stream of content & resources that engage, inspire, and support Muslims around the world. From prayer times and the Holy Quran to Islamic resources and content - Muslim Pro is your digital home for all things Muslim.
+          At Aqala, we provide real-time translation and tools that help you understand Islamic content across languages. From prayer times and the Holy Quran to khutbahs and lectures — Aqala connects you through comprehension.
         </p>
       </div>
     </section>

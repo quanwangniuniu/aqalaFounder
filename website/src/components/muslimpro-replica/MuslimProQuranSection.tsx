@@ -17,7 +17,7 @@ export default function MuslimProQuranSection() {
               Immerse & Learn the Holy Quran
             </h2>
             <p className="text-lg text-gray-600 mb-6">
-              Muslim Pro features the full Quran with Arabic scripts, coloured Tajweed, 40+ translations and more. Now, you can also learn more about selected surahs and use our tools to kick start your Quran memorizing journey.
+              Aqala features real-time Quran translation. When you hear verses, we detect them and show Arabic, translation, and links to explore. Understand the Qur&apos;an in your language.
             </p>
             <Link
               href="/listen"

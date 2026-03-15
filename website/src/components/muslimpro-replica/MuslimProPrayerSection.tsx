@@ -28,7 +28,7 @@ export default function MuslimProPrayerSection() {
               Get Verified Prayer Times, Qibla & Adhan Notifications
             </h2>
             <p className="text-lg text-gray-600 mb-6">
-              Muslim Pro is recognized as having the most accurate prayer times among Muslim lifestyle apps, being the first app to offer verified prayer times for major cities across the world.
+              Aqala offers accurate prayer times alongside real-time translation. Stay on schedule and understand Islamic content in your language.
             </p>
             {nextPrayer && (
               <p className="text-[#00a651] font-semibold mb-4">

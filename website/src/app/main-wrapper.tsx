@@ -9,11 +9,12 @@ export default function MainWrapper({
 }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const isMuslimProDemo = pathname?.startsWith("/muslimpro-demo");
+  const isLanding = pathname === "/landing";
+  const isMuslimProDemo = pathname?.startsWith("/app");
   const isListen = pathname === "/listen";
   const isDonate = pathname === "/donate";
-  const isFullWidth = isHome || isMuslimProDemo || isListen || isDonate || pathname?.startsWith("/rooms") || pathname?.startsWith("/admin");
-  const padTop = isHome || isMuslimProDemo ? "" : "pt-[20px]";
+  const isFullWidth = isHome || isLanding || isMuslimProDemo || isListen || isDonate || pathname?.startsWith("/rooms") || pathname?.startsWith("/admin");
+  const padTop = isHome || isLanding || isMuslimProDemo ? "" : "pt-[20px]";
   
   // Full-width pages (homepage, listen, donate, rooms, admin)
   if (isFullWidth) {

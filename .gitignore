@@ -45,5 +45,3 @@ next-env.d.ts
 !.cursor/rules/
 !.cursor/rules/*
 
-# personal context (not for repo)
-CONTEXT_FOR_LANDING_PAGE.md

@@ -2,33 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import DownloadModal from "./DownloadModal";
 
 const SCROLL_HIDE_AFTER = 900;
 
 const NAV_LINKS = [
-  { label: "About Us", href: "/muslimpro-demo/about" },
+  { label: "About Us", href: "/app/about" },
   {
     label: "Features",
-    href: "/muslimpro-demo/features",
+    href: "/app/features",
     dropdown: [
-      { label: "Core Features", href: "/muslimpro-demo/features" },
-      { label: "Hijri Calendar", href: "/muslimpro-demo/islamic-calendar" },
-      { label: "Ummah Pro", href: "/muslimpro-demo/ummah-pro" },
-      { label: "Academy", href: "/muslimpro-demo/academy" },
+      { label: "Core Features", href: "/app/features" },
+      { label: "Hijri Calendar", href: "/app/islamic-calendar" },
+      { label: "Ummah Pro", href: "/app/ummah" },
+      { label: "Academy", href: "/app/academy" },
     ],
   },
-  { label: "Prayer Times", href: "/muslimpro-demo/prayer-times" },
+  { label: "Prayer Times", href: "/app/prayer-times" },
   {
     label: "Blog",
-    href: "/muslimpro-demo/blog",
+    href: "/app/blog",
     dropdown: [
-      { label: "All Articles", href: "/muslimpro-demo/blog" },
-      { label: "Ramadan 2026 Guide", href: "/muslimpro-demo/blog" },
-      { label: "Deen", href: "/muslimpro-demo/blog" },
-      { label: "Lifestyle", href: "/muslimpro-demo/blog" },
-      { label: "Quran", href: "/muslimpro-demo/blog" },
-      { label: "Qalbox", href: "/muslimpro-demo/blog" },
+      { label: "All Articles", href: "/app/blog" },
+      { label: "Ramadan 2026 Guide", href: "/app/ramadan-fasting-times-iftar-dua-ramadan-greetings" },
+      { label: "Deen", href: "/app/category/deen" },
+      { label: "Lifestyle", href: "/app/category/lifestyle" },
+      { label: "Quran", href: "/app/category/quran" },
+      { label: "Qalbox", href: "/app/qalbox" },
     ],
   },
   {
@@ -36,7 +37,7 @@ const NAV_LINKS = [
     href: "/subscription",
     dropdown: [
       { label: "Get Premium", href: "/subscription" },
-      { label: "Special Offer", href: "/muslimpro-demo/special-offer" },
+      { label: "Special Offer", href: "/app/special-offer" },
       { label: "Gift Premium", href: "/subscription" },
       { label: "Redeem Premium", href: "/subscription" },
     ],
@@ -45,7 +46,7 @@ const NAV_LINKS = [
     label: "Giving",
     href: "/donate",
     dropdown: [
-      { label: "Giving by Muslim Pro", href: "/muslimpro-demo/giving" },
+      { label: "Giving / Donate", href: "/app/giving" },
       { label: "Urgent", href: "/donate" },
       { label: "Sadaqah", href: "/donate" },
       { label: "Zakat", href: "/donate" },
@@ -56,25 +57,58 @@ const NAV_LINKS = [
   },
 ];
 
+const DROPDOWN_FADE_MS = 200;
+
 export default function MuslimProNav() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [closingDropdown, setClosingDropdown] = useState<string | null>(null);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollYRef = useRef(0);
   const navRef = useRef<HTMLDivElement>(null);
+  const closingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const closeDropdown = useCallback(() => {
+    if (openDropdown) {
+      setClosingDropdown(openDropdown);
+      setOpenDropdown(null);
+      closingTimeoutRef.current = setTimeout(() => {
+        setClosingDropdown(null);
+        closingTimeoutRef.current = null;
+      }, DROPDOWN_FADE_MS);
+    }
+  }, [openDropdown]);
+
+  const toggleDropdown = useCallback((label: string) => {
+    if (closingTimeoutRef.current) {
+      clearTimeout(closingTimeoutRef.current);
+      closingTimeoutRef.current = null;
+    }
+    setClosingDropdown(null);
+    if (openDropdown === label) {
+      closeDropdown();
+    } else {
+      setOpenDropdown(label);
+    }
+  }, [closeDropdown, openDropdown]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null);
+        closeDropdown();
       }
     }
     if (openDropdown) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [openDropdown]);
+  }, [openDropdown, closeDropdown]);
+
+  useEffect(() => () => {
+    if (closingTimeoutRef.current) clearTimeout(closingTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     function handleScroll() {
@@ -93,93 +127,136 @@ export default function MuslimProNav() {
         ticking = true;
       }
     }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  return (
-    <nav
-      className={`sticky top-[42px] left-0 right-0 z-50 bg-[#0a5c3e] transition-transform duration-300 ease-out ${
-        navVisible ? "translate-y-0" : "-translate-y-full"
-      }`}
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 md:h-16">
-          {/* Logo - Muslim Pro / Qalbox from clone */}
-          <Link
-            href="/muslimpro-demo"
-            className="flex items-center group"
-          >
-            <img
-              src="/muslimpro-demo/logo.png"
-              alt="Muslim Pro Logo"
-              className="h-8 md:h-9 w-auto object-contain"
-            />
-          </Link>
+  const activeDropdown = NAV_LINKS.find((l) => l.dropdown && openDropdown === l.label);
+  const dropdownToShow = activeDropdown ?? NAV_LINKS.find((l) => l.dropdown && closingDropdown === l.label);
 
-          {/* Desktop nav - no App Store / Google Play */}
-          <div ref={navRef} className="hidden md:flex items-center gap-6 lg:gap-8">
-            {NAV_LINKS.map((link) =>
-              link.dropdown ? (
-                <div key={link.href} className="relative">
+  return (
+    <div ref={navRef} className={`relative sticky top-[42px] left-0 right-0 z-50 transition-transform duration-300 ease-out ${navVisible ? "translate-y-0" : "-translate-y-full"}`}>
+      {/* Main nav bar - seamless with banner, no white gap */}
+      <nav className="bg-[#0a5c3e]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 md:h-16 gap-8">
+            <Link href="/" className="flex items-center shrink-0 mr-8 md:mr-12" aria-label="Back to Aqala home">
+              <img src="/aqala-logo.png" alt="Aqala" className="h-8 md:h-9 w-auto object-contain invert" />
+            </Link>
+
+            {/* Desktop nav - Muslim Pro style, more space between logo and first link */}
+            <div className="hidden md:flex flex-1 items-center justify-end gap-6 lg:gap-8 min-w-0">
+              {NAV_LINKS.map((link) =>
+                link.dropdown ? (
                   <button
-                    onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                    className={`flex items-center gap-1 font-medium transition-colors ${
-                      pathname?.startsWith(link.href) ? "text-white" : "text-white/90 hover:text-white"
+                    key={link.href}
+                    onClick={() => toggleDropdown(link.label)}
+                    className={`flex items-center gap-1 font-medium transition-colors px-2 py-1 rounded ${
+                      openDropdown === link.label
+                        ? "bg-[#2d8a5e] text-white"
+                        : pathname?.startsWith(link.href)
+                          ? "text-white"
+                          : "text-white/90 hover:text-white"
                     }`}
                   >
                     {link.label}
-                    <svg className={`w-4 h-4 transition-transform ${openDropdown === link.label ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className={`w-4 h-4 transition-transform ${openDropdown === link.label ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  {openDropdown === link.label && (
-                    <div data-mp-dropdown className="absolute top-full left-0 mt-1 w-48 py-2 bg-[#0a5c3e] border border-white/10 rounded-lg">
-                      {link.dropdown.map((d) => (
-                        <Link
-                          key={d.label}
-                          href={d.href}
-                          className="block px-4 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10"
-                          onClick={() => setOpenDropdown(null)}
-                        >
-                          {d.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`font-medium transition-colors ${
-                    pathname === link.href ? "text-white" : "text-white/90 hover:text-white"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
-          </div>
-
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-white/90 hover:bg-white/10"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`font-medium transition-colors ${pathname === link.href ? "text-white" : "text-white/90 hover:text-white"}`}
+                  >
+                    {link.label}
+                  </Link>
+                )
               )}
-            </svg>
-          </button>
-        </div>
+              <div className="flex items-center gap-4 ml-auto shrink-0">
+                <Link href="/auth/login" className="font-medium text-white/90 hover:text-white transition-colors">
+                  Sign In
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setDownloadModalOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-white text-[#0a5c3e] font-semibold hover:bg-gray-100 transition-colors"
+                >
+                  Open Aqala
+                </button>
+              </div>
+            </div>
 
-        {/* Mobile menu - no App Store / Google Play */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-white/10">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-white/90 hover:bg-white/10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Floating dropdown - separate banner, overlays content (no nav expansion) */}
+      {dropdownToShow && (
+        <div
+          key={dropdownToShow.label}
+          className={`absolute top-full left-0 right-0 z-50 shadow-lg transition-opacity duration-200 ease-out ${
+            activeDropdown ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="bg-[#DBF3EC] border-b border-[#0a5c3e]/10">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+              <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+                {(dropdownToShow.dropdown ?? []).map((d) => (
+                  <Link
+                    key={d.label}
+                    href={d.href}
+                    className="text-[#0B3939] font-medium hover:text-[#0a5c3e] transition-colors"
+                    onClick={closeDropdown}
+                  >
+                    {d.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <DownloadModal isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} />
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#0a5c3e] py-4 border-t border-white/10">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex flex-col gap-2 mb-4">
+              <Link href="/auth/login" className="block py-2 text-white/90 font-medium" onClick={() => setMobileMenuOpen(false)}>
+                Sign In
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setDownloadModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full py-3 rounded-lg bg-white text-[#0a5c3e] font-semibold text-center"
+              >
+                Open Aqala
+              </button>
+            </div>
             <div className="flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
                 <div key={link.href}>
@@ -195,8 +272,8 @@ export default function MuslimProNav() {
               ))}
             </div>
           </div>
-        )}
-      </div>
-    </nav>
+        </div>
+      )}
+    </div>
   );
 }
