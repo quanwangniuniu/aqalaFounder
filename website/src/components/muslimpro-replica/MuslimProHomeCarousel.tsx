@@ -4,30 +4,31 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+// Aqala premium carousel — unique AI-generated images, no repetition
 const SLIDES = [
   {
-    title: "Everything you need for Ramadan, in one place",
-    desc: "From daily fasting times and iftar du'as to ready-to-use Ramadan greetings, the Ramadan Hub is designed to be your main reference point throughout Ramadan 2026 — so you spend less time searching and more time focusing on the month.",
-    cta: "Get Ready for Ramadan",
-    href: "/app/islamic-calendar",
-    image: "/app/homepage/Ramadan-Hub-Header.jpg",
-    imageAlt: "Ramadan Hub Header",
+    title: "Real-time translation for Islamic content",
+    desc: "Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language. 20+ languages including English, Arabic, Urdu, Hindi, Turkish, Indonesian, Bengali, French, German, Spanish, and more.",
+    cta: "Start Listening",
+    href: "/listen",
+    image: "/aqala-shared-listening.png",
+    imageAlt: "Real-time translation — Aqala",
   },
   {
-    title: "Fulfil Umrah For Your Loved Ones",
-    desc: "Gift a Badal Umrah to be performed in Makkah on behalf of your loved one. Whether for the deceased, the sick, or those unable to perform it themselves, this service ensures their reward is preserved. Each request is handled securely with our trusted partner Tawkeel, giving you peace of mind while honoring those dearest to you.",
-    cta: "Learn More",
-    href: "/app/giving",
-    image: "/app/homepage/A-large-crowd-of-Muslims-doing-their-tawaf-around-the-Kaabah-scaled.jpg",
-    imageAlt: "Muslims doing tawaf around the Kaabah",
+    title: "Automatic Quran detection",
+    desc: "When you hear Quranic verses, Aqala automatically detects them and shows the surah, verse reference, and translation. Tap any verse to explore details and verify on Quran.com. Explore what you hear!",
+    cta: "View on Quran.com",
+    href: "https://quran.com",
+    image: "/aqala-quran-detection.png",
+    imageAlt: "Quran detection — Aqala",
   },
   {
-    title: "Upgrade to Aqala Premium!",
-    desc: "Ads help us keep Aqala running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app's growth and development. Explore our promos and discounts to find the perfect plan for you. Upgrade to Aqala Premium today and enjoy an ad-free experience + unlock all features!",
+    title: "Aqala Premium — No ads, unlimited translation, AI enhancement",
+    desc: "Go ad-free, enjoy unlimited translation time, and invite friends to get $10 off. AI enhancement makes translations clearer. One-time payment, lifetime access.",
     cta: "Upgrade to Premium",
-    href: "/app/special-offer",
-    image: "/app/muslim-pro-features.jpg",
-    imageAlt: "Aqala app features",
+    href: "/subscription",
+    image: "/aqala-assets/aqala-ai-premium.jpg",
+    imageAlt: "Aqala Premium — exclusive experience",
   },
 ];
 
@@ -46,25 +47,36 @@ export default function MuslimProHomeCarousel() {
           sizes="100vw"
           priority={index === 0}
         />
-        <div className="absolute inset-0 bg-[#0E1C25]/76" />
+        <div className="absolute inset-0 bg-[#032117]/80" />
         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 text-center text-white">
           <h3 className="text-2xl md:text-3xl font-bold mb-4 max-w-3xl">{s.title}</h3>
           <p className="text-base md:text-lg text-white/95 mb-6 max-w-2xl">{s.desc}</p>
-          <Link
-            href={s.href}
-            className="inline-flex px-8 py-4 rounded-lg bg-[#00a651] text-white font-bold hover:bg-[#008f44] transition-colors"
-          >
-            {s.cta}
-          </Link>
+          {s.href.startsWith("http") ? (
+            <a
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#b8944d] transition-colors"
+            >
+              {s.cta}
+            </a>
+          ) : (
+            <Link
+              href={s.href}
+              className="inline-flex px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#b8944d] transition-colors"
+            >
+              {s.cta}
+            </Link>
+          )}
         </div>
       </div>
       {/* Pagination */}
-      <div className="flex justify-center gap-2 py-4 bg-gray-50">
+      <div className="flex justify-center gap-2 py-4 bg-[#032117]">
         {SLIDES.map((_, i) => (
           <button
             key={i}
             onClick={() => setIndex(i)}
-            className={`w-2.5 h-2.5 rounded-full transition-colors ${i === index ? "bg-[#00a651]" : "bg-gray-300 hover:bg-gray-400"}`}
+            className={`w-2.5 h-2.5 rounded-full transition-colors ${i === index ? "bg-[#D4AF37]" : "bg-white/30 hover:bg-white/50"}`}
             aria-label={`Slide ${i + 1}`}
           />
         ))}

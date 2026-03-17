@@ -20,47 +20,47 @@ export default function MuslimProBlogPage() {
   return (
     <>
       <MuslimProAppBar />
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-16 md:py-24 bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Muslim Pro&apos;s Blog — Your Gateway to Enriching Islamic Content
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Aqala Blog — Your Gateway to Enriching Islamic Content
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mb-8">
+          <p className="text-lg text-white/70 max-w-3xl mb-8">
             Discover a world of inspiration, spirituality, and practical insights tailored for the modern Muslim. From heartwarming stories of faith, in-depth Islamic knowledge, to lifestyle tips and wellness advice, our blog is designed to guide and uplift your journey in life and faith.
           </p>
           <div className="relative max-w-md">
             <input
               type="search"
               placeholder="Search for:"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#00a651] focus:ring-1 focus:ring-[#00a651] outline-none"
+              className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder:text-white/50 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none"
             />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded bg-[#00a651] text-white text-sm font-medium">
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 rounded bg-[#D4AF37] text-[#032117] text-sm font-medium">
               Search
             </button>
           </div>
         </div>
       </section>
 
-      {/* Article grid - Muslim Pro style */}
-      <section className="py-8 md:py-12 bg-white border-t border-gray-100">
+      {/* Article grid */}
+      <section className="py-8 md:py-12 bg-[#032117] border-t border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
               <article
                 key={post.slug}
-                className="group mp-card-hover border border-gray-200 rounded-2xl overflow-hidden hover:border-[#00a651]/30"
+                className="group mp-card-hover border border-white/10 rounded-2xl overflow-hidden hover:border-[#D4AF37]/30 bg-white/[0.03]"
               >
-                <div className="h-40 bg-gradient-to-br from-[#00a651]/10 to-emerald-500/10 flex items-center justify-center">
-                  <span className="text-4xl text-[#00a651]/30">﴾</span>
+                <div className="h-40 bg-gradient-to-br from-[#D4AF37]/10 to-[#06402B] flex items-center justify-center">
+                  <span className="text-4xl text-[#D4AF37]/30">﴾</span>
                 </div>
                 <div className="p-6">
-                  <h3 className="font-bold text-gray-900 mb-2 group-hover:text-[#00a651] transition-colors line-clamp-2">
+                  <h3 className="font-bold text-white mb-2 group-hover:text-[#D4AF37] transition-colors line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
+                  <p className="text-sm text-white/70 mb-4 line-clamp-2">{post.excerpt}</p>
                   <Link
                     href={post.href}
-                    className="inline-flex items-center gap-1 text-[#00a651] font-semibold text-sm hover:underline"
+                    className="inline-flex items-center gap-1 text-[#D4AF37] font-semibold text-sm hover:underline"
                   >
                     Read more
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,12 +72,12 @@ export default function MuslimProBlogPage() {
             ))}
           </div>
 
-          {/* Pagination - Muslim Pro style */}
+          {/* Pagination */}
           {totalPages > 1 && (
             <nav className="mt-12 flex flex-wrap items-center justify-center gap-2" aria-label="Blog pagination">
               <Link
                 href={`/app/blog?page=${totalPages}`}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium"
+                className="px-4 py-2 rounded-lg border border-white/20 text-white/70 hover:bg-white/10 text-sm font-medium"
               >
                 {totalPages}
               </Link>
@@ -91,8 +91,8 @@ export default function MuslimProBlogPage() {
                   href={p === 1 ? "/app/blog" : `/app/blog?page=${p}`}
                   className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
                     p === currentPage
-                      ? "border-[#00a651] bg-[#00a651] text-white"
-                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      ? "border-[#D4AF37] bg-[#D4AF37] text-[#032117]"
+                      : "border-white/20 text-white/70 hover:bg-white/10"
                   }`}
                 >
                   {p}

@@ -108,7 +108,12 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
       setError(null);
     } catch (err) {
       console.error('Failed to fetch prayer times:', err);
-      setError('Failed to load prayer times. Please try again.');
+      const msg = err instanceof Error ? err.message : '';
+      setError(
+        msg.includes('Too Many Requests') || msg.includes('429')
+          ? 'Prayer times service is busy. Please wait a minute and try again.'
+          : 'Failed to load prayer times. Please try again.'
+      );
     }
   }, [lat, lng, settings]);
 
@@ -171,13 +176,44 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     setLocation({ latitude: lat, longitude: lng, city, country });
   }, []);
 
-  // Fetch prayer times when location or settings change, and refresh every minute
+  // In-flight deduplication + rate limit protection (Aladhan API 429)
+  const inFlightRef = useRef<Promise<void> | null>(null);
+  const lastFetchKeyRef = useRef<string>('');
+  const lastFetchTimeRef = useRef<number>(0);
+  const MIN_FETCH_INTERVAL_MS = 60 * 1000; // 1 min - same params
+
+  const fetchKey = `${lat},${lng},${settings.method},${settings.school},${JSON.stringify(settings.adjustments)}`;
+  const adjustmentsStr = JSON.stringify(settings.adjustments);
+
+  // Fetch prayer times when location or settings change.
+  // Refresh every hour (prayer times are per-day; no need for minute-level updates).
+  // Use primitive deps only to avoid "useEffect changed size" (object refs can confuse React).
   useEffect(() => {
-    const refresh = () => refreshPrayerTimesRef.current();
+    const refresh = async () => {
+      const now = Date.now();
+      if (lastFetchKeyRef.current === fetchKey && now - lastFetchTimeRef.current < MIN_FETCH_INTERVAL_MS) {
+        return; // Skip if we fetched same params recently (rate limit protection)
+      }
+      if (inFlightRef.current) {
+        await inFlightRef.current; // Deduplicate: wait for in-flight request (handles React Strict Mode double-mount)
+        return;
+      }
+      const promise = (async () => {
+        try {
+          lastFetchKeyRef.current = fetchKey;
+          await refreshPrayerTimesRef.current();
+          lastFetchTimeRef.current = Date.now();
+        } finally {
+          inFlightRef.current = null;
+        }
+      })();
+      inFlightRef.current = promise;
+      await promise;
+    };
     refresh();
-    const interval = setInterval(refresh, 60000);
+    const interval = setInterval(refresh, 60 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [lat, lng, settings]);
+  }, [lat, lng, settings.method, settings.school, adjustmentsStr]);
 
   // Auto-refresh location on mount if not saved (try geolocation, fallback to default)
   useEffect(() => {

@@ -16,7 +16,7 @@ export default function MuslimProQuranPage() {
             Your Prayer and Quran Companion
           </h1>
           <p className="text-lg text-gray-600 mb-8 max-w-3xl">
-            Let Muslim Pro guide your day with accurate prayer times, beautiful Quran recitations, and meaningful Islamic reminders. Get real-time Adhan alerts, track your ibadah, ask our AI assistant, and stay inspired every step of the way.
+            Let Aqala guide your day with accurate prayer times, real-time translation for Quran and Islamic content, and meaningful tools. Listen to khutbahs and lectures in your language, explore Quran with verse detection, and stay connected across 20+ languages.
           </p>
           <Link href="/listen" className="inline-flex px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
             Download Free App

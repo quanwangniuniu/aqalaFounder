@@ -42,7 +42,7 @@ export default function BlogArticlePage() {
           <p className="text-lg text-gray-700 leading-relaxed mb-8">{post.excerpt}</p>
           <p className="text-gray-600 leading-relaxed">
             This article is part of the Aqala blog. Full content would be loaded from your CMS or content source.
-            For now, this is a placeholder view matching the Muslim Pro article layout.
+            Article content placeholder.
           </p>
           <Link
             href="/app/blog"

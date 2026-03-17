@@ -5,12 +5,12 @@ import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewsletter";
 
 const RAMADAN_ARTICLES = [
-  { title: "What Actually Happens on Laylat al-Qadr?", date: "March 12, 2026", excerpt: "The barrier between heaven and earth disappears on Laylat al-Qadr. Here is how this night allows you to rewrite your future.", href: "/app/blog/laylat-al-qadr" },
-  { title: "What to Expect from the Last 10 Nights of Ramadan", date: "March 11, 2026", excerpt: "The last 10 nights of Ramadan are not about pushing your body to the limit. They are about meeting Allah with honesty while tired, busy, and human.", href: "/app/blog/last-10-nights" },
-  { title: "How Do You Perform I'tikaf Correctly During Ramadan?", date: "March 10, 2026", excerpt: "Is the world too loud? Discover how Itikaf can help you reconnect with your Creator during the final stretch of Ramadan.", href: "/app/blog/itikaf-during-ramadan" },
-  { title: "Why Your Heart Feels Tired This Ramadan", date: "March 6, 2026", excerpt: "The flatness you feel halfway through Ramadan isn't a sign of failure. Here's what's actually going on and how to keep going.", href: "/app/blog/heart-feels-tired" },
-  { title: "Simple Ramadan Dhikr for Everyday Practice", date: "March 3, 2026", excerpt: "Ramadan often begins with strong intentions. You want to pray more, read more Quran, and give more charity.", href: "/app/blog/simple-ramadan-dhikr" },
-  { title: "Complete the Quran in Ramadan With This 4-Page Rule", date: "March 2, 2026", excerpt: "Is your Quran goal slipping away? Don't quit. Here is the mathematical and habit-based strategy to finish the book in 30 days.", href: "/app/blog/four-page-rule" },
+  { title: "Laylat al-Qadr: When the Heavens Open", date: "March 12, 2026", excerpt: "One night worth a thousand months. A practical guide to seeking this blessed night.", href: "/app/blog/laylat-al-qadr" },
+  { title: "Ramadan's Final Ten Nights: A Practical Guide", date: "March 11, 2026", excerpt: "Not about pushing limits — about showing up tired, busy, and human.", href: "/app/blog/last-10-nights" },
+  { title: "I'tikaf: Stepping Back to Reconnect", date: "March 10, 2026", excerpt: "When the world feels too loud, retreat into the mosque. A step-by-step guide.", href: "/app/blog/itikaf-during-ramadan" },
+  { title: "When Ramadan Feels Flat: What's Really Going On", date: "March 6, 2026", excerpt: "The mid-Ramadan slump isn't failure. Understanding the spiritual rhythm.", href: "/app/blog/heart-feels-tired" },
+  { title: "Dhikr You Can Do Anywhere This Ramadan", date: "March 3, 2026", excerpt: "Short, powerful remembrances for commutes, breaks, and quiet moments.", href: "/app/blog/simple-ramadan-dhikr" },
+  { title: "Finishing the Quran in 30 Days: The Four-Page Method", date: "March 2, 2026", excerpt: "A simple daily target that adds up. How to pace yourself without burnout.", href: "/app/blog/four-page-rule" },
 ];
 
 export default function RamadanGuidePage() {

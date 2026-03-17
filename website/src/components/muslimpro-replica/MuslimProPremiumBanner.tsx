@@ -5,37 +5,30 @@ import Link from "next/link";
 export default function MuslimProPremiumBanner() {
   return (
     <section className="relative py-16 md:py-24 overflow-hidden">
-      {/* Background image - muslim-pro-features.jpg */}
+      {/* Aqala-branded gradient background */}
       <div className="absolute inset-0">
-        <img
-          src="/app/muslim-pro-features.jpg"
-          alt=""
-          className="w-full h-full object-cover"
-          aria-hidden
-        />
-        {/* Overlay: #0E1C25 with ~76% opacity (C2 in hex = 194/255) */}
         <div
           className="absolute inset-0"
-          style={{ backgroundColor: "rgba(14, 28, 37, 0.76)" }}
+          style={{
+            background: "linear-gradient(135deg, #032117 0%, #06402B 40%, #0a5c3e 70%, #032117 100%)",
+          }}
         />
-        {/* Base tint: #003232 */}
         <div
-          className="absolute inset-0 mix-blend-multiply"
-          style={{ backgroundColor: "#003232" }}
+          className="absolute inset-0 opacity-40"
+          style={{ backgroundColor: "#021a12" }}
         />
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
         <h3 className="text-2xl md:text-3xl font-bold mb-4">
-          Upgrade to Aqala Premium!
+          Aqala Premium — No ads, unlimited translation, AI enhancement
         </h3>
         <p className="text-base md:text-lg opacity-95 mb-8 leading-relaxed">
-          Ads help us keep Aqala running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app&apos;s growth and development. Upgrade to{" "}
-          <strong>Aqala Premium</strong> today and enjoy an ad-free experience + unlock all features!
+          Go ad-free, enjoy unlimited translation time, and invite friends to get $10 off. AI enhancement makes translations clearer. One-time payment, lifetime access.
         </p>
         <Link
           href="/subscription"
-          className="inline-flex items-center px-8 py-4 rounded-lg bg-[#00a651] text-white font-bold text-lg hover:bg-[#008f44] transition-colors shadow-lg"
+          className="inline-flex items-center px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold text-lg hover:bg-[#E8D5A3] transition-colors shadow-lg"
         >
           Upgrade to Premium
         </Link>

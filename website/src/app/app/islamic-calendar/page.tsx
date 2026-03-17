@@ -23,7 +23,7 @@ const EVENTS = [
   { name: "Mawlid al-Nabi", date: "Thursday, 3 September 2026", hijri: "12 Rabi al-Awwal 1448" },
 ];
 
-// March 2026 calendar grid (matches app.muslimpro.com)
+// March 2026 calendar grid
 const MARCH_2026_DAYS = [
   { day: 1, hijri: "12", gregorian: "1" },
   { day: 2, hijri: "13", gregorian: "2" },
@@ -99,137 +99,133 @@ export default function MuslimProIslamicCalendarPage() {
       <MuslimProAppBar />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#0a5c3e]/5 to-transparent">
-        <div className="absolute inset-0 opacity-5">
-          <img src="/app/banner-bg.svg" alt="" className="w-full h-full object-cover" aria-hidden />
-        </div>
+      <section className="relative overflow-hidden bg-[#032117]">
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
             Islamic Calendar 2026
           </h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-white/70 mb-8">
             in {location?.country || "United States"} 25 Ramadan 1447
           </p>
 
           {/* Month grid - March 2026 */}
           <div className="mb-12">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">March</h2>
-              <span className="text-gray-600">2026</span>
+              <h2 className="text-xl font-bold text-white">March</h2>
+              <span className="text-white/70">2026</span>
             </div>
-            <p className="text-sm text-gray-500 mb-4">March 2026</p>
-            <p className="text-sm text-gray-500 mb-4">Ramadhan 1447 - Shawwal 1447</p>
+            <p className="text-sm text-white/60 mb-4">March 2026</p>
+            <p className="text-sm text-white/60 mb-4">Ramadhan 1447 - Shawwal 1447</p>
             <div className="grid grid-cols-7 gap-1 text-center text-sm">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                <div key={d} className="font-semibold text-gray-600 py-2">
+                <div key={d} className="font-semibold text-white/60 py-2">
                   {d}
                 </div>
               ))}
-              {/* March 1 2026 = Sunday, so 6 empty cells first */}
               {Array.from({ length: 6 }, (_, i) => (
                 <div key={`empty-${i}`} className="py-2" />
               ))}
               {MARCH_2026_DAYS.map((d) => (
                 <div
                   key={d.day}
-                  className={`py-2 rounded-lg ${d.day === 14 ? "bg-[#00a651]/20 font-semibold text-[#00a651]" : "text-gray-700"}`}
+                  className={`py-2 rounded-lg ${d.day === 14 ? "bg-[#D4AF37]/30 font-semibold text-[#D4AF37]" : "text-white/90"}`}
                 >
-                  <span className="block text-xs text-gray-500">{d.hijri}</span>
+                  <span className="block text-xs text-white/50">{d.hijri}</span>
                   <span>{d.gregorian}</span>
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-500 mt-4">See the full calendar in the app</p>
+            <p className="text-sm text-white/60 mt-4">See the full calendar in the app</p>
             <Link
-              href="/app/app"
-              className="inline-flex mt-4 px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors"
+              href="/listen"
+              className="inline-flex mt-4 px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
             >
-              Download Free App
+              Open in Browser
             </Link>
           </div>
         </div>
       </section>
 
       {/* Premium banner */}
-      <section className="py-8 md:py-12 bg-gradient-to-r from-[#0a5c3e] to-[#00a651] text-white">
+      <section className="py-8 md:py-12 bg-[#06402B] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-xl md:text-2xl font-bold mb-2">Best Premium Offer — Only on Web Limited Time Offer!</h2>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">Best Premium Offer — Limited Time!</h2>
           <p className="text-white/95 mb-4">Remove ads. Unlock Quran. Stay consistent.</p>
           <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
-            <span className="text-[#00a651] font-mono font-bold text-lg tabular-nums">
+            <span className="text-[#D4AF37] font-mono font-bold text-lg tabular-nums">
               {String(countdown.h).padStart(2, "0")} Hr : {String(countdown.m).padStart(2, "0")} Min : {String(countdown.s).padStart(2, "0")} Sec
             </span>
           </div>
-          <Link href="/app/special-offer" className="inline-flex px-8 py-4 rounded-lg bg-white text-[#00a651] font-bold hover:bg-gray-100 transition-colors">
+          <Link href="/subscription" className="inline-flex px-8 py-4 rounded-lg bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors">
             Upgrade to Premium
           </Link>
         </div>
       </section>
 
       {/* Prayer times widget */}
-      <section className="py-12 md:py-16 bg-white">
+      <section className="py-12 md:py-16 bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             {PRAYER_ORDER.map(({ key, label, icon }) => (
-              <div key={key} className="mp-card-hover text-center p-4 rounded-xl bg-gray-50 border border-gray-200">
-                <img src={icon} alt="" className="w-8 h-8 mx-auto mb-1 opacity-80" />
-                <p className="font-semibold text-gray-900 text-sm">{label}</p>
+              <div key={key} className="mp-card-hover text-center p-4 rounded-xl bg-white/5 border border-white/10">
+                <img src={icon} alt="" className="w-8 h-8 mx-auto mb-1 opacity-80 invert" />
+                <p className="font-semibold text-white text-sm">{label}</p>
                 {loading || !prayerTimes ? (
-                  <p className="text-gray-400 text-sm">--:--</p>
+                  <p className="text-white/40 text-sm">--:--</p>
                 ) : (
                   <>
-                    <p className="text-[#00a651] font-medium text-sm">{formatPrayerTime(prayerTimes[key])}</p>
+                    <p className="text-[#D4AF37] font-medium text-sm">{formatPrayerTime(prayerTimes[key])}</p>
                     {isNextPrayer(label) && (
-                      <p className="text-xs text-[#00a651] mt-0.5">Next in {timeUntilNext}</p>
+                      <p className="text-xs text-[#D4AF37] mt-0.5">Next in {timeUntilNext}</p>
                     )}
                   </>
                 )}
               </div>
             ))}
           </div>
-          <Link href="/app/prayer-times" className="text-[#00a651] font-semibold hover:underline">
+          <Link href="/app/prayer-times" className="text-[#D4AF37] font-semibold hover:underline">
             Prayer Times in {locationLabel} →
           </Link>
         </div>
       </section>
 
       {/* Special Islamic Days */}
-      <section className="py-12 md:py-16 bg-white">
+      <section className="py-12 md:py-16 bg-[#06402B]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Islamic Events</h2>
+          <h2 className="text-2xl font-bold text-white mb-8">Islamic Events</h2>
           <div className="space-y-4">
             {EVENTS.map((e) => (
-              <div key={e.name} className="mp-card-hover p-6 rounded-2xl border border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div key={e.name} className="mp-card-hover p-6 rounded-2xl border border-white/10 bg-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-gray-900">{e.name}</h3>
-                  <p className="text-gray-600 text-sm">{e.date} | {e.hijri}</p>
+                  <h3 className="font-bold text-white">{e.name}</h3>
+                  <p className="text-white/70 text-sm">{e.date} | {e.hijri}</p>
                 </div>
-                <Link href="/app/prayer-times" className="text-[#00a651] font-semibold hover:underline text-sm shrink-0">
+                <Link href="/app/prayer-times" className="text-[#D4AF37] font-semibold hover:underline text-sm shrink-0">
                   View Prayer Times →
                 </Link>
               </div>
             ))}
           </div>
-          <Link href="/app/islamic-calendar/special-events" className="inline-block mt-4 text-[#00a651] font-semibold hover:underline">
+          <Link href="/app/islamic-calendar/special-events" className="inline-block mt-4 text-[#D4AF37] font-semibold hover:underline">
             Show more Special Islamic Days →
           </Link>
         </div>
       </section>
 
-      {/* Gregorian ⇄ Hijri converter (matches app.muslimpro.com) */}
-      <section className="py-12 md:py-16 bg-gray-50">
+      {/* Gregorian ⇄ Hijri converter */}
+      <section className="py-12 md:py-16 bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-white mb-4">
             {convertMode === "g2h" ? "Gregorian Calendar to Hijri" : "Hijri Calendar to Gregorian"}
           </h2>
           <button
             type="button"
             onClick={() => setConvertMode((m) => (m === "g2h" ? "h2g" : "g2h"))}
-            className="text-[#00a651] font-medium hover:underline mb-6"
+            className="text-[#D4AF37] font-medium hover:underline mb-6"
           >
             ⇄ Switch
           </button>
-          <p className="text-gray-600 mb-4">Select a date to convert</p>
+          <p className="text-white/70 mb-4">Select a date to convert</p>
           {convertMode === "g2h" ? (
             <div className="flex flex-wrap items-center gap-4 mb-4">
               <input
@@ -238,12 +234,12 @@ export default function MuslimProIslamicCalendarPage() {
                 max={31}
                 value={gDate.day}
                 onChange={(e) => setGDate((d) => ({ ...d, day: parseInt(e.target.value) || 1 }))}
-                className="w-16 px-3 py-2 rounded-lg border border-gray-300"
+                className="w-16 px-3 py-2 rounded-lg border border-white/20 bg-white/5 text-white"
               />
               <select
                 value={gDate.month}
                 onChange={(e) => setGDate((d) => ({ ...d, month: parseInt(e.target.value) }))}
-                className="px-3 py-2 rounded-lg border border-gray-300"
+                className="px-3 py-2 rounded-lg border border-white/20 bg-white/5 text-white"
               >
                 {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
                   <option key={m} value={i + 1}>{m}</option>
@@ -253,7 +249,7 @@ export default function MuslimProIslamicCalendarPage() {
                 type="number"
                 value={gDate.year}
                 onChange={(e) => setGDate((d) => ({ ...d, year: parseInt(e.target.value) || 2026 }))}
-                className="w-20 px-3 py-2 rounded-lg border border-gray-300"
+                className="w-20 px-3 py-2 rounded-lg border border-white/20 bg-white/5 text-white"
               />
               <button
                 type="button"
@@ -269,7 +265,7 @@ export default function MuslimProIslamicCalendarPage() {
                     setConvertLoading(false);
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-[#00a651] text-white font-semibold hover:bg-[#008f44] disabled:opacity-60"
+                className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] disabled:opacity-60"
               >
                 {convertLoading ? "..." : "Convert"}
               </button>
@@ -282,12 +278,12 @@ export default function MuslimProIslamicCalendarPage() {
                 max={30}
                 value={hDate.day}
                 onChange={(e) => setHDate((d) => ({ ...d, day: parseInt(e.target.value) || 1 }))}
-                className="w-16 px-3 py-2 rounded-lg border border-gray-300"
+                className="w-16 px-3 py-2 rounded-lg border border-white/20 bg-white/5 text-white"
               />
               <select
                 value={hDate.month}
                 onChange={(e) => setHDate((d) => ({ ...d, month: parseInt(e.target.value) }))}
-                className="px-3 py-2 rounded-lg border border-gray-300"
+                className="px-3 py-2 rounded-lg border border-white/20 bg-white/5 text-white"
               >
                 {["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah"].map((m, i) => (
                   <option key={m} value={i + 1}>{m}</option>
@@ -297,7 +293,7 @@ export default function MuslimProIslamicCalendarPage() {
                 type="number"
                 value={hDate.year}
                 onChange={(e) => setHDate((d) => ({ ...d, year: parseInt(e.target.value) || 1447 }))}
-                className="w-20 px-3 py-2 rounded-lg border border-gray-300"
+                className="w-20 px-3 py-2 rounded-lg border border-white/20 bg-white/5 text-white"
               />
               <button
                 type="button"
@@ -313,52 +309,52 @@ export default function MuslimProIslamicCalendarPage() {
                     setConvertLoading(false);
                   }
                 }}
-                className="px-4 py-2 rounded-lg bg-[#00a651] text-white font-semibold hover:bg-[#008f44] disabled:opacity-60"
+                className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] disabled:opacity-60"
               >
                 {convertLoading ? "..." : "Convert"}
               </button>
             </div>
           )}
-          <p className="text-sm text-gray-500">There is a small probability of one day error</p>
-          <p className="mt-4 font-semibold text-gray-900">Converted: {convertedResult}</p>
+          <p className="text-sm text-white/60">There is a small probability of one day error</p>
+          <p className="mt-4 font-semibold text-white">Converted: {convertedResult}</p>
         </div>
       </section>
 
       {/* The Islamic Calendar article */}
-      <section className="py-12 md:py-16 bg-white">
+      <section className="py-12 md:py-16 bg-[#06402B]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">The Islamic Calendar</h2>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">The Hijri Calendar: A Lunar System</h3>
-          <p className="text-gray-600 mb-4">
+          <h2 className="text-2xl font-bold text-white mb-6">The Islamic Calendar</h2>
+          <h3 className="text-lg font-semibold text-white mb-2">The Hijri Calendar: A Lunar System</h3>
+          <p className="text-white/80 mb-4">
             The Islamic calendar, also known as the Hijri calendar (1446 AH), is based on the phases of the moon, unlike the solar-based Gregorian calendar. Its starting point is the Hijrah, which was the Prophet Muhammad&apos;s migration to Medina. A new month officially begins when the new moon is sighted at the close of the previous month. Because the start of each month depends on this lunar sighting, the calendar provides an estimated, rather than a fixed, schedule for upcoming Islamic dates.
           </p>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Calendar Structure and Months</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-lg font-semibold text-white mb-2">Calendar Structure and Months</h3>
+          <p className="text-white/80 mb-4">
             Like the Gregorian calendar, the Islamic year has 12 months. However, it is shorter, with each year containing approximately 354 to 355 days compared to the 365 or 366 days of the Gregorian calendar. The months in order are: Muharram, Safar, Rabi al-Awwal, Rabi al-Thani, Jumada al-Awwal, Jumada al-Thani, Rajab, Shaban, Ramadan, Shawwal, Dhul Qadah, and Dhul Hijjah.
           </p>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Sacred Months</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-lg font-semibold text-white mb-2">Sacred Months</h3>
+          <p className="text-white/80 mb-4">
             Four months in the Islamic calendar are considered sacred, and it&apos;s forbidden to wage war during them. As stated in a narration from the Prophet (PBUH) found in Bukhari (3197), these months are: &apos;Dhul-Qa&apos;dah, Dhul-Hijjah, and Muharram, which occur in succession, and the fourth is Rajab.&apos;
           </p>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Important Events and Online Resources</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Important Events and Online Resources</h3>
+          <p className="text-white/80 mb-6">
             Key Islamic holidays and major events, such as Eid al-Fitr, Hajj, and Eid al-Adha, are determined by the dates of the Hijri calendar. The Aqala app and website provides these dates, which allow you to easily convert dates between the Hijri and Gregorian systems. Many of these resources let you view both calendars side-by-side for convenience. This makes it simple to plan for Islamic holidays and events.
           </p>
-          <Link href="/app/app" className="inline-flex px-8 py-4 rounded-lg bg-[#00a651] text-white font-bold hover:bg-[#008f44] transition-colors">
-            Download Free App
+          <Link href="/listen" className="inline-flex px-8 py-4 rounded-lg bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors">
+            Open in Browser
           </Link>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-12 md:py-16 bg-gray-50">
+      <section className="py-12 md:py-16 bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Prayer and Quran Companion</h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-4">Your Prayer and Quran Companion</h2>
+          <p className="text-white/80 mb-6 max-w-2xl mx-auto">
             Let Aqala guide your day with accurate prayer times, real-time Quran translation, and meaningful Islamic reminders. Get real-time Adhan alerts, understand khutbahs and lectures in your language, and stay inspired every step of the way.
           </p>
-          <Link href="/app/app" className="inline-flex px-8 py-4 rounded-lg bg-[#00a651] text-white font-bold hover:bg-[#008f44] transition-colors">
-            Download Free App
+          <Link href="/listen" className="inline-flex px-8 py-4 rounded-lg bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors">
+            Open in Browser
           </Link>
         </div>
       </section>

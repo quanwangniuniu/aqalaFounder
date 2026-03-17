@@ -16,7 +16,7 @@ export default function MuslimProAiDeenSection() {
             </p>
             <Link
               href="/listen"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
             >
               Ask AiDeen
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,8 +25,8 @@ export default function MuslimProAiDeenSection() {
             </Link>
           </div>
           <div className="flex-1">
-            <div className="w-full max-w-sm h-48 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center">
-              <svg className="w-24 h-24 text-[#00a651]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-full max-w-sm h-48 bg-gradient-to-br from-[#032117]/10 to-[#D4AF37]/20 rounded-2xl flex items-center justify-center">
+              <svg className="w-24 h-24 text-[#D4AF37]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>

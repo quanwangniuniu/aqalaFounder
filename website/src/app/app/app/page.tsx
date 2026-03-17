@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * App entry - matches app.muslimpro.com
+ * App entry redirect
  * Redirects to prayer-times (the main app-like experience)
  */
 export default function MuslimProAppPage() {

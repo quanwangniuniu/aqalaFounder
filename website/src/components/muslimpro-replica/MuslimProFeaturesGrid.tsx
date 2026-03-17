@@ -2,31 +2,73 @@
 
 import Link from "next/link";
 
-// Order matches Muslim Pro: 4 columns x 3 rows
-// Col1: Daily Duas, Inspirational Quotes, Zakat Calculator
-// Col2: Mosque Finder, Greeting Cards, Halal Food Finder
-// Col3: Prayer Requests, 99 Names of Allah, Makkah Live
-// Col4: Blog Articles, Hijri Calendar, Hajj & Umrah Guides
+// Aqala features with inline SVG icons
 const FEATURES = [
-  { icon: "02-Daily-Duas.png", title: "Daily Duas", href: "/listen" },
-  { icon: "10-Inspirational-Quotes.png", title: "Inspirational Quotes", href: "#" },
-  { icon: "12-Zakat-Calculator.png", title: "Zakat Calculator", href: "/donate" },
-  { icon: "05-Mosque-Finder.png", title: "Mosque Finder", href: "/rooms" },
-  { icon: "11-Greeting-Cards.png", title: "Greeting Cards", href: "#" },
-  { icon: "06-Halal-Food-Finder.png", title: "Halal Food Finder", href: "#" },
-  { icon: "04-Prayer-Requests.png", title: "Prayer Requests", href: "/donate" },
-  { icon: "01-99-Names-of-Allah.png", title: "99 Names of Allah", href: "/listen" },
-  { icon: "07-Makkah-Live.png", title: "Makkah Live", href: "#" },
-  { icon: "09-Blog-Articles.png", title: "Blog Articles", href: "/app/blog" },
-  { icon: "03-Hijri-Calendar.png", title: "Hijri Calendar", href: "/app/prayer-times" },
-  { icon: "08-Hajj-Umrah-Guides.png", title: "Hajj & Umrah Guides", href: "#" },
+  { title: "Real-time Translation", href: "/listen", Icon: IconTranslate },
+  { title: "Quran Detection", href: "/listen", Icon: IconQuran },
+  { title: "Shared Listening", href: "/rooms", Icon: IconRoom },
+  { title: "Prayer Times", href: "/app/prayer-times", Icon: IconPrayer },
+  { title: "Islamic Calendar", href: "/app/islamic-calendar", Icon: IconCalendar },
+  { title: "Blog & Articles", href: "/app/blog", Icon: IconBlog },
+  { title: "Quran Explorer", href: "/app/quran", Icon: IconQuran },
+  { title: "Donate", href: "/donate", Icon: IconDonate },
 ];
+
+function IconTranslate({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+    </svg>
+  );
+}
+function IconQuran({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+  );
+}
+function IconRoom({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+function IconPrayer({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+function IconCalendar({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
+function IconBlog({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+    </svg>
+  );
+}
+function IconDonate({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  );
+}
 
 export default function MuslimProFeaturesGrid() {
   return (
-    <section className="py-16 md:py-24 bg-gray-50">
+    <section className="py-16 md:py-24 bg-[#032117]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-12 text-center">
+        <h3 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center">
           All Features in the Aqala App
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 md:gap-8">
@@ -34,16 +76,12 @@ export default function MuslimProFeaturesGrid() {
             <Link
               key={f.title}
               href={f.href}
-              className="group mp-card-hover flex flex-col items-center text-center p-4 rounded-xl bg-white border border-gray-100"
+              className="group mp-card-hover flex flex-col items-center text-center p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 transition-colors"
             >
-              <div className="mp-img-hover w-24 h-24 md:w-32 md:h-32 mb-3 flex items-center justify-center overflow-hidden rounded-lg">
-                <img
-                  src={`/app/icons/${f.icon}`}
-                  alt={f.title}
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                />
+              <div className="mp-img-hover w-24 h-24 md:w-32 md:h-32 mb-3 flex items-center justify-center rounded-lg bg-[#D4AF37]/10 text-[#D4AF37] group-hover:bg-[#D4AF37]/20 transition-colors">
+                <f.Icon className="w-12 h-12 md:w-16 md:h-16 group-hover:scale-105 transition-transform duration-300" />
               </div>
-              <span className="text-sm font-medium text-gray-900 group-hover:text-[#00a651] transition-colors">
+              <span className="text-sm font-medium text-white group-hover:text-[#D4AF37] transition-colors">
                 {f.title}
               </span>
             </Link>

@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: projectRoot,
   async redirects() {
     return [
       { source: "/muslimpro-demo", destination: "/app", permanent: true },
@@ -22,6 +27,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.googleusercontent.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
         pathname: "/**",
       },
     ],

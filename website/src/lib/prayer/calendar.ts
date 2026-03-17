@@ -1,6 +1,6 @@
 /**
  * Aladhan Calendar API - fetch prayer times for a month
- * Used for week table on prayer-times page (1:1 Muslim Pro replication)
+ * Used for week table on prayer-times page
  */
 
 export interface CalendarDay {

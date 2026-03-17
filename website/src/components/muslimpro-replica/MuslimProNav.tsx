@@ -14,12 +14,11 @@ const NAV_LINKS = [
     href: "/app/features",
     dropdown: [
       { label: "Core Features", href: "/app/features" },
-      { label: "Hijri Calendar", href: "/app/islamic-calendar" },
-      { label: "Ummah Pro", href: "/app/ummah" },
-      { label: "Academy", href: "/app/academy" },
+      { label: "Islamic Calendar", href: "/app/islamic-calendar" },
+      { label: "Listen", href: "/listen" },
+      { label: "Shared Listening", href: "/rooms" },
     ],
   },
-  { label: "Prayer Times", href: "/app/prayer-times" },
   {
     label: "Blog",
     href: "/app/blog",
@@ -29,32 +28,11 @@ const NAV_LINKS = [
       { label: "Deen", href: "/app/category/deen" },
       { label: "Lifestyle", href: "/app/category/lifestyle" },
       { label: "Quran", href: "/app/category/quran" },
-      { label: "Qalbox", href: "/app/qalbox" },
+      { label: "Shared Listening", href: "/app/qalbox" },
     ],
   },
-  {
-    label: "Premium",
-    href: "/subscription",
-    dropdown: [
-      { label: "Get Premium", href: "/subscription" },
-      { label: "Special Offer", href: "/app/special-offer" },
-      { label: "Gift Premium", href: "/subscription" },
-      { label: "Redeem Premium", href: "/subscription" },
-    ],
-  },
-  {
-    label: "Giving",
-    href: "/donate",
-    dropdown: [
-      { label: "Giving / Donate", href: "/app/giving" },
-      { label: "Urgent", href: "/donate" },
-      { label: "Sadaqah", href: "/donate" },
-      { label: "Zakat", href: "/donate" },
-      { label: "Waqaf", href: "/donate" },
-      { label: "Aqiqah", href: "/donate" },
-      { label: "Become a Partner", href: "/donate" },
-    ],
-  },
+  { label: "Premium", href: "/subscription" },
+  { label: "Donate", href: "/donate" },
 ];
 
 const DROPDOWN_FADE_MS = 200;
@@ -135,16 +113,16 @@ export default function MuslimProNav() {
   const dropdownToShow = activeDropdown ?? NAV_LINKS.find((l) => l.dropdown && closingDropdown === l.label);
 
   return (
-    <div ref={navRef} className={`relative sticky top-[42px] left-0 right-0 z-50 transition-transform duration-300 ease-out ${navVisible ? "translate-y-0" : "-translate-y-full"}`}>
+    <div ref={navRef} className={`relative sticky top-0 left-0 right-0 z-50 transition-transform duration-300 ease-out ${navVisible ? "translate-y-0" : "-translate-y-full"}`}>
       {/* Main nav bar - seamless with banner, no white gap */}
-      <nav className="bg-[#0a5c3e]">
+      <nav className="bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 md:h-16 gap-8">
             <Link href="/" className="flex items-center shrink-0 mr-8 md:mr-12" aria-label="Back to Aqala home">
               <img src="/aqala-logo.png" alt="Aqala" className="h-8 md:h-9 w-auto object-contain invert" />
             </Link>
 
-            {/* Desktop nav - Muslim Pro style, more space between logo and first link */}
+            {/* Desktop nav */}
             <div className="hidden md:flex flex-1 items-center justify-end gap-6 lg:gap-8 min-w-0">
               {NAV_LINKS.map((link) =>
                 link.dropdown ? (
@@ -153,7 +131,7 @@ export default function MuslimProNav() {
                     onClick={() => toggleDropdown(link.label)}
                     className={`flex items-center gap-1 font-medium transition-colors px-2 py-1 rounded ${
                       openDropdown === link.label
-                        ? "bg-[#2d8a5e] text-white"
+                        ? "bg-[#D4AF37]/20 text-[#D4AF37]"
                         : pathname?.startsWith(link.href)
                           ? "text-white"
                           : "text-white/90 hover:text-white"
@@ -180,13 +158,10 @@ export default function MuslimProNav() {
                 )
               )}
               <div className="flex items-center gap-4 ml-auto shrink-0">
-                <Link href="/auth/login" className="font-medium text-white/90 hover:text-white transition-colors">
-                  Sign In
-                </Link>
                 <button
                   type="button"
                   onClick={() => setDownloadModalOpen(true)}
-                  className="px-4 py-2 rounded-lg bg-white text-[#0a5c3e] font-semibold hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
                 >
                   Open Aqala
                 </button>
@@ -217,14 +192,14 @@ export default function MuslimProNav() {
             activeDropdown ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         >
-          <div className="bg-[#DBF3EC] border-b border-[#0a5c3e]/10">
+          <div className="bg-[#032117]/95 border-b border-white/10 backdrop-blur-md">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
               <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
                 {(dropdownToShow.dropdown ?? []).map((d) => (
                   <Link
                     key={d.label}
                     href={d.href}
-                    className="text-[#0B3939] font-medium hover:text-[#0a5c3e] transition-colors"
+                    className="text-white/90 font-medium hover:text-[#D4AF37] transition-colors"
                     onClick={closeDropdown}
                   >
                     {d.label}
@@ -240,19 +215,16 @@ export default function MuslimProNav() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0a5c3e] py-4 border-t border-white/10">
+          <div className="md:hidden bg-[#032117] py-4 border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex flex-col gap-2 mb-4">
-              <Link href="/auth/login" className="block py-2 text-white/90 font-medium" onClick={() => setMobileMenuOpen(false)}>
-                Sign In
-              </Link>
               <button
                 type="button"
                 onClick={() => {
                   setDownloadModalOpen(true);
                   setMobileMenuOpen(false);
                 }}
-                className="w-full py-3 rounded-lg bg-white text-[#0a5c3e] font-semibold text-center"
+                className="w-full py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold text-center"
               >
                 Open Aqala
               </button>

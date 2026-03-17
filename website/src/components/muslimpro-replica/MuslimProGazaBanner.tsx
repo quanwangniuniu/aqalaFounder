@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function MuslimProGazaBanner() {
   return (
-    <div className="sticky top-0 z-[60] bg-[#00a651] text-white py-2.5 px-4 flex items-center justify-between gap-4">
+    <div className="sticky top-0 z-[60] bg-[#06402B] text-white py-2.5 px-4 flex items-center justify-between gap-4 border-b border-white/10">
       <Link
         href="/donate"
         className="flex-1 text-center font-semibold text-sm hover:underline inline-flex items-center justify-center gap-2"
