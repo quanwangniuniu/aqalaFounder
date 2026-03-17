@@ -15,7 +15,7 @@ const WHAT_WE_DO = [
 const FOR_USERS = [
   { label: "Gift Premium", href: "/subscription" },
   { label: "Redeem Premium", href: "/subscription" },
-  { label: "Giving / Donate", href: "/app/giving" },
+  { label: "Donate", href: "/donate" },
   { label: "Contact Us", href: "/support" },
 ];
 
@@ -73,7 +73,7 @@ function FooterColumn({ title, links }: { title: string; links: { label: string;
 
 export default function MuslimProFooter() {
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-[#021a12] text-gray-300 border-t border-white/10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         {/* Main footer grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-12">

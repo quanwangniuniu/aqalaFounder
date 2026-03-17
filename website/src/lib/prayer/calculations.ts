@@ -108,24 +108,51 @@ interface AladhanResponse {
 }
 
 /**
- * Fetch with retry logic
+ * Fetch with retry logic (uses internal API proxy to avoid CORS)
  */
 async function fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<Response> {
+    let lastError: Error | null = null;
+    let lastStatus: number | null = null;
+
     for (let i = 0; i < retries; i++) {
         try {
-            const response = await fetch(url);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
+
+            const response = await fetch(url, {
+                signal: controller.signal,
+                cache: 'no-store',
+            });
+
+            clearTimeout(timeout);
+
             if (response.ok) return response;
+            // Don't retry client errors (incl. 429 Too Many Requests)
+            if (response.status >= 400 && response.status < 500) return response;
+
+            lastStatus = response.status;
         } catch (error) {
-            if (i === retries - 1) throw error;
-            // Wait before retrying
+            lastError = error instanceof Error ? error : new Error(String(error));
+            if (i === retries - 1) {
+                throw new Error(
+                    lastError.message?.includes('fetch') || lastError.name === 'TypeError'
+                        ? 'Unable to reach prayer times service. Check your connection and try again.'
+                        : lastError.message
+                );
+            }
             await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
         }
     }
-    throw new Error('Failed to fetch after retries');
+
+    throw new Error(
+        lastStatus
+            ? `Prayer times service returned ${lastStatus}. Please try again later.`
+            : 'Failed to load prayer times. Please try again.'
+    );
 }
 
 /**
- * Fetch prayer times from Aladhan API
+ * Fetch prayer times via internal API proxy (avoids CORS / "Failed to fetch" from direct Aladhan call)
  */
 export async function fetchPrayerTimes(
     date: Date,
@@ -133,11 +160,10 @@ export async function fetchPrayerTimes(
     longitude: number,
     settings: PrayerSettings = DEFAULT_SETTINGS
 ): Promise<PrayerTimes> {
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
 
-    // Build adjustment string
     const tune = [
         settings.adjustments.fajr,
         settings.adjustments.sunrise,
@@ -145,24 +171,27 @@ export async function fetchPrayerTimes(
         settings.adjustments.asr,
         settings.adjustments.maghrib,
         settings.adjustments.isha,
-        0, // Imsak
-        0, // Midnight
-        0, // First third
-        0, // Last third
+        0, 0, 0, 0, 0, 0,
     ].join(',');
 
-    const url = new URL('https://api.aladhan.com/v1/timings');
-    url.searchParams.set('latitude', latitude.toString());
-    url.searchParams.set('longitude', longitude.toString());
-    url.searchParams.set('method', settings.method.toString());
-    url.searchParams.set('school', settings.school.toString());
-    url.searchParams.set('tune', tune);
-    url.searchParams.set('date', `${day}-${month}-${year}`);
+    const params = new URLSearchParams({
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
+        method: settings.method.toString(),
+        school: settings.school.toString(),
+        tune,
+        date: `${day}-${month}-${year}`, // DD-MM-YYYY for Aladhan
+    });
+    // Use relative URL in browser so fetch always hits same origin (avoids CORS/port issues)
+    const url = typeof window !== 'undefined'
+        ? `/api/prayer-times?${params.toString()}`
+        : `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/prayer-times?${params.toString()}`;
 
-    const response = await fetchWithRetry(url.toString());
+    const response = await fetchWithRetry(url);
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch prayer times: ${response.statusText}`);
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Failed to fetch prayer times: ${response.statusText}`);
     }
 
     const data: AladhanResponse = await response.json();

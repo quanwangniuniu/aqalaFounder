@@ -17,36 +17,33 @@ export default function MuslimProSpecialEventsPage() {
     <>
       <MuslimProAppBar />
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#0a5c3e]/5 to-transparent">
-        <div className="absolute inset-0 opacity-5">
-          <img src="/app/banner-bg.svg" alt="" className="w-full h-full object-cover" aria-hidden />
-        </div>
+      <section className="relative overflow-hidden bg-[#032117]">
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-          <nav aria-label="Breadcrumb" className="text-sm text-gray-500 mb-4">
-            <Link href="/app" className="hover:text-[#00a651]">Home</Link>
+          <nav aria-label="Breadcrumb" className="text-sm text-white/60 mb-4">
+            <Link href="/app" className="hover:text-[#D4AF37]">Home</Link>
             {" > "}
-            <Link href="/app/islamic-calendar" className="hover:text-[#00a651]">Islamic Calendar</Link>
+            <Link href="/app/islamic-calendar" className="hover:text-[#D4AF37]">Islamic Calendar</Link>
             {" > "}
-            <span className="text-gray-600">Special Events</span>
+            <span className="text-white/80">Special Events</span>
           </nav>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Islamic Events 2026</h1>
-          <p className="text-gray-600 mb-8">All Special Islamic Events 2026</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Islamic Events 2026</h1>
+          <p className="text-white/70 mb-8">All Special Islamic Events 2026</p>
 
           <div className="space-y-4 mb-12">
             {EVENTS.map((e) => (
-              <div key={e.name} className="mp-card-hover p-6 rounded-2xl border border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div key={e.name} className="mp-card-hover p-6 rounded-2xl border border-white/10 bg-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-gray-900">{e.name}</h3>
-                  <p className="text-gray-600 text-sm">{e.date} | {e.hijri}</p>
+                  <h3 className="font-bold text-white">{e.name}</h3>
+                  <p className="text-white/70 text-sm">{e.date} | {e.hijri}</p>
                 </div>
-                <Link href="/app/prayer-times" className="text-[#00a651] font-semibold hover:underline text-sm shrink-0">
+                <Link href="/app/prayer-times" className="text-[#D4AF37] font-semibold hover:underline text-sm shrink-0">
                   View Prayer Times →
                 </Link>
               </div>
             ))}
           </div>
 
-          <Link href="/app/prayer-times" className="inline-flex px-6 py-3 rounded-lg bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors">
+          <Link href="/app/prayer-times" className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors">
             Go to Prayer Times
           </Link>
         </div>

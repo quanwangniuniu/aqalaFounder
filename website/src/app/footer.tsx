@@ -26,7 +26,7 @@ export default function Footer() {
     }
   }, [showLangMenu]);
 
-  // Hide footer on listen, messages, Muslim Pro demo pages
+  // Hide footer on listen, messages, /app pages
   if (pathname === "/listen" || pathname?.startsWith("/messages") || pathname?.startsWith("/app")) {
     return null;
   }

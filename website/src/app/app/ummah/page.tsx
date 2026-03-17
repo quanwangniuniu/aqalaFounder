@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
 /**
- * /ummah alias - redirects to /ummah-pro (matches app.muslimpro.com/ummah)
+ * /ummah alias - redirects to Core Features
  */
 export default function UmmahRedirect() {
-  redirect("/app/ummah-pro");
+  redirect("/app/features");
 }

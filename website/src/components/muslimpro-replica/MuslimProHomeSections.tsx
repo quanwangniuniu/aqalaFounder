@@ -3,32 +3,33 @@
 import Link from "next/link";
 import Image from "next/image";
 
+// Aqala premium sections — unique AI-generated images per section
 const SECTIONS = [
   {
-    title: "Get Verified Prayer Times, Qibla & Adhan Notifications",
-    desc: "Aqala offers accurate prayer times alongside real-time translation. Stay on schedule and understand Islamic content in your language.",
-    cta: "Get Prayer Times",
-    href: "/app/prayer-times",
-    image: "/app/homepage/Muslim-Pro-prayer-times-adhan-notification.png",
-    imageAlt: "Aqala app screen of prayer times",
+    title: "Real-time translation for Islamic content",
+    desc: "Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language. 20+ languages — English, Arabic, Urdu, Hindi, Turkish, Indonesian, Bengali, French, German, Spanish, and more. Sources & methodology",
+    cta: "Start Listening",
+    href: "/listen",
+    image: "/aqala-shared-listening.png",
+    imageAlt: "Real-time translation — Aqala",
     imageFirst: true,
   },
   {
-    title: "Immerse & Learn the Holy Quran",
-    desc: "Aqala features real-time Quran translation. When you hear verses, we detect them and show Arabic, translation, and links to explore. Understand the Qur'an in your language.",
-    cta: "Read the Quran",
-    href: "/app/quran",
-    image: "/app/homepage/muslim-pro-quran-learn-memorize.png",
-    imageAlt: "Aqala app Quran interface",
+    title: "Automatic Quran detection",
+    desc: "When you hear Quranic verses, Aqala automatically detects them and shows the surah, verse reference, and translation. Tap any verse to explore details and verify on Quran.com. Aqala automatically detects Quran verses and shows surah details, Arabic text, and translation. Explore what you hear with links to Quran.com. Sources & AI transparency",
+    cta: "View on Quran.com",
+    href: "https://quran.com",
+    image: "/aqala-quran-detection.png",
+    imageAlt: "Quran detection — Aqala",
     imageFirst: false,
   },
   {
-    title: "Real-time Translation - Aqala's AI-Powered Understanding",
-    desc: "Ask AiDeen is a companion in your journey of faith, offering you information about topics in Islam on-the-go. Ask AiDeen is trained to answer your Islamic queries based on the holy Quran and authentic hadiths.",
-    cta: "Ask AiDeen",
-    href: "/app/quran",
-    image: "/app/homepage/Muslim-Pro-ask-aideen-islamic-ai-chatbpt.png",
-    imageAlt: "Aqala real-time translation",
+    title: "Shared listening rooms",
+    desc: "Join rooms with others to listen and translate together. Perfect for mosques, study circles, or connecting with the Ummah across languages.",
+    cta: "Join a Room",
+    href: "/rooms",
+    image: "/aqala-shared-listening.png",
+    imageAlt: "Shared listening — Aqala",
     imageFirst: true,
   },
 ];
@@ -37,30 +38,44 @@ export default function MuslimProHomeSections() {
   return (
     <section className="py-0">
       {SECTIONS.map((s, i) => (
-        <div
-          key={i}
-          className={`flex flex-col ${s.imageFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12 py-16 md:py-24 bg-white`}
-        >
-          <div className="flex-1 max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="relative aspect-square max-h-[400px]">
-              <Image
-                src={s.image}
-                alt={s.imageAlt}
-                fill
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw, 400px"
-              />
-            </div>
-          </div>
-          <div className="flex-1 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">{s.title}</h1>
-            <p className="text-gray-600 mb-6">{s.desc}</p>
-            <Link
-              href={s.href}
-              className="inline-flex px-6 py-3 rounded-lg bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors"
+        <div key={i} className="py-16 md:py-24 bg-[#032117]">
+          <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div
+              className={`flex flex-col ${s.imageFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12`}
             >
-              {s.cta}
-            </Link>
+              <div className="flex-1 max-w-xl mx-auto w-full px-2 sm:px-4">
+                <div className="relative aspect-square max-h-[400px]">
+                  <Image
+                    src={s.image}
+                    alt={s.imageAlt}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 400px"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 px-4 sm:px-6 lg:px-8 min-w-0">
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">{s.title}</h1>
+                <p className="text-white/70 mb-6">{s.desc}</p>
+                {s.href.startsWith("http") ? (
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
+                  >
+                    {s.cta}
+                  </a>
+                ) : (
+                  <Link
+                    href={s.href}
+                    className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
+                  >
+                    {s.cta}
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       ))}

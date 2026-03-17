@@ -13,8 +13,7 @@ import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewslet
 import MuslimProAsSeenOn from "@/components/muslimpro-replica/MuslimProAsSeenOn";
 
 /**
- * Muslim Pro Home - /app
- * Layout matches Muslim Pro homepage structure
+ * Aqala /app — Features, blog, and resources
  */
 export default function MuslimProDemoPage() {
   return (
@@ -33,22 +32,22 @@ export default function MuslimProDemoPage() {
         <div className="max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore Aqala</h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/app/features" className="px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
+            <Link href="/app/features" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
               Features
             </Link>
-            <Link href="/app/prayer-times" className="px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
+            <Link href="/app/prayer-times" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
               Prayer Times
             </Link>
-            <Link href="/app/app" className="px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
+            <Link href="/app/app" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
               Open App
             </Link>
-            <Link href="/app/quran" className="px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
+            <Link href="/app/quran" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
               Quran
             </Link>
-            <Link href="/app/blog" className="px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
+            <Link href="/app/blog" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
               Blog
             </Link>
-            <Link href="/app/about" className="px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44]">
+            <Link href="/app/about" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
               About Us
             </Link>
           </div>

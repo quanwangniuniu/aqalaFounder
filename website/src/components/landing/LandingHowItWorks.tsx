@@ -21,7 +21,7 @@ const STEPS = [
     titleKey: "landing.startListeningStep",
     descKey: "landing.startListeningDesc",
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#D4AF37">
         <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
         <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
       </svg>
@@ -65,7 +65,7 @@ export default function LandingHowItWorks() {
               key={s.step}
               className="relative text-center rounded-2xl p-4 hover:bg-white/5 transition-colors duration-300"
             >
-              <div className="w-14 h-14 rounded-2xl bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
                 {s.icon}
               </div>
               <p className="text-[#D4AF37] text-sm font-semibold mb-1">{t("landing.step")} {s.step}</p>
@@ -106,7 +106,7 @@ export default function LandingHowItWorks() {
             <div className="flex-1 order-1 lg:order-2 flex justify-center lg:justify-end mb-6 lg:mb-0">
               <div className="relative w-full max-w-sm landing-img-hover rounded-2xl">
                 <Image
-                  src="/landing-quran-detection.png"
+                  src="/aqala-quran-detection.png"
                   alt="Aqala automatically detects Quran verses and shows surah details, Arabic text, and translation. Explore what you hear with links to Quran.com."
                   width={600}
                   height={700}
@@ -122,7 +122,7 @@ export default function LandingHowItWorks() {
         <div className="text-center mt-10">
           <Link
             href="/how-it-works"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 text-white/90 font-medium hover:bg-white/10 hover:border-[#D4AF37]/30 transition-all text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/90 font-medium hover:bg-white/10 hover:border-[#D4AF37]/30 transition-all text-sm"
           >
             {t("landing.sourcesTransparency")}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

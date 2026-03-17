@@ -28,7 +28,7 @@ export default function MuslimProDeenCategoryPage() {
         </div>
       </section>
 
-      {/* Article grid - Muslim Pro Deen category style (with author) */}
+      {/* Article grid */}
       <section className="py-8 md:py-12 bg-white border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

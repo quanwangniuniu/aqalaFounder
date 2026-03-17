@@ -2,17 +2,17 @@
 
 export default function MuslimProStats() {
   const stats = [
-    { value: "180+ million", label: "downloads and growing" },
-    { value: "9.7M users", label: "on Day 1 of Ramadan 2024" },
-    { value: "4.7 Stars", label: "review on App Store" },
-    { value: "4.2 Stars", label: "reviews on Play Store" },
+    { value: "20+", label: "languages supported" },
+    { value: "Real-time", label: "translation as you listen" },
+    { value: "Quran", label: "verse detection built-in" },
+    { value: "Shared", label: "listening rooms" },
   ];
 
   return (
-    <section className="py-16 md:py-24 bg-[#00a651]">
+    <section className="py-16 md:py-24 bg-[#06402B] border-y border-white/10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-12">
-          The Digital Home for All Things Muslim
+          Connecting Through Comprehension
         </h2>
         <p className="text-white/90 text-center mb-12 max-w-2xl mx-auto">
           Aqala connects people through comprehension — real-time translation for Qur&apos;an, khutbahs, and Islamic lectures across 20+ languages.

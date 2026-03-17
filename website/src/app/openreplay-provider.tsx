@@ -9,20 +9,20 @@ interface OpenReplayProviderProps {
   children: React.ReactNode;
 }
 
+// Module-level singleton: OpenReplay allows only one tracker instance per page.
+// Creating a second instance throws "one tracker instance has been initialised already".
+let trackerInstance: Tracker | null = null;
+
 export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
   const { user } = useAuth();
   const { consent } = usePrivacyConsent();
-  const trackerRef = useRef<Tracker | null>(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     // Only initialize if user has consented to session recording
     if (!consent.consentGiven || !consent.sessionRecording) {
-      // If tracker was previously initialized but consent was revoked, clear it
-      if (trackerRef.current) {
-        trackerRef.current = null;
-      }
       return;
     }
 
@@ -32,24 +32,24 @@ export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
       return;
     }
 
-    // Don't re-initialize if already running
-    if (trackerRef.current) return;
-
     try {
-      const tracker = new Tracker({
-        projectKey,
-      });
+      // Create tracker only once (singleton) - avoids "one tracker instance" error
+      if (!trackerInstance) {
+        const isLocalhost =
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1";
 
-      tracker.start();
-      trackerRef.current = tracker;
+        trackerInstance = new Tracker({
+          projectKey,
+          ...(isLocalhost && { __DISABLE_SECURE_MODE: true }),
+        });
+      }
 
-      return () => {
-        try {
-          trackerRef.current = null;
-        } catch (error) {
-          console.error("OpenReplay cleanup error:", error);
-        }
-      };
+      // Start only once per consent grant (avoids duplicate start on Strict Mode re-mount)
+      if (!hasStartedRef.current) {
+        trackerInstance.start();
+        hasStartedRef.current = true;
+      }
     } catch (error) {
       console.error("OpenReplay initialization error:", error);
     }
@@ -57,22 +57,20 @@ export function OpenReplayProvider({ children }: OpenReplayProviderProps) {
 
   // Handle user identification
   useEffect(() => {
-    const tracker = trackerRef.current;
-
-    if (!tracker) return;
+    if (!trackerInstance) return;
 
     try {
       if (user) {
-        tracker.setUserID(user.uid);
+        trackerInstance.setUserID(user.uid);
 
         if (user.email) {
-          tracker.setMetadata("email", user.email);
+          trackerInstance.setMetadata("email", user.email);
         }
         if (user.displayName) {
-          tracker.setMetadata("displayName", user.displayName);
+          trackerInstance.setMetadata("displayName", user.displayName);
         }
       } else {
-        tracker.setUserID("");
+        trackerInstance.setUserID("");
       }
     } catch (error) {
       console.error("OpenReplay user identification error:", error);

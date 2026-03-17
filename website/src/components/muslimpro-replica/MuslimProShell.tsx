@@ -1,14 +1,11 @@
 "use client";
 
-import MuslimProGazaBanner from "./MuslimProGazaBanner";
 import MuslimProNav from "./MuslimProNav";
 
 export default function MuslimProShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Wrapper bg prevents white gap between banner and nav */}
-      <div className="bg-[#0a5c3e]">
-        <MuslimProGazaBanner />
+    <div className="min-h-screen bg-[#032117]">
+      <div className="bg-[#032117] border-b border-white/10">
         <MuslimProNav />
       </div>
       {children}

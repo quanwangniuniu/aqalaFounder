@@ -6,16 +6,16 @@ export default function MuslimProNewsletter() {
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <section className="py-16 md:py-24 bg-gray-50">
+    <section className="py-16 md:py-24 bg-[#032117] border-t border-white/10">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-          Subscribe to Our Newsletter!
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+          Subscribe to Our Newsletter
         </h2>
-        <p className="text-gray-600 mb-8">
-          For exciting updates on our app - from new features and sweet deals to new Muslim films & TV series, subscribe to our newsletter!
+        <p className="text-white/70 mb-8">
+          Get updates on new features, translation improvements, and Islamic content — subscribe to stay connected with Aqala.
         </p>
         {submitted ? (
-          <p className="text-[#00a651] font-semibold">Thank you for subscribing!</p>
+          <p className="text-[#D4AF37] font-semibold">Thank you for subscribing!</p>
         ) : (
           <form
             onSubmit={(e) => {
@@ -27,24 +27,24 @@ export default function MuslimProNewsletter() {
             <input
               type="text"
               placeholder="First Name*"
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:border-[#00a651] focus:ring-1 focus:ring-[#00a651] outline-none"
+              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder:text-white/50 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none"
             />
             <input
               type="email"
               placeholder="Email Address*"
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:border-[#00a651] focus:ring-1 focus:ring-[#00a651] outline-none"
+              className="flex-1 px-4 py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder:text-white/50 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none"
             />
             <button
               type="submit"
-              className="px-6 py-3 rounded-lg bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors"
+              className="px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
             >
               Subscribe
             </button>
           </form>
         )}
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-white/50 mt-4">
           We care about the protection of your data. Read our{" "}
-          <a href="/privacy" className="text-[#00a651] hover:underline">Privacy Policy</a>.
+          <a href="/privacy" className="text-[#D4AF37] hover:underline">Privacy Policy</a>.
         </p>
       </div>
     </section>

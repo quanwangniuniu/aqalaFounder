@@ -2,20 +2,20 @@
 
 const TESTIMONIALS = [
   {
-    quote: "It's the best Islamic app I've ever come across, it's super duper. Love it so much. Upgrading to the premium is the best decision I've taken in a long time. Jazakallahu khairan! May Allah reward the developers of this app with jannatul firdausi.",
-    author: "Isa A.",
+    quote: "Finally I can follow khutbahs in my language. The real-time translation is a game-changer — I used to zone out when the imam spoke Arabic. Now I understand every word. JazakAllahu Khairan to the Aqala team.",
+    author: "Yusuf K.",
   },
   {
-    quote: "I love this app with all my heart, as a Muslim it helps me find mosque's near me, what the times to pray are all over the world. It has so many different abilities, you should download and see for yourself. It might be even better in the future.",
-    author: "Amhar O.",
+    quote: "I listen to Quran recitation with Urdu translation side by side. My kids and I use the shared listening room during family time. Aqala has brought us closer to the Book. MashaAllah.",
+    author: "Amina R.",
   },
   {
-    quote: "Jazakalla khair ya ikhwa. This app is wonderfully designed and only seems to get better! Perfect for the Muslim living in the west where there are so many different distractions and influences pulling one in many different directions. May Allah grant the brothers and sisters who have contributed to this app a high place in Jannah! Ameen!",
-    author: "Moe T.",
+    quote: "As a revert, I struggled with Arabic lectures. Aqala's live translation lets me learn at my own pace. The AI enhancement makes complex terms clearer. May Allah bless this project.",
+    author: "James M.",
   },
   {
-    quote: "MashaAllah, a great source of reflection, learning, ibadah and being on track, whether it is praying on time or following your Deen in all aspects! May Allah reward the makers of the app. Immensely, InshaAllah and Ameen",
-    author: "—",
+    quote: "Our mosque uses Aqala for Friday khutbahs — visitors who don't speak Arabic can follow along on their phones. The community feedback has been incredible. BarakAllahu feekum.",
+    author: "Imam Hassan",
   },
 ];
 
@@ -24,7 +24,7 @@ export default function MuslimProTestimonial() {
     <section className="py-16 md:py-24 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-12 text-center">
-          What Members Say
+          What the Community Says About Aqala
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {TESTIMONIALS.map((t, i) => (

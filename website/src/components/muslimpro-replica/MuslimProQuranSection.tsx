@@ -8,8 +8,8 @@ export default function MuslimProQuranSection() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           <div className="flex-1 order-2 lg:order-1">
-            <div className="w-full max-w-sm h-64 bg-gradient-to-br from-[#00a651]/20 to-emerald-500/20 rounded-2xl flex items-center justify-center">
-              <span className="text-6xl text-[#00a651]/40">﴾</span>
+            <div className="w-full max-w-sm h-64 bg-gradient-to-br from-[#032117]/10 to-[#D4AF37]/20 rounded-2xl flex items-center justify-center">
+              <span className="text-6xl text-[#D4AF37]/50">﴾</span>
             </div>
           </div>
           <div className="flex-1 order-1 lg:order-2">
@@ -21,7 +21,7 @@ export default function MuslimProQuranSection() {
             </p>
             <Link
               href="/listen"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#00a651] text-white font-semibold hover:bg-[#008f44] transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
             >
               Read the Quran
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

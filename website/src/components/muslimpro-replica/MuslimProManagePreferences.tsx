@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 /**
- * Manage Preferences bar - matches app.muslimpro.com top bar
+ * Manage Preferences bar
  * Shown on app-like pages (prayer-times, app)
  */
 export default function MuslimProManagePreferences() {

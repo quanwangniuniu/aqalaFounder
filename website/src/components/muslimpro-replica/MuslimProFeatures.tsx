@@ -22,8 +22,8 @@ const features = [
     hover: "hover:border-rose-300",
   },
   {
-    title: "Upgrade to Aqala Premium!",
-    desc: "Ads help us keep Aqala running, but upgrading to Premium offers you an uninterrupted experience while directly supporting the app's growth.",
+    title: "Upgrade to Aqala Premium",
+    desc: "No ads, unlimited translation time, invite friends for $10 off, and AI enhancement. One-time payment, lifetime access.",
     cta: "Upgrade to Premium",
     href: "/subscription",
     gradient: "from-[#00a651]/10 to-emerald-500/10",

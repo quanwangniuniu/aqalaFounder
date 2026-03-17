@@ -38,7 +38,7 @@ function LanguageSelector({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all text-sm text-white/80 min-h-[44px]"
+        className="flex items-center gap-1.5 px-3 py-2 h-9 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all text-sm text-white/80"
         aria-label="Change language"
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -121,7 +121,7 @@ export default function LandingNav() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/app/about"
-            className="inline-flex px-3 py-2 rounded-full text-sm font-medium text-white/80 hover:text-white hover:bg-white/5 transition-all"
+            className="inline-flex px-2.5 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/5 transition-all"
           >
             {t("landing.about")}
           </Link>
@@ -138,7 +138,7 @@ export default function LandingNav() {
                 <>
                   <Link
                     href="/search"
-                    className="p-2.5 rounded-full bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all flex items-center justify-center"
                     aria-label="Search"
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -152,14 +152,14 @@ export default function LandingNav() {
               {!user && (
                 <Link
                   href="/auth/login"
-                  className="px-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all text-sm font-medium text-white min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
+                  className="px-3 py-2 h-9 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all text-sm font-medium text-white flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
                 >
                   {t("landing.signIn")}
                 </Link>
               )}
               <AdLink
                 href="/listen"
-                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#021a12] font-semibold text-sm hover:shadow-lg hover:shadow-[#D4AF37]/20 transition-all min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#021a12] font-semibold text-sm hover:shadow-lg hover:shadow-[#D4AF37]/20 transition-all flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
               >
                 {t("home.startListening")}
               </AdLink>

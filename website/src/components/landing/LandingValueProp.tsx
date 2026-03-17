@@ -45,8 +45,8 @@ export default function LandingValueProp() {
             <div className="flex-1 flex justify-center lg:justify-end">
               <div className="relative w-full max-w-md landing-img-hover rounded-2xl">
                 <Image
-                  src="/landing-translate-any-language.png"
-                  alt="Aqala instantly translates Islamic content to 20+ languages. Arabic to French, Spanish, German, Turkish and more."
+                  src="/aqala-shared-listening.png"
+                  alt="Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language."
                   width={800}
                   height={600}
                   className="w-full h-auto rounded-2xl border border-white/10 shadow-xl"

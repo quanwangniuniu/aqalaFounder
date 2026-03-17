@@ -1,5 +1,4 @@
-/* Muslim Pro Demo - typography & effects from Muslimpro_v2 clone
- * Body: system-ui stack (matches www.muslimpro.com)
+/* /app section - typography & effects
  * Headings/Arabic: Poppins + Edu NSW ACT Foundation
  */
 html {
@@ -29,7 +28,7 @@ html {
     transform var(--mp-transition-duration) ease;
 }
 
-/* Dropdown shadow - match Muslim Pro breakdance-dropdown-body */
+/* Dropdown shadow */
 .muslimpro-demo-root [data-mp-dropdown] {
   box-shadow: var(--mp-dropdown-shadow);
   transition: opacity var(--mp-transition-duration) ease,

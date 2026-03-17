@@ -42,16 +42,17 @@ export const PLAN_CONFIGS: Record<SubscriptionPlan, PlanConfig> = {
   },
   premium: {
     id: "premium",
-    name: "Ad-Free Forever",
+    name: "Aqala Premium",
     price: 19.95,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PREMIUM || "",
     currency: "USD",
     isOneTime: true,
     features: [
-      "Everything in Free",
-      "No ads, ever",
-      "Support Aqala's mission",
-      "One-time payment",
+      "No ads — uninterrupted listening",
+      "Unlimited translation time",
+      "Invite friends — they get $10 off",
+      "AI enhancement for clearer translations",
+      "One-time payment, lifetime access",
     ],
   },
 };
