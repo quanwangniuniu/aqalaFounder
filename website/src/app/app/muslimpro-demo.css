@@ -54,3 +54,43 @@ html {
 .muslimpro-demo-root .mp-img-hover:hover img {
   transform: scale(1.05);
 }
+
+/* Scroll reveal (landing only: /app) */
+.muslimpro-demo-root .mp-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.muslimpro-demo-root .mp-reveal.mp-reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .muslimpro-demo-root .mp-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Subtle CTA hover (landing only: /app) */
+.muslimpro-demo-root .mp-btn-hover {
+  transition: transform var(--mp-transition-duration) ease,
+    box-shadow var(--mp-transition-duration) ease,
+    filter var(--mp-transition-duration) ease;
+}
+
+.muslimpro-demo-root .mp-btn-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.55),
+    0 10px 26px -18px rgba(212, 175, 55, 0.45);
+  filter: saturate(1.05);
+}
+
+.muslimpro-demo-root .mp-btn-hover:active {
+  transform: translateY(0);
+}

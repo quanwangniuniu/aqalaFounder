@@ -8,7 +8,7 @@ const HERO_BG = "/aqala-assets/aqala-hero-mosque.jpg";
 
 export default function MuslimProHero() {
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[64vh] flex items-center justify-center overflow-hidden">
       {/* Background: Aqala-themed mosque interior from Unsplash */}
       <div className="absolute inset-0">
         <Image
@@ -22,7 +22,7 @@ export default function MuslimProHero() {
         <div className="absolute inset-0 bg-[#032117]/75" />
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-14 md:py-16">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4">
           Understand Islamic Content in Your Language
         </h1>
@@ -34,7 +34,7 @@ export default function MuslimProHero() {
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             href="/listen"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors mp-btn-hover"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -43,13 +43,13 @@ export default function MuslimProHero() {
             Open in Browser
           </Link>
           <Link
-            href="/listen"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/80 text-white font-bold hover:bg-white/10 transition-colors"
+            href="/app#get-aqala-app"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/80 text-white font-bold hover:bg-white/10 transition-colors mp-btn-hover"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
             </svg>
-            Start Listening
+            Get Aqala app
           </Link>
         </div>
       </div>

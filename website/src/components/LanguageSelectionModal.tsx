@@ -88,12 +88,11 @@ export default function LanguageSelectionModal() {
             </div>
 
             <h2
-              className="text-xl font-medium text-white mb-1"
-              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+              className="text-2xl md:text-3xl font-semibold text-[#D4AF37] mb-1"
             >
               {t.title}
             </h2>
-            <p className="text-white/50 text-sm">{t.subtitle}</p>
+            <p className="text-white/70 text-base md:text-lg">{t.subtitle}</p>
           </div>
 
           {/* Language grid - always LTR to prevent jumping */}
@@ -128,7 +127,7 @@ export default function LanguageSelectionModal() {
 
                   <span className="text-xl mb-1">{lang.flag}</span>
                   <span
-                    className={`text-xs font-medium ${
+                    className={`text-sm font-medium ${
                       selectedLang === lang.code
                         ? "text-[#E8D5A3]"
                         : "text-white/80"
@@ -137,7 +136,7 @@ export default function LanguageSelectionModal() {
                     {lang.label}
                   </span>
                   <span
-                    className={`text-[10px] ${
+                    className={`text-[11px] leading-tight ${
                       selectedLang === lang.code
                         ? "text-[#D4AF37]/70"
                         : "text-white/40"
@@ -154,7 +153,7 @@ export default function LanguageSelectionModal() {
           <div className="px-6 pb-6 pt-2" dir={isRTL ? "rtl" : "ltr"}>
             <button
               onClick={handleConfirm}
-              className="w-full py-3 px-6 rounded-xl bg-[#D4AF37] text-[#032117] font-semibold text-sm hover:bg-[#E8D5A3] transition-all duration-200 active:scale-[0.98]"
+              className="w-full py-3 px-6 rounded-xl bg-[#D4AF37] text-[#032117] font-semibold text-base hover:bg-[#E8D5A3] transition-all duration-200 active:scale-[0.98]"
             >
               <span
                 className={`flex items-center justify-center gap-2 ${
@@ -176,7 +175,7 @@ export default function LanguageSelectionModal() {
               </span>
             </button>
 
-            <p className="text-center text-[11px] text-white/30 mt-3">
+            <p className="text-center text-xs text-[#D4AF37]/70 mt-3">
               {t.settingsNote}
             </p>
           </div>

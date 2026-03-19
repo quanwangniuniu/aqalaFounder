@@ -7,10 +7,14 @@ import MuslimProHomeCarousel from "@/components/muslimpro-replica/MuslimProHomeC
 import MuslimProHomeSections from "@/components/muslimpro-replica/MuslimProHomeSections";
 import MuslimProQalboxHomeSection from "@/components/muslimpro-replica/MuslimProQalboxHomeSection";
 import MuslimProStats from "@/components/muslimpro-replica/MuslimProStats";
+import MuslimProComparisonSection from "@/components/muslimpro-replica/MuslimProComparisonSection";
 import MuslimProHomeTestimonial from "@/components/muslimpro-replica/MuslimProHomeTestimonial";
 import MuslimProBlogSection from "@/components/muslimpro-replica/MuslimProBlogSection";
 import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewsletter";
 import MuslimProAsSeenOn from "@/components/muslimpro-replica/MuslimProAsSeenOn";
+import MuslimProDownloadSection from "@/components/muslimpro-replica/MuslimProDownloadSection";
+import MuslimProScrollReveal from "@/components/muslimpro-replica/MuslimProScrollReveal";
+import MuslimProQuranDetectionSection from "@/components/muslimpro-replica/MuslimProQuranDetectionSection";
 
 /**
  * Aqala /app — Features, blog, and resources
@@ -19,15 +23,18 @@ export default function MuslimProDemoPage() {
   return (
     <>
       <MuslimProHero />
-      <MuslimProIntro />
-      <MuslimProHomeCarousel />
-      <MuslimProHomeSections />
-      <MuslimProQalboxHomeSection />
-      <MuslimProStats />
-      <MuslimProHomeTestimonial />
-      <MuslimProBlogSection />
-      <MuslimProNewsletter />
-      <MuslimProAsSeenOn />
+      <MuslimProScrollReveal><MuslimProIntro /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProHomeCarousel /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProHomeSections /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProQuranDetectionSection /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProComparisonSection /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProQalboxHomeSection /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProStats /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProDownloadSection /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProHomeTestimonial /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProBlogSection /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProNewsletter /></MuslimProScrollReveal>
+      <MuslimProScrollReveal><MuslimProAsSeenOn /></MuslimProScrollReveal>
       <section className="py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore Aqala</h2>

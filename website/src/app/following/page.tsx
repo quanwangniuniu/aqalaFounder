@@ -80,7 +80,7 @@ export default function FollowingPage() {
       </div>
 
       {/* List */}
-      <div className="max-w-lg mx-auto px-5 py-4">
+      <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-5 lg:px-6 py-4">
         {following.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">

@@ -1,25 +1,8 @@
-"use client";
-
-import LandingPage from "@/components/landing";
-import AppHome from "@/components/AppHome";
+import { redirect } from "next/navigation";
 
 /**
- * Unified homepage at "/" - no /landing suffix.
- * - Desktop (md+): Landing page
- * - Mobile (sm): App home (original)
- * Same route, conditional rendering via CSS.
+ * Keep /app as the only landing page entry.
  */
 export default function Page() {
-  return (
-    <>
-      {/* Landing: visible on desktop (md and up) */}
-      <div className="hidden md:block">
-        <LandingPage />
-      </div>
-      {/* App home: visible on mobile (below md) */}
-      <div className="md:hidden">
-        <AppHome />
-      </div>
-    </>
-  );
+  redirect("/app");
 }

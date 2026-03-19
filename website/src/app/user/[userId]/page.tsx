@@ -248,7 +248,7 @@ export default function UserProfilePage() {
     <div className="min-h-screen text-white">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-4">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4 lg:px-6 py-3 flex items-center gap-4">
           <button
             onClick={() => router.back()}
             className="text-white/60 hover:text-white transition-colors"
@@ -365,7 +365,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* Profile Header */}
-      <div className="max-w-lg mx-auto px-4 pt-6 pb-4">
+      <div className="max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4 lg:px-6 pt-6 pb-4">
         <div className="flex items-start gap-4">
           {/* Left column: Avatar */}
           <div className="flex-shrink-0">
@@ -533,7 +533,7 @@ export default function UserProfilePage() {
 
       {/* Tabs */}
       <div className="sticky top-[60px] z-40 bg-black/20 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-lg mx-auto flex">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto flex">
           <button
             onClick={() => setActiveTab("history")}
             className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -598,7 +598,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-lg mx-auto px-4 py-4 min-h-[300px]">
+      <div className="max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4 lg:px-6 py-4 min-h-[300px]">
         {/* Room History Tab */}
         {activeTab === "history" && (
           <>
@@ -629,7 +629,7 @@ export default function UserProfilePage() {
                 <p className="text-white/50 text-sm">No room activity yet</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-1">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5">
                 {roomHistory.map((room, idx) => (
                   <Link
                     key={idx}

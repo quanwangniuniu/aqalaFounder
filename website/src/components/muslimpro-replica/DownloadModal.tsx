@@ -87,7 +87,7 @@ export default function DownloadModal({ isOpen, onClose }: DownloadModalProps) {
               <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
               <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
             </svg>
-            <span>Start Listening</span>
+            <span>Get Aqala app</span>
           </a>
         </div>
 

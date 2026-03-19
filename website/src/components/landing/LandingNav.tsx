@@ -157,12 +157,6 @@ export default function LandingNav() {
                   {t("landing.signIn")}
                 </Link>
               )}
-              <AdLink
-                href="/listen"
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-[#021a12] font-semibold text-sm hover:shadow-lg hover:shadow-[#D4AF37]/20 transition-all flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
-              >
-                {t("home.startListening")}
-              </AdLink>
             </>
           )}
         </div>
