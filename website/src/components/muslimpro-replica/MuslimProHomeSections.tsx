@@ -3,8 +3,20 @@
 import Link from "next/link";
 import Image from "next/image";
 
+type HomeSection = {
+  title: string;
+  desc: string;
+  cta: string;
+  href: string;
+  image: string;
+  imageAlt: string;
+  imageFirst: boolean;
+  imageFit: "cover" | "contain";
+  imageAspectClass: string;
+};
+
 // Aqala premium sections — unique AI-generated images per section
-const SECTIONS = [
+const SECTIONS: HomeSection[] = [
   {
     title: "Real-time translation for Islamic content",
     desc: "Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language. 20+ languages — English, Arabic, Urdu, Hindi, Turkish, Indonesian, Bengali, French, German, Spanish, and more. Sources & methodology",
@@ -13,7 +25,7 @@ const SECTIONS = [
     image: "/aqala-shared-listening.png",
     imageAlt: "Real-time translation — Aqala",
     imageFirst: true,
-    imageFit: "cover" as const,
+    imageFit: "cover",
     imageAspectClass: "aspect-[4/3]",
   },
   {
@@ -24,7 +36,7 @@ const SECTIONS = [
     image: "/aqala-quran-detection.png",
     imageAlt: "Quran detection — Aqala",
     imageFirst: false,
-    imageFit: "cover" as const,
+    imageFit: "cover",
     imageAspectClass: "aspect-video",
   },
   {
@@ -35,7 +47,7 @@ const SECTIONS = [
     image: "/aqala-shared-listening.png",
     imageAlt: "Shared listening — Aqala",
     imageFirst: true,
-    imageFit: "cover" as const,
+    imageFit: "cover",
     imageAspectClass: "aspect-[4/3]",
   },
 ];
