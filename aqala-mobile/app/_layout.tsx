@@ -3,9 +3,13 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SonioxProvider } from "@soniox/react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { PreferencesProvider, usePreferences } from "@/contexts/PreferencesContext";
+import {
+  PreferencesProvider,
+  usePreferences,
+} from "@/contexts/PreferencesContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { PrayerProvider } from "@/contexts/PrayerContext";
 import { RoomsProvider } from "@/contexts/RoomsContext";
@@ -17,10 +21,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 import * as Location from "expo-location";
 import { getRecordingPermissionsAsync } from "expo-audio";
-import { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } from "expo-tracking-transparency";
+import {
+  getTrackingPermissionsAsync,
+  requestTrackingPermissionsAsync,
+} from "expo-tracking-transparency";
 import { useFonts } from "expo-font";
 import { Platform, View, Text } from "react-native";
 import "../global.css";
+
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
+const DIRECT_SONIOX_KEY = process.env.EXPO_PUBLIC_SONIOX_API_KEY || "";
+
+async function fetchSonioxApiKey(): Promise<string> {
+  try {
+    const res = await fetch(`${WEB_URL}/api/soniox-key`, { method: "POST" });
+    if (res.ok) {
+      const { api_key } = await res.json();
+      if (api_key) return api_key;
+    }
+  } catch {}
+  if (DIRECT_SONIOX_KEY) return DIRECT_SONIOX_KEY;
+  throw new Error("No Soniox API key available");
+}
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -33,8 +55,22 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", padding: 32 }}>
-          <Text style={{ color: "#ff4444", fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "#000",
+            justifyContent: "center",
+            padding: 32,
+          }}
+        >
+          <Text
+            style={{
+              color: "#ff4444",
+              fontSize: 18,
+              fontWeight: "bold",
+              marginBottom: 12,
+            }}
+          >
             App Error
           </Text>
           <Text style={{ color: "#fff", fontSize: 14 }}>
@@ -162,31 +198,36 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <IAPProvider>
-              <InterstitialAdProvider>
-                <PreferencesProvider>
-                  <PrivacyConsentProvider>
-                    <LanguageProvider>
-                      <PrayerProvider>
-                        <RoomsProvider>
-                          <StatusBar style="light" />
-                          <ThemedStack />
-                          <ConsentBanner />
-                        </RoomsProvider>
-                      </PrayerProvider>
-                    </LanguageProvider>
-                  </PrivacyConsentProvider>
-                </PreferencesProvider>
-              </InterstitialAdProvider>
-            </IAPProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <IAPProvider>
+                <InterstitialAdProvider>
+                  <PreferencesProvider>
+                    <PrivacyConsentProvider>
+                      <LanguageProvider>
+                        <SonioxProvider
+                          apiKey={fetchSonioxApiKey}
+                          permissions={null}
+                        >
+                          <PrayerProvider>
+                            <RoomsProvider>
+                              <StatusBar style="light" />
+                              <ThemedStack />
+                              <ConsentBanner />
+                            </RoomsProvider>
+                          </PrayerProvider>
+                        </SonioxProvider>
+                      </LanguageProvider>
+                    </PrivacyConsentProvider>
+                  </PreferencesProvider>
+                </InterstitialAdProvider>
+              </IAPProvider>
+            </SubscriptionProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }

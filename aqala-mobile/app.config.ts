@@ -108,6 +108,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             },
         ],
         "expo-iap",
+        "@siteed/audio-studio",
         [
             "react-native-google-mobile-ads",
             {

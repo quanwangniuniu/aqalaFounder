@@ -31,10 +31,14 @@ import {
   PastTranslation,
 } from "@/lib/firebase/userPastTranslations";
 
+// Set to true to show Past Translations section (code kept, hidden for now)
+const SHOW_PAST_TRANSLATIONS = false;
+
 export default function ListenHomeScreen() {
   const { t, language } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const { isPremium, showAds } = useSubscription();
+  const isPremiumUser = Boolean(user && isPremium);
   const { showAdBeforeNavigation } = useInterstitialAd();
   const router = useRouter();
 
@@ -574,8 +578,8 @@ export default function ListenHomeScreen() {
               ))}
             </View>
 
-            {/* Past Translations - only when logged in */}
-            {user && (
+            {/* Past Translations - only when logged in (hidden via SHOW_PAST_TRANSLATIONS) */}
+            {SHOW_PAST_TRANSLATIONS && user && (
               <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-4">
                 <TouchableOpacity
                   onPress={() => setPastTranslationsCollapsed((c) => !c)}
@@ -663,41 +667,42 @@ export default function ListenHomeScreen() {
               </View>
             )}
 
-            {/* Support Aqala */}
+            {/* Support Aqala / Thank you (premium) */}
             <View className="rounded-2xl bg-white/5 border border-white/10 p-4 mb-6">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-2.5">
-                  <View className="w-8 h-8 rounded-full bg-[#D4AF37]/15 items-center justify-center">
-                    <Ionicons name="heart" size={16} color="#D4AF37" />
-                  </View>
-                  <View>
-                    <Text className="text-sm font-semibold text-white">
-                      {t("listen.supportAqala")}
-                    </Text>
-                    <Text className="text-[11px] text-white/40">
-                      {t("listen.helpKeepFree")}
-                    </Text>
-                  </View>
+              {isPremiumUser ? (
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="heart" size={22} color="#D4AF37" />
+                  <Text className="text-base font-semibold text-[#D4AF37]">
+                    {t("listen.thankYouForSupportingAqala")}
+                  </Text>
                 </View>
+              ) : (
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-2.5">
+                    <View className="w-8 h-8 rounded-full bg-[#D4AF37]/15 items-center justify-center">
+                      <Ionicons name="heart" size={16} color="#D4AF37" />
+                    </View>
+                    <View>
+                      <Text className="text-sm font-semibold text-white">
+                        {t("listen.supportAqala")}
+                      </Text>
+                      <Text className="text-[11px] text-white/40">
+                        {t("listen.helpKeepFree")}
+                      </Text>
+                    </View>
+                  </View>
 
-                {showAds && user ? (
-                  <Link href="/subscription" asChild>
-                    <TouchableOpacity className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40">
-                      <Text className="text-xs font-medium text-[#D4AF37]">
-                        {t("listen.goAdFree")}
-                      </Text>
-                    </TouchableOpacity>
-                  </Link>
-                ) : (
-                  <Link href="/donate" asChild>
-                    <TouchableOpacity className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40">
-                      <Text className="text-xs font-medium text-[#D4AF37]">
-                        {t("listen.donateToAqala")}
-                      </Text>
-                    </TouchableOpacity>
-                  </Link>
-                )}
-              </View>
+                  {showAds && user ? (
+                    <Link href="/subscription" asChild>
+                      <TouchableOpacity className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40">
+                        <Text className="text-xs font-medium text-[#D4AF37]">
+                          {t("listen.goAdFree")}
+                        </Text>
+                      </TouchableOpacity>
+                    </Link>
+                  ) : null}
+                </View>
+              )}
             </View>
 
             {/* Footer */}

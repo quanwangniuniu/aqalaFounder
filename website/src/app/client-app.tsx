@@ -33,6 +33,9 @@ import { useLiveKitBroadcast, BroadcastMessage } from "@/hooks/useLiveKitBroadca
 // Client-side API key - must be prefixed with NEXT_PUBLIC_ to be available in browser
 const SONIOX_API_KEY = process.env.NEXT_PUBLIC_SONIOX_API_KEY || "";
 
+// Set to true to show Save translation + Past Translations (code is kept, just hidden for now)
+const SHOW_PAST_TRANSLATIONS = false;
+
 function concatReadable(...parts: string[]) {
   return parts
     .map((p) => p.trim())
@@ -2467,7 +2470,7 @@ https://aqala.org
                 </svg>
                 {t("share.email")}
               </button>
-              {(user || isInWebView) && (
+              {SHOW_PAST_TRANSLATIONS && (user || isInWebView) && (
                 <button
                   onClick={handleSavePastTranslation}
                   disabled={savingPastTranslation || pastTranslationSaved}
@@ -2483,7 +2486,7 @@ https://aqala.org
             
             {/* Secondary actions */}
             <div className="flex items-center justify-center gap-3 pt-2">
-              {user && !isInWebView && (
+              {SHOW_PAST_TRANSLATIONS && user && !isInWebView && (
                 <Link
                   href="/listen/past"
                   className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
