@@ -9,8 +9,11 @@ import {
   Linking,
   Share,
   Animated,
+  Modal,
+  FlatList,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRecording } from "@soniox/react";
 import { useKeepAwake } from "expo-keep-awake";
 import {
@@ -21,16 +24,16 @@ import { Ionicons } from "@expo/vector-icons";
 
 import WallpaperBackground from "@/components/WallpaperBackground";
 import VerseModal from "@/components/VerseModal";
+import VerseHighlightedText from "@/components/VerseHighlightedText";
 import SummaryModal from "@/components/SummaryModal";
+import EmailModal from "@/components/EmailModal";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  useLanguage,
-  LANGUAGE_OPTIONS,
-} from "@/contexts/LanguageContext";
+import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { savePastTranslation } from "@/lib/firebase/userPastTranslations";
-import { useLiveRefinement } from "@/lib/live-listen/useLiveRefinement";
 import { SonioxAudioSource } from "@/lib/audio/SonioxAudioSource";
+import { findVerseReference } from "@/lib/quran/findVerse";
+import type { VerseHighlight } from "@/components/VerseHighlightedText";
 
 // ── Fade-in wrapper for new content ──────────────────────────────────
 
@@ -76,8 +79,24 @@ function FadeInView({
 
 const LANG_OPTIONS = LANGUAGE_OPTIONS.filter((l) =>
   [
-    "en", "ar", "ur", "hi", "bn", "tr", "id", "fr", "de",
-    "es", "pt", "ru", "zh", "ja", "ko", "vi", "th", "it",
+    "en",
+    "ar",
+    "ur",
+    "hi",
+    "bn",
+    "tr",
+    "id",
+    "fr",
+    "de",
+    "es",
+    "pt",
+    "ru",
+    "zh",
+    "ja",
+    "ko",
+    "vi",
+    "th",
+    "it",
   ].includes(l.code),
 );
 
@@ -86,6 +105,7 @@ const LANG_OPTIONS = LANGUAGE_OPTIONS.filter((l) =>
 export default function NativeLiveListenScreen() {
   useKeepAwake();
 
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuth();
   const { language, t } = useLanguage();
@@ -101,19 +121,27 @@ export default function NativeLiveListenScreen() {
 
   const [selectedVerseKey, setSelectedVerseKey] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [savingPast, setSavingPast] = useState(false);
   const [savedPast, setSavedPast] = useState(false);
+  const [savedTranslationText, setSavedTranslationText] = useState("");
+  const [verseHighlights, setVerseHighlights] = useState<VerseHighlight[]>([]);
+
+  const selectedLangOption =
+    LANG_OPTIONS.find((l) => l.code === targetLang) ?? LANG_OPTIONS[0];
 
   const translationScrollRef = useRef<ScrollView>(null);
   const sourceScrollRef = useRef<ScrollView>(null);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  const userIsScrollingRef = useRef(false);
+  const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [savedSourceText, setSavedSourceText] = useState("");
 
   // ── Audio source (persistent across renders) ──────────────────────
 
   const audioSourceRef = useRef(new SonioxAudioSource());
-
-  // ── Refinement hook ───────────────────────────────────────────────
-
-  const refinement = useLiveRefinement(targetLang);
 
   // ── Soniox useRecording ───────────────────────────────────────────
 
@@ -131,12 +159,12 @@ export default function NativeLiveListenScreen() {
     num_channels: 1,
     source: audioSourceRef.current,
     onError: (err) => {
+      if (err?.name === "AbortError" || err?.message?.includes("aborted"))
+        return;
       console.error("[LiveListen] Soniox error:", err);
       setError(err.message || "Transcription error");
     },
-    onFinished: () => {
-      refinement.flush();
-    },
+    onFinished: () => {},
     onConnected: () => {
       console.log("[LiveListen] Soniox WebSocket connected");
     },
@@ -167,59 +195,146 @@ export default function NativeLiveListenScreen() {
     })();
   }, []);
 
-  // ── Feed Soniox output into refinement pipeline ───────────────────
+  // ── Track Soniox output ──────────────────────────────────────────
 
   const groups = recording.groups;
   const translationFinalText = groups?.translation?.finalText ?? "";
   const sourceFinalText = groups?.original?.finalText ?? "";
 
+  const baseTranslationRef = useRef("");
+  const baseSourceRef = useRef("");
+  const prevSessionTranslationRef = useRef("");
+  const prevSessionSourceRef = useRef("");
+
   useEffect(() => {
-    if (groups && Object.keys(groups).length > 0) {
-      console.log(
-        "[LiveListen] groups:",
-        JSON.stringify(
-          Object.fromEntries(
-            Object.entries(groups).map(([k, v]: [string, any]) => [
-              k,
-              { finalLen: v?.finalText?.length ?? 0, partialLen: v?.partialText?.length ?? 0 },
-            ]),
-          ),
-        ),
-      );
+    if (isListening) {
+      baseTranslationRef.current = prevSessionTranslationRef.current;
+      baseSourceRef.current = prevSessionSourceRef.current;
     }
-  }, [groups]);
+  }, [isListening]);
 
   useEffect(() => {
     if (translationFinalText) {
-      refinement.feedTranslation(translationFinalText);
+      const combined = baseTranslationRef.current
+        ? `${baseTranslationRef.current} ${translationFinalText}`
+        : translationFinalText;
+      setSavedTranslationText(combined);
+      prevSessionTranslationRef.current = combined;
     }
   }, [translationFinalText]);
 
   useEffect(() => {
     if (sourceFinalText) {
-      refinement.feedSource(sourceFinalText);
+      const combined = baseSourceRef.current
+        ? `${baseSourceRef.current} ${sourceFinalText}`
+        : sourceFinalText;
+      setSavedSourceText(combined);
+      prevSessionSourceRef.current = combined;
     }
   }, [sourceFinalText]);
 
-  // ── Auto-scroll ───────────────────────────────────────────────────
+  // ── Auto-scroll (teleprompter: latest text stays at vertical center) ──
 
-  useEffect(() => {
-    if (refinement.refinedParagraphs.length > 0) {
-      setTimeout(
-        () => translationScrollRef.current?.scrollToEnd({ animated: true }),
-        100,
-      );
-    }
-  }, [refinement.refinedParagraphs.length]);
+  const scrollToCenter = useCallback(() => {
+    if (userIsScrollingRef.current) return;
+    if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+    scrollDebounceRef.current = setTimeout(() => {
+      translationScrollRef.current?.scrollToEnd({ animated: true });
+    }, 80);
+  }, []);
 
-  useEffect(() => {
-    if (refinement.sourceStable) {
-      setTimeout(
-        () => sourceScrollRef.current?.scrollToEnd({ animated: true }),
-        100,
-      );
+  // ── Verse detection (debounced on Arabic source text) ───────────────
+
+  const verseDetectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const detectingRef = useRef(false);
+  const lastDetectedKeyRef = useRef<string | null>(null);
+  const revealTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Snapshot the translation word count when Arabic text starts arriving —
+  // this marks where the Quran recitation begins in the translation stream
+  const verseWordStartRef = useRef(0);
+  const arabicStartedRef = useRef(false);
+
+  const runVerseDetection = useCallback(async (
+    fullArabic: string,
+    wordEnd: number,
+  ) => {
+    if (detectingRef.current) return;
+    if (fullArabic.trim().length < 10) return;
+    detectingRef.current = true;
+
+    try {
+      const result = await findVerseReference(fullArabic.trim());
+      if (result) {
+        // Same result as last time — skip
+        if (result.verseKey === lastDetectedKeyRef.current) {
+          detectingRef.current = false;
+          return;
+        }
+        lastDetectedKeyRef.current = result.verseKey;
+
+        const wordStart = verseWordStartRef.current;
+
+        // 3s reveal delay — text has been flowing as normal typewriter,
+        // now quietly wrap the verse block around it
+        const timer = setTimeout(() => {
+          setVerseHighlights((prev) => {
+            // Replace any existing highlight from the same chapter
+            const chapter = result.verseKey.split(":")[0];
+            const filtered = prev.filter(
+              (h) => h.verseKey.split(":")[0] !== chapter,
+            );
+            return [
+              ...filtered,
+              {
+                startWord: wordStart,
+                endWord: wordEnd,
+                verseKey: result.verseKey,
+                verseReference: result.reference,
+              },
+            ];
+          });
+        }, 3000);
+        revealTimersRef.current.push(timer);
+      }
+    } catch (err) {
+      console.warn("[VerseDetect] Detection failed:", err);
     }
-  }, [refinement.sourceStable]);
+    detectingRef.current = false;
+  }, []);
+
+  // 5s debounce — only fires after Arabic text has been stable for 5 seconds,
+  // meaning the reciter has clearly moved on from the Quran verse
+  useEffect(() => {
+    if (!savedSourceText) return;
+
+    // Mark where in the translation the Arabic recitation started
+    if (!arabicStartedRef.current) {
+      arabicStartedRef.current = true;
+      const currentWords = savedTranslationText.split(/\s+/).filter(Boolean).length;
+      verseWordStartRef.current = currentWords;
+    }
+
+    if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
+
+    verseDetectTimerRef.current = setTimeout(() => {
+      const transWords = savedTranslationText.split(/\s+/).filter(Boolean);
+      // Send FULL accumulated Arabic for correct surah identification
+      runVerseDetection(savedSourceText, transWords.length);
+      // Reset start marker for next verse
+      arabicStartedRef.current = false;
+    }, 5000);
+
+    return () => {
+      if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
+    };
+  }, [savedSourceText, savedTranslationText, runVerseDetection]);
+
+  // Cleanup reveal timers on unmount
+  useEffect(() => {
+    return () => {
+      revealTimersRef.current.forEach(clearTimeout);
+    };
+  }, []);
 
   // ── Handlers ──────────────────────────────────────────────────────
 
@@ -227,7 +342,6 @@ export default function NativeLiveListenScreen() {
     setError(null);
     setHasStopped(false);
     setSavedPast(false);
-    refinement.reset();
     try {
       recording.start();
     } catch (e: any) {
@@ -240,23 +354,27 @@ export default function NativeLiveListenScreen() {
         setError(msg);
       }
     }
-  }, [recording, refinement]);
+  }, [recording]);
 
   const handleStop = useCallback(async () => {
     try {
       await recording.stop();
     } catch {}
     setHasStopped(true);
-    refinement.flush();
-  }, [recording, refinement]);
+
+    // Flush pending verse detection on stop — no need to wait 5s
+    if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
+    if (savedSourceText.trim().length >= 10) {
+      const transWords = savedTranslationText.split(/\s+/).filter(Boolean);
+      runVerseDetection(savedSourceText, transWords.length);
+    }
+  }, [recording, savedSourceText, savedTranslationText, runVerseDetection]);
 
   const handleLanguageChange = useCallback(
     (code: string) => {
       setTargetLangState(code);
-      refinement.setTargetLang(code);
       if (isListening) {
         handleStop().then(() => {
-          refinement.reset();
           setTimeout(() => {
             recording.start();
             setHasStopped(false);
@@ -264,28 +382,109 @@ export default function NativeLiveListenScreen() {
         });
       }
     },
-    [isListening, recording, refinement, handleStop],
+    [isListening, recording, handleStop],
   );
 
   const handleCopy = useCallback(async () => {
-    const fullText =
-      refinement.refinedParagraphs.join("\n\n") || translationFinalText;
-    if (!fullText.trim()) return;
+    if (!savedTranslationText.trim()) return;
     try {
-      await Share.share({ message: fullText });
+      await Share.share({ message: savedTranslationText });
     } catch {}
-  }, [refinement.refinedParagraphs, translationFinalText]);
+  }, [savedTranslationText]);
+
+  const getEmailContent = useCallback(() => {
+    const sourceText = savedSourceText.trim();
+    const translatedText = savedTranslationText.trim();
+    const langLabel =
+      LANG_OPTIONS.find((l) => l.code === targetLang)?.label || targetLang;
+    const escape = (s: string) =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    const safeSource = escape(sourceText || "(No source text recorded)").replace(
+      /\n/g,
+      "<br>",
+    );
+    const safeTranslation = escape(
+      translatedText || "(No translation recorded)",
+    ).replace(/\n/g, "<br>");
+    const safeLang = escape(langLabel);
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a;background:#f5f5f5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:24px 0;">
+<tr><td align="center" style="padding:0 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+<tr><td style="padding:32px 32px 24px;border-bottom:1px solid #eee;">
+<h1 style="margin:0;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:-0.02em;">Quran Translation Record</h1>
+<p style="margin:12px 0 0;font-size:14px;color:#666;">${new Date().toLocaleString()}</p>
+<p style="margin:8px 0 0;font-size:14px;color:#666;"><strong>Source:</strong> Arabic &nbsp;|&nbsp; <strong>Translation:</strong> ${safeLang}</p>
+</td></tr>
+<tr><td style="padding:24px 32px;">
+<p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.05em;">Original Text</p>
+<p style="margin:0;padding:16px;background:#f9f9f9;border-radius:6px;font-size:16px;line-height:1.8;color:#333;border-left:3px solid #D4AF37;">${safeSource}</p>
+</td></tr>
+<tr><td style="padding:0 32px 24px;">
+<p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.05em;">Translation</p>
+<p style="margin:0;padding:16px;background:#f9f9f9;border-radius:6px;font-size:15px;line-height:1.8;color:#333;border-left:3px solid #D4AF37;">${safeTranslation}</p>
+</td></tr>
+<tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #eee;text-align:center;">
+<p style="margin:0;font-size:13px;color:#888;">Powered by <strong style="color:#1a1a1a;">Aqala</strong></p>
+<p style="margin:4px 0 0;"><a href="https://aqala.org" style="color:#D4AF37;text-decoration:none;font-weight:500;">aqala.org</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+    return {
+      subject: `Quran Translation – ${new Date().toLocaleDateString()}`,
+      body: `QURAN TRANSLATION RECORD
+
+Date: ${new Date().toLocaleString()}
+Source Language: Arabic
+Translation Language: ${langLabel}
+
+---
+
+ORIGINAL TEXT
+
+${sourceText || "(No source text recorded)"}
+
+---
+
+TRANSLATION
+
+${translatedText || "(No translation recorded)"}
+
+---
+
+Powered by Aqala
+https://aqala.org
+`,
+      html,
+    };
+  }, [savedSourceText, savedTranslationText, targetLang]);
 
   const handleSave = useCallback(async () => {
     if (!user?.uid || savingPast || savedPast) return;
+    if (!savedTranslationText.trim()) return;
     setSavingPast(true);
     try {
       await savePastTranslation(user.uid, {
-        sourceText: refinement.sourceStable,
-        translatedParagraphs: refinement.refinedParagraphs,
-        verseReferences: refinement.verseReferences,
+        sourceText: savedSourceText,
+        translatedParagraphs: [savedTranslationText.trim()],
+        verseReferences: verseHighlights.length > 0
+          ? [verseHighlights[0].verseReference]
+          : [],
         sourceLang: "ar",
         targetLang,
+        verseHighlights: verseHighlights.length > 0 ? verseHighlights : undefined,
       });
       setSavedPast(true);
     } catch (e) {
@@ -297,27 +496,35 @@ export default function NativeLiveListenScreen() {
     user,
     savingPast,
     savedPast,
-    refinement.sourceStable,
-    refinement.refinedParagraphs,
-    refinement.verseReferences,
+    savedSourceText,
+    savedTranslationText,
+    verseHighlights,
     targetLang,
   ]);
 
   // ── Derived ───────────────────────────────────────────────────────
 
-  const translationPartial =
-    recording.groups?.translation?.partialText ?? "";
+  const translationPartial = recording.groups?.translation?.partialText ?? "";
   const sourcePartial = recording.groups?.original?.partialText ?? "";
-  const hasRefined = refinement.refinedParagraphs.length > 0;
-  const hasRawTranslation = translationFinalText.length > 0;
-  const hasResults = hasRefined || hasRawTranslation;
+  const hasResults = savedTranslationText.length > 0;
   const showPostActions = hasStopped && !isListening && hasResults;
+
+  // ── Source panel auto-scroll ────────────────────────────────────────
+
+  useEffect(() => {
+    if (savedSourceText || sourcePartial) {
+      setTimeout(
+        () => sourceScrollRef.current?.scrollToEnd({ animated: true }),
+        80,
+      );
+    }
+  }, [savedSourceText, sourcePartial]);
 
   // ── Word-by-word typewriter reveal ──────────────────────────────────
 
   const allTranslationWords = useMemo(
-    () => translationFinalText.split(/\s+/).filter(Boolean),
-    [translationFinalText],
+    () => savedTranslationText.split(/\s+/).filter(Boolean),
+    [savedTranslationText],
   );
 
   const [revealedWordCount, setRevealedWordCount] = useState(0);
@@ -333,10 +540,6 @@ export default function NativeLiveListenScreen() {
   }, []);
 
   useEffect(() => {
-    if (hasRefined) {
-      clearRevealTimer();
-      return;
-    }
     if (revealTimerRef.current) return;
     if (revealedWordCount >= allTranslationWords.length) return;
 
@@ -351,14 +554,11 @@ export default function NativeLiveListenScreen() {
     }, 55);
 
     return clearRevealTimer;
-  }, [allTranslationWords.length, revealedWordCount, hasRefined, clearRevealTimer]);
+  }, [allTranslationWords.length, revealedWordCount, clearRevealTimer]);
 
   useEffect(() => {
-    if (!isListening && !hasStopped) {
-      setRevealedWordCount(0);
-      clearRevealTimer();
-    }
-  }, [isListening, hasStopped, clearRevealTimer]);
+    if (revealedWordCount > 0) scrollToCenter();
+  }, [revealedWordCount, scrollToCenter]);
 
   // ── Verse reference parsing helper ────────────────────────────────
 
@@ -370,7 +570,7 @@ export default function NativeLiveListenScreen() {
   // ── Render ────────────────────────────────────────────────────────
 
   return (
-    <WallpaperBackground edges={["top", "bottom"]}>
+    <WallpaperBackground edges={["top"]}>
       {/* Header */}
       <View
         className="flex-row items-center px-4 py-3 border-b border-white/10"
@@ -384,11 +584,8 @@ export default function NativeLiveListenScreen() {
         </TouchableOpacity>
 
         <View className="flex-1 flex-row items-center gap-2">
-          <View
-            className="w-8 h-8 rounded-full items-center justify-center"
-            style={{ backgroundColor: `${accent.base}33` }}
-          >
-            <Ionicons name="mic" size={16} color={accent.base} />
+          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+            <Ionicons name="mic" size={16} color="white" />
           </View>
           <Text
             className="text-white font-semibold text-base"
@@ -405,45 +602,36 @@ export default function NativeLiveListenScreen() {
             </View>
           )}
         </View>
-      </View>
 
-      {/* Language selector */}
-      <View className="px-4 py-2 border-b border-white/5">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+        <TouchableOpacity
+          onPress={() => setShowLangPicker(true)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            backgroundColor: "rgba(255,255,255,0.08)",
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.15)",
+          }}
         >
-          {LANG_OPTIONS.map((opt) => {
-            const active = opt.code === targetLang;
-            return (
-              <TouchableOpacity
-                key={opt.code}
-                onPress={() => handleLanguageChange(opt.code)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
-                  borderRadius: 20,
-                  backgroundColor: active
-                    ? `${accent.base}33`
-                    : "rgba(255,255,255,0.06)",
-                  borderWidth: active ? 1 : 0,
-                  borderColor: accent.base,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: active ? "600" : "400",
-                    color: active ? accent.base : "rgba(255,255,255,0.6)",
-                  }}
-                >
-                  {opt.flag} {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+          <Text
+            style={{
+              fontSize: 13,
+              color: "rgba(255,255,255,0.9)",
+              fontWeight: "600",
+            }}
+          >
+            {selectedLangOption?.flag} {selectedLangOption?.label}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={14}
+            color="rgba(255,255,255,0.5)"
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Mic permission denied */}
@@ -473,20 +661,20 @@ export default function NativeLiveListenScreen() {
         </View>
       )}
 
-      {/* Error banner */}
-      {(error || refinement.error || recording.error) && (
+      {/* Error banner — suppress expected AbortError from stop/cleanup */}
+      {(error ||
+        (recording.error &&
+          recording.error.name !== "AbortError" &&
+          !recording.error.message?.includes("aborted"))) && (
         <View className="px-4 py-2 bg-red-900/30 border-b border-red-500/30">
           <Text className="text-red-300 text-xs">
-            {error || refinement.error || recording.error?.message}
+            {error || recording.error?.message}
           </Text>
         </View>
       )}
 
-      {/* Source (reference) panel */}
-      <View
-        className="border-b border-white/5"
-        style={{ maxHeight: 120 }}
-      >
+      {/* Source (reference) panel — fixed 2-line height */}
+      <View className="border-b border-white/5" style={{ height: 80 }}>
         <View className="px-4 pt-2 pb-1">
           <Text className="text-white/40 text-xs font-medium uppercase tracking-wider">
             Source / Reference
@@ -495,20 +683,20 @@ export default function NativeLiveListenScreen() {
         <ScrollView
           ref={sourceScrollRef}
           className="px-4 pb-2"
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
         >
-          {refinement.sourceStable || sourcePartial ? (
+          {savedSourceText || sourcePartial ? (
             <Text
               style={{
-                fontSize: 15,
-                lineHeight: 28,
+                fontSize: 14,
+                lineHeight: 22,
                 color: "rgba(255,255,255,0.7)",
                 textAlign: "right",
-                fontFamily:
-                  Platform.OS === "ios" ? "Geeza Pro" : "sans-serif",
+                fontFamily: Platform.OS === "ios" ? "Geeza Pro" : "sans-serif",
               }}
             >
-              {refinement.sourceStable}
+              {savedSourceText}
               {sourcePartial ? (
                 <Text style={{ color: "rgba(255,255,255,0.3)" }}>
                   {" "}
@@ -517,85 +705,47 @@ export default function NativeLiveListenScreen() {
               ) : null}
             </Text>
           ) : isListening ? (
-            <Text className="text-white/25 text-sm italic">
+            <Text className="text-white/25 text-xs italic">
               Listening for audio...
             </Text>
           ) : (
-            <Text className="text-white/25 text-sm italic">
+            <Text className="text-white/25 text-xs italic">
               Waiting for audio
             </Text>
           )}
         </ScrollView>
       </View>
 
-      {/* Main translation area */}
+      {/* Main translation area — teleprompter scroll keeps latest text centered */}
       <ScrollView
         ref={translationScrollRef}
-        className="flex-1 px-4 pt-3"
-        contentContainerStyle={{ paddingBottom: 100 }}
+        className="flex-1 px-4"
+        onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
+        contentContainerStyle={{
+          paddingTop: 12,
+          paddingBottom: Math.max(scrollViewHeight * 0.5, 100),
+        }}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => {
+          userIsScrollingRef.current = true;
+        }}
+        onMomentumScrollEnd={() => {
+          userIsScrollingRef.current = false;
+        }}
+        onScrollEndDrag={() => {
+          setTimeout(() => {
+            userIsScrollingRef.current = false;
+          }, 1200);
+        }}
       >
-        {hasRefined ? (
-          refinement.refinedParagraphs.map((para, i) => (
-            <FadeInView key={`refined-${i}`} style={{ marginBottom: 16 }}>
-              <Text
-                style={{
-                  fontSize: 17,
-                  lineHeight: 28,
-                  color: "rgba(255,255,255,0.9)",
-                }}
-              >
-                {para}
-              </Text>
-
-              {refinement.verseReferences[i] && (
-                <TouchableOpacity
-                  onPress={() => {
-                    const key = parseVerseKey(refinement.verseReferences[i]!);
-                    if (key) setSelectedVerseKey(key);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                    marginTop: 8,
-                    alignSelf: "flex-start",
-                    backgroundColor: `${accent.base}1A`,
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: `${accent.base}33`,
-                  }}
-                >
-                  <Ionicons
-                    name="book-outline"
-                    size={12}
-                    color={accent.base}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "500",
-                      color: accent.base,
-                    }}
-                  >
-                    {refinement.verseReferences[i]}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </FadeInView>
-          ))
-        ) : revealedWordCount > 0 ? (
-          <Text
-            style={{
-              fontSize: 17,
-              lineHeight: 28,
-              color: "rgba(255,255,255,0.9)",
-            }}
-          >
-            {allTranslationWords.slice(0, revealedWordCount).join(" ")}
-          </Text>
+        {revealedWordCount > 0 ? (
+          <VerseHighlightedText
+            words={allTranslationWords}
+            highlights={verseHighlights}
+            accentColor={accent.base}
+            onVersePress={setSelectedVerseKey}
+            maxWord={revealedWordCount}
+          />
         ) : null}
 
         {/* Live preview: partial translation or incoming cursor */}
@@ -614,7 +764,10 @@ export default function NativeLiveListenScreen() {
                 <Text style={{ color: accent.base }}>|</Text>
               </Text>
             ) : !hasResults ? (
-              <View className="flex-row items-center gap-2" style={{ opacity: 0.5 }}>
+              <View
+                className="flex-row items-center gap-2"
+                style={{ opacity: 0.5 }}
+              >
                 <ActivityIndicator size="small" color={accent.base} />
                 <Text className="text-white/30 text-sm">Listening...</Text>
               </View>
@@ -649,11 +802,8 @@ export default function NativeLiveListenScreen() {
             className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl"
             style={{ backgroundColor: `${accent.base}1A` }}
           >
-            <Ionicons name="sparkles" size={16} color={accent.base} />
-            <Text
-              style={{ color: accent.base }}
-              className="text-sm font-medium"
-            >
+            <Ionicons name="sparkles" size={16} color="white" />
+            <Text style={{ color: "white" }} className="text-sm font-medium">
               Summary
             </Text>
           </TouchableOpacity>
@@ -682,9 +832,7 @@ export default function NativeLiveListenScreen() {
                 <Ionicons
                   name={savedPast ? "checkmark-circle" : "bookmark-outline"}
                   size={16}
-                  color={
-                    savedPast ? accent.base : "rgba(255,255,255,0.7)"
-                  }
+                  color={savedPast ? accent.base : "rgba(255,255,255,0.7)"}
                 />
                 <Text
                   style={savedPast ? { color: accent.base } : undefined}
@@ -699,13 +847,28 @@ export default function NativeLiveListenScreen() {
               </>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setShowEmailModal(true)}
+            className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/6"
+          >
+            <Ionicons
+              name="mail-outline"
+              size={16}
+              color="rgba(255,255,255,0.7)"
+            />
+            <Text className="text-white/70 text-sm font-medium">Email</Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      {/* Mic button */}
+      {/* Mic button — bottom inset applied here so bar fills to screen edge (no dead gap below) */}
       <View
-        className="items-center py-4 border-t border-white/10"
-        style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
+        className="items-center pt-4 border-t border-white/10"
+        style={{
+          backgroundColor: "rgba(0,0,0,0.15)",
+          paddingBottom: Math.max(insets.bottom, 16),
+        }}
       >
         {micReady ? (
           <TouchableOpacity
@@ -758,12 +921,106 @@ export default function NativeLiveListenScreen() {
       <SummaryModal
         visible={showSummary}
         onClose={() => setShowSummary(false)}
-        refinedText={
-          refinement.refinedParagraphs.join("\n\n") || translationFinalText
-        }
-        sourceText={refinement.sourceStable}
+        refinedText={savedTranslationText}
+        sourceText={savedSourceText}
         targetLang={targetLang}
       />
+
+      <EmailModal
+        visible={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        content={getEmailContent()}
+        userEmail={user?.email}
+        accentColor={accent.base}
+      />
+
+      {/* Language picker */}
+      <Modal
+        visible={showLangPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowLangPicker(false)}
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            justifyContent: "flex-end",
+          }}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <View
+              style={{
+                backgroundColor: "#0a1f16",
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                paddingBottom: 40,
+                maxHeight: "60%",
+              }}
+            >
+              <View className="flex-row items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
+                <Text className="text-white font-semibold text-base">
+                  Translate to
+                </Text>
+                <TouchableOpacity onPress={() => setShowLangPicker(false)}>
+                  <Ionicons
+                    name="close"
+                    size={22}
+                    color="rgba(255,255,255,0.5)"
+                  />
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={LANG_OPTIONS}
+                keyExtractor={(item) => item.code}
+                renderItem={({ item }) => {
+                  const active = item.code === targetLang;
+                  return (
+                    <TouchableOpacity
+                      onPress={() => {
+                        handleLanguageChange(item.code);
+                        setShowLangPicker(false);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 20,
+                        paddingVertical: 14,
+                        backgroundColor: active
+                          ? `${accent.base}15`
+                          : "transparent",
+                      }}
+                    >
+                      <Text style={{ fontSize: 20, marginRight: 12 }}>
+                        {item.flag}
+                      </Text>
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 15,
+                          fontWeight: active ? "600" : "400",
+                          color: active ? accent.base : "rgba(255,255,255,0.8)",
+                        }}
+                      >
+                        {item.label}
+                      </Text>
+                      {active && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color={accent.base}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </WallpaperBackground>
   );
 }

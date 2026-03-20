@@ -157,110 +157,101 @@ function countArabicWords(text: string): number {
 }
 
 /**
- * Analyze search result to determine if it's a confident match
- * Returns confidence score 0-1
- * 
- * BALANCED MATCHING: We use consecutive word sequences as a quality signal
- * but also consider overall match density. This handles transcription
- * variations while still blocking false positives from common words.
- * 
- * @param result - The search result to analyze
- * @param inputWordCount - Number of Arabic words in the input
- * @param isTopResult - Whether this is the #1 ranked result (gets bonus)
+ * Strip tashkeel / diacritics and normalize common letter variants
+ * for exact surface-form comparison.
+ */
+function normalizeArabic(text: string): string {
+  return text
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, "")
+    .replace(/[\u0622\u0623\u0625\u0671]/g, "\u0627")
+    .replace(/\u0629/g, "\u0647")
+    .replace(/\u0649/g, "\u064A");
+}
+
+/**
+ * Verify match using exact surface-form comparison (not root/stem).
+ * The API's highlight uses root matching which is too loose.
+ */
+function verifyExactMatch(
+  verseWords: SearchResultWord[],
+  inputText: string,
+): { exactHighlighted: number; exactConsecutive: number } {
+  const normalizedInput = normalizeArabic(inputText);
+  const inputWordSet = new Set(
+    normalizedInput.split(/\s+/).filter((w) => /[\u0600-\u06FF]/.test(w)),
+  );
+
+  const actualWords = verseWords.filter((w) => w.char_type === "word");
+  let exactHighlighted = 0;
+  let exactConsecutive = 0;
+  let streak = 0;
+
+  for (const word of actualWords) {
+    if (word.highlight !== true) { streak = 0; continue; }
+    const normalizedWord = normalizeArabic(word.text);
+    if (inputWordSet.has(normalizedWord)) {
+      exactHighlighted++;
+      streak++;
+      exactConsecutive = Math.max(exactConsecutive, streak);
+    } else {
+      streak = 0;
+    }
+  }
+
+  return { exactHighlighted, exactConsecutive };
+}
+
+/**
+ * Analyze search result using exact surface-form matching.
  */
 function analyzeMatch(
   result: SearchResult,
   inputWordCount: number,
-  isTopResult: boolean = false
+  isTopResult: boolean = false,
+  inputText: string = "",
 ): { confidence: number; verseWordCount: number; highlightedCount: number; longestConsecutive: number } {
   if (!result.words || result.words.length === 0) {
     return { confidence: 0, verseWordCount: 0, highlightedCount: 0, longestConsecutive: 0 };
   }
 
-  // Count actual words (not verse numbers/end markers)
   const actualWords = result.words.filter((w) => w.char_type === "word");
   const verseWordCount = actualWords.length;
-  const highlightedCount = actualWords.filter((w) => w.highlight === true).length;
 
-  // If no words highlighted, no match
-  if (highlightedCount === 0) {
-    return { confidence: 0, verseWordCount, highlightedCount, longestConsecutive: 0 };
+  const { exactHighlighted, exactConsecutive } = verifyExactMatch(result.words, inputText);
+
+  if (exactHighlighted < 2) {
+    return { confidence: 0, verseWordCount, highlightedCount: exactHighlighted, longestConsecutive: 0 };
   }
 
-  // Find longest consecutive sequence of highlighted words
-  let longestConsecutive = 0;
-  let currentStreak = 0;
-  for (const word of actualWords) {
-    if (word.highlight === true) {
-      currentStreak++;
-      longestConsecutive = Math.max(longestConsecutive, currentStreak);
-    } else {
-      currentStreak = 0;
-    }
+  if (exactConsecutive < 3 && verseWordCount > 5) {
+    return { confidence: 0, verseWordCount, highlightedCount: exactHighlighted, longestConsecutive: exactConsecutive };
+  }
+  if (exactConsecutive < 2) {
+    return { confidence: 0, verseWordCount, highlightedCount: exactHighlighted, longestConsecutive: exactConsecutive };
   }
 
-  // Calculate what percentage of the verse is highlighted
-  const verseMatchRatio = highlightedCount / verseWordCount;
-  
-  // Calculate what percentage of input was found in the verse
-  const inputMatchRatio = highlightedCount / inputWordCount;
-  
+  const verseMatchRatio = exactHighlighted / verseWordCount;
   let confidence = 0;
 
-  // FILTER: Reject very weak matches (scattered single words)
-  // Need at least 2 consecutive OR high density matches
-  const hasGoodConsecutive = longestConsecutive >= 2;
-  const hasHighDensity = highlightedCount >= 3 && inputMatchRatio >= 0.5;
-  
-  if (!hasGoodConsecutive && !hasHighDensity) {
-    return { confidence: 0, verseWordCount, highlightedCount, longestConsecutive };
-  }
-
-  // Short verses (1-5 words): need high match ratio
   if (verseWordCount <= 5) {
-    if (verseMatchRatio >= 0.5 && highlightedCount >= 2) {
-      confidence = verseMatchRatio * 0.9;
-    }
-  }
-  // Medium verses (6-15 words): balanced approach
-  else if (verseWordCount <= 15) {
-    // Need either good consecutive OR high density
-    if (verseMatchRatio >= 0.35 && highlightedCount >= 3) {
-      confidence = verseMatchRatio;
-      // Boost for good consecutive matches
-      if (longestConsecutive >= 3) {
-        confidence *= 1.15;
-      }
-    }
-  }
-  // Long verses (16+ words): more lenient on ratio, focus on absolute matches
-  else {
-    if (highlightedCount >= 4 && verseMatchRatio >= 0.2) {
+    confidence = verseMatchRatio * 0.9;
+  } else if (verseWordCount <= 15) {
+    confidence = verseMatchRatio;
+    if (exactConsecutive >= 3) confidence *= 1.2;
+  } else {
+    if (exactHighlighted >= 4) {
       confidence = verseMatchRatio * 1.2;
-      // Boost for consecutive sequences in long verses
-      if (longestConsecutive >= 3) {
-        confidence *= 1.1;
-      }
+      if (exactConsecutive >= 4) confidence *= 1.15;
     }
   }
 
-  // Bonus for strong consecutive matches (indicates real phrase match)
-  if (longestConsecutive >= 4) {
-    confidence = Math.min(confidence * 1.15, 1);
-  }
-  if (longestConsecutive >= 5) {
-    confidence = Math.min(confidence * 1.1, 1);
-  }
+  if (exactConsecutive >= 5) confidence = Math.min(confidence * 1.15, 1);
+  if (exactConsecutive >= 6) confidence = Math.min(confidence * 1.1, 1);
+  if (isTopResult && confidence > 0) confidence = Math.min(confidence * 1.15, 1);
 
-  // Top result from search API gets a boost (relevance ranking)
-  if (isTopResult && confidence > 0) {
-    confidence = Math.min(confidence * 1.2, 1);
-  }
-
-  // Cap confidence and ensure it's meaningful
   confidence = Math.min(confidence, 1);
 
-  return { confidence, verseWordCount, highlightedCount, longestConsecutive };
+  return { confidence, verseWordCount, highlightedCount: exactHighlighted, longestConsecutive: exactConsecutive };
 }
 
 /**
@@ -396,17 +387,11 @@ export async function findVerseReference(
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
       
-      // Skip Bismillah (1:1) - it's said before every surah, not a unique reference
-      if (result.verse_key === "1:1") {
-        continue;
-      }
-      
-      const isTopResult = i === 0; // First result gets ranking boost
-      const analysis = analyzeMatch(result, inputWordCount, isTopResult);
+      const isTopResult = i === 0;
+      const analysis = analyzeMatch(result, inputWordCount, isTopResult, arabicText);
       
       // Collect all matches above threshold for range detection
-      // Require at least 35% confidence for consideration
-      if (analysis.confidence >= 0.35) {
+      if (analysis.confidence >= 0.25) {
         confidentMatches.push({
           verseKey: result.verse_key,
           confidence: analysis.confidence,
@@ -419,9 +404,9 @@ export async function findVerseReference(
       }
     }
 
-    // THRESHOLD: Need at least one match with 45%+ confidence
-    // Balanced to catch real Quran while filtering false positives
-    if (bestConfidence < 0.45) {
+    // THRESHOLD: 35%+ confidence — requires consecutive word sequences
+    // to avoid false positives from common Arabic words in hadith/speech
+    if (bestConfidence < 0.35) {
       return null;
     }
 

@@ -15,7 +15,125 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://www.aqala.org";
+
+// ── Lightweight markdown renderer ─────────────────────────────────────
+
+function renderInline(text: string, baseColor: string, accentColor: string) {
+  const parts: React.ReactNode[] = [];
+  const regex = /\*\*(.+?)\*\*|\[([^\]]+)\s+(\d+:\d+(?:-\d+)?)\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1]) {
+      parts.push(
+        <Text key={match.index} style={{ fontWeight: "700", color: "rgba(255,255,255,0.95)" }}>
+          {match[1]}
+        </Text>,
+      );
+    } else if (match[2] && match[3]) {
+      parts.push(
+        <Text key={match.index} style={{ fontWeight: "600", color: accentColor }}>
+          {match[2]} {match[3]}
+        </Text>,
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+}
+
+function MarkdownText({
+  content,
+  accentColor,
+}: {
+  content: string;
+  accentColor: string;
+}) {
+  const lines = content.split("\n");
+  const elements: React.ReactNode[] = [];
+  const baseColor = "rgba(255,255,255,0.85)";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      elements.push(<View key={`sp-${i}`} style={{ height: 10 }} />);
+      continue;
+    }
+
+    // Headings
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const sizes = [22, 19, 17, 15];
+      elements.push(
+        <Text
+          key={`h-${i}`}
+          style={{
+            fontSize: sizes[level - 1] ?? 15,
+            fontWeight: "700",
+            color: "white",
+            marginTop: level <= 2 ? 16 : 10,
+            marginBottom: 6,
+          }}
+        >
+          {renderInline(headingMatch[2], baseColor, accentColor)}
+        </Text>,
+      );
+      continue;
+    }
+
+    // Numbered list
+    const listMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (listMatch) {
+      elements.push(
+        <View key={`li-${i}`} style={{ flexDirection: "row", marginBottom: 8, paddingLeft: 4 }}>
+          <Text style={{ fontSize: 15, lineHeight: 24, color: accentColor, fontWeight: "600", width: 24 }}>
+            {listMatch[1]}.
+          </Text>
+          <Text style={{ flex: 1, fontSize: 15, lineHeight: 24, color: baseColor }}>
+            {renderInline(listMatch[2], baseColor, accentColor)}
+          </Text>
+        </View>,
+      );
+      continue;
+    }
+
+    // Bullet list
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (bulletMatch) {
+      elements.push(
+        <View key={`bl-${i}`} style={{ flexDirection: "row", marginBottom: 8, paddingLeft: 4 }}>
+          <Text style={{ fontSize: 15, lineHeight: 24, color: accentColor, width: 20 }}>•</Text>
+          <Text style={{ flex: 1, fontSize: 15, lineHeight: 24, color: baseColor }}>
+            {renderInline(bulletMatch[1], baseColor, accentColor)}
+          </Text>
+        </View>,
+      );
+      continue;
+    }
+
+    // Regular paragraph
+    elements.push(
+      <Text key={`p-${i}`} style={{ fontSize: 15, lineHeight: 24, color: baseColor, marginBottom: 4 }}>
+        {renderInline(trimmed, baseColor, accentColor)}
+      </Text>,
+    );
+  }
+
+  return <View>{elements}</View>;
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────
 
 interface Message {
   role: "user" | "assistant";
@@ -50,40 +168,101 @@ export default function SummaryModal({
   const gradientColors = getGradientColors() as [string, string, ...string[]];
   const accent = getAccentColor();
 
-  // Fetch summary when modal opens
-  useEffect(() => {
-    if (!visible || !refinedText.trim()) return;
-    if (summary) return; // already loaded
+  const fetchSummary = useCallback(async (signal: AbortSignal) => {
+    const url = `${WEB_URL}/api/summarize`;
+    console.log("[SummaryModal] fetchSummary called");
+    console.log("[SummaryModal] URL:", url);
+    console.log("[SummaryModal] refinedText length:", refinedText.length);
+    console.log("[SummaryModal] refinedText preview:", refinedText.slice(0, 200));
+    console.log("[SummaryModal] sourceText length:", sourceText.length);
+    console.log("[SummaryModal] targetLang:", targetLang);
 
-    let cancelled = false;
     setLoading(true);
     setError(null);
 
-    (async () => {
-      try {
-        const res = await fetch(`${WEB_URL}/api/summarize`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: refinedText,
-            sourceText,
-            targetLang,
-          }),
-        });
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        const data = await res.json();
-        if (!cancelled) setSummary(data.summary || "No summary available.");
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Failed to generate summary");
-      } finally {
-        if (!cancelled) setLoading(false);
+    try {
+      const body = JSON.stringify({
+        text: refinedText,
+        sourceText,
+        targetLang,
+      });
+      console.log("[SummaryModal] Sending POST, body length:", body.length);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal,
+      });
+
+      console.log("[SummaryModal] Response status:", res.status);
+      console.log("[SummaryModal] Response ok:", res.ok);
+
+      if (!res.ok) {
+        const respBody = await res.text().catch(() => "");
+        console.log("[SummaryModal] Error response body:", respBody);
+        throw new Error(`Server error ${res.status}${respBody ? `: ${respBody}` : ""}`);
       }
-    })();
+      const data = await res.json();
+      console.log("[SummaryModal] Response data keys:", Object.keys(data));
+      console.log("[SummaryModal] Summary length:", data.summary?.length ?? 0);
+      if (!signal.aborted) setSummary(data.summary || "No summary available.");
+    } catch (e: any) {
+      console.log("[SummaryModal] Fetch error:", e?.name, e?.message);
+      if (signal.aborted) {
+        console.log("[SummaryModal] Request was aborted, ignoring");
+        return;
+      }
+      if (e?.name === "AbortError") {
+        setError("Request timed out. Tap to retry.");
+      } else {
+        setError(e?.message ?? "Failed to generate summary");
+      }
+    } finally {
+      if (!signal.aborted) setLoading(false);
+      console.log("[SummaryModal] fetchSummary done, aborted:", signal.aborted);
+    }
+  }, [refinedText, sourceText, targetLang]);
+
+  // Fetch summary when modal opens
+  useEffect(() => {
+    console.log("[SummaryModal] Effect fired — visible:", visible, "summary:", !!summary, "refinedText length:", refinedText.length);
+
+    if (!visible) return;
+    if (summary) {
+      console.log("[SummaryModal] Already have summary, skipping");
+      return;
+    }
+
+    if (!refinedText.trim()) {
+      console.log("[SummaryModal] refinedText is empty, setting error");
+      setError("No translation text available to summarize.");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      console.log("[SummaryModal] 30s timeout reached, aborting");
+      controller.abort();
+    }, 30000);
+
+    console.log("[SummaryModal] Starting fetchSummary");
+    fetchSummary(controller.signal);
 
     return () => {
-      cancelled = true;
+      console.log("[SummaryModal] Effect cleanup — aborting controller");
+      clearTimeout(timer);
+      controller.abort();
     };
-  }, [visible, refinedText, sourceText, targetLang, summary]);
+  }, [visible, refinedText, summary, fetchSummary]);
+
+  const handleRetry = useCallback(() => {
+    setSummary(null);
+    setError(null);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    fetchSummary(controller.signal).finally(() => clearTimeout(timer));
+  }, [fetchSummary]);
 
   const handleAsk = useCallback(async () => {
     const q = question.trim();
@@ -95,6 +274,7 @@ export default function SummaryModal({
 
     const newConvo = [...conversation, { role: "user" as const, content: q }];
     setConversation(newConvo);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
 
     try {
       const res = await fetch(`${WEB_URL}/api/ask`, {
@@ -133,10 +313,8 @@ export default function SummaryModal({
   }, [summary]);
 
   const handleClose = useCallback(() => {
-    setSummary(null);
-    setConversation([]);
     setQuestion("");
-    setError(null);
+    Keyboard.dismiss();
     onClose();
   }, [onClose]);
 
@@ -280,16 +458,31 @@ export default function SummaryModal({
               </Text>
             </View>
           ) : error ? (
-            <View style={{ paddingHorizontal: 20, paddingVertical: 24 }}>
+            <View style={{ paddingHorizontal: 20, paddingVertical: 24, alignItems: "center" }}>
               <View
                 style={{
                   backgroundColor: "rgba(248,113,113,0.1)",
                   borderRadius: 12,
                   padding: 16,
+                  width: "100%",
                 }}
               >
                 <Text style={{ fontSize: 14, color: "#f87171" }}>{error}</Text>
               </View>
+              <TouchableOpacity
+                onPress={handleRetry}
+                style={{
+                  marginTop: 16,
+                  backgroundColor: accent.base,
+                  paddingHorizontal: 24,
+                  paddingVertical: 10,
+                  borderRadius: 20,
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: "#000" }}>
+                  Retry
+                </Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <>
@@ -305,16 +498,9 @@ export default function SummaryModal({
               >
                 {/* Summary */}
                 {summary && (
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      lineHeight: 24,
-                      color: "rgba(255,255,255,0.85)",
-                      marginBottom: 20,
-                    }}
-                  >
-                    {summary}
-                  </Text>
+                  <View style={{ marginBottom: 20 }}>
+                    <MarkdownText content={summary} accentColor={accent.base} />
+                  </View>
                 )}
 
                 {/* Q&A conversation */}
@@ -339,18 +525,19 @@ export default function SummaryModal({
                         paddingVertical: 10,
                       }}
                     >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          lineHeight: 22,
-                          color:
-                            msg.role === "user"
-                              ? accent.base
-                              : "rgba(255,255,255,0.8)",
-                        }}
-                      >
-                        {msg.content}
-                      </Text>
+                      {msg.role === "assistant" ? (
+                        <MarkdownText content={msg.content} accentColor={accent.base} />
+                      ) : (
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            lineHeight: 22,
+                            color: accent.base,
+                          }}
+                        >
+                          {msg.content}
+                        </Text>
+                      )}
                     </View>
                   </View>
                 ))}
