@@ -1628,8 +1628,33 @@ https://aqala.org
     }
   }, [currentQuestion, summaryText, refinedParagraphs, summaryConversation, targetLang, isAskingQuestion]);
 
+  // Detect if we're inside a React Native WebView (mobile app)
+  const isInWebView = typeof window !== "undefined" && !!(window as any).ReactNativeWebView;
+
   const handleSavePastTranslation = useCallback(async () => {
-    if (!user?.uid || savingPastTranslation || pastTranslationSaved || refinedParagraphs.length === 0) return;
+    if (savingPastTranslation || pastTranslationSaved || refinedParagraphs.length === 0) return;
+
+    if (isInWebView) {
+      setSavingPastTranslation(true);
+      try {
+        (window as any).ReactNativeWebView.postMessage(
+          JSON.stringify({
+            type: "saveTranslation",
+            sourceText: srcStable,
+            translatedParagraphs: refinedParagraphs,
+            verseReferences: verseReferences.length ? verseReferences : [],
+            sourceLang: detectedLang ?? "en",
+            targetLang,
+          })
+        );
+      } catch {
+        setToast({ message: "Failed to send to app", type: "error" });
+        setSavingPastTranslation(false);
+      }
+      return;
+    }
+
+    if (!user?.uid) return;
     setSavingPastTranslation(true);
     try {
       await savePastTranslation(user.uid, {
@@ -1647,7 +1672,23 @@ https://aqala.org
     } finally {
       setSavingPastTranslation(false);
     }
-  }, [user?.uid, savingPastTranslation, pastTranslationSaved, refinedParagraphs, srcStable, verseReferences, detectedLang, targetLang, t]);
+  }, [isInWebView, user?.uid, savingPastTranslation, pastTranslationSaved, refinedParagraphs, srcStable, verseReferences, detectedLang, targetLang, t]);
+
+  // Listen for save result from mobile app (when in WebView)
+  useEffect(() => {
+    if (!isInWebView) return;
+    const handler = (e: CustomEvent<{ success: boolean; error?: string }>) => {
+      setSavingPastTranslation(false);
+      if (e.detail.success) {
+        setPastTranslationSaved(true);
+        setToast({ message: t("listen.translationSaved") ?? "Translation saved", type: "success" });
+      } else {
+        setToast({ message: e.detail.error ?? "Failed to save", type: "error" });
+      }
+    };
+    window.addEventListener("aqalaSaveResult", handler as EventListener);
+    return () => window.removeEventListener("aqalaSaveResult", handler as EventListener);
+  }, [isInWebView, t]);
 
   // Auto-scroll to show new Q&A messages
   useEffect(() => {
@@ -2426,7 +2467,7 @@ https://aqala.org
                 </svg>
                 {t("share.email")}
               </button>
-              {user && (
+              {(user || isInWebView) && (
                 <button
                   onClick={handleSavePastTranslation}
                   disabled={savingPastTranslation || pastTranslationSaved}
@@ -2442,7 +2483,7 @@ https://aqala.org
             
             {/* Secondary actions */}
             <div className="flex items-center justify-center gap-3 pt-2">
-              {user && (
+              {user && !isInWebView && (
                 <Link
                   href="/listen/past"
                   className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
@@ -2456,15 +2497,6 @@ https://aqala.org
                   Past Translations
                 </Link>
               )}
-              <button
-                onClick={() => router.push("/")}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-full border border-white/10 transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-                {t("listen.returnHome")}
-              </button>
               <button
                 onClick={() => setIsSheetOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/15 rounded-full border border-[#D4AF37]/30 transition-all"

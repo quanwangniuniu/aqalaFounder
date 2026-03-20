@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { auth } from "@/lib/firebase/config";
+import { savePastTranslation } from "@/lib/firebase/userPastTranslations";
 import { Ionicons } from "@expo/vector-icons";
 import {
   getRecordingPermissionsAsync,
@@ -314,11 +315,35 @@ export default function ListenScreen() {
           {...(Platform.OS === "android"
             ? { androidLayerType: "hardware" as const }
             : {})}
-          onMessage={(event) => {
+          onMessage={async (event: { nativeEvent: { data: string } }) => {
             try {
               const data = JSON.parse(event.nativeEvent.data);
               if (data.type === "ready") {
                 console.log("✅ [WebView] Listen page ready");
+              } else if (data.type === "saveTranslation") {
+                if (!user?.uid) {
+                  webViewRef.current?.injectJavaScript(
+                    `window.dispatchEvent(new CustomEvent('aqalaSaveResult', { detail: { success: false, error: 'Sign in to save translations' } })); true;`
+                  );
+                  return;
+                }
+                try {
+                  await savePastTranslation(user.uid, {
+                    sourceText: data.sourceText ?? "",
+                    translatedParagraphs: data.translatedParagraphs ?? [],
+                    verseReferences: data.verseReferences ?? [],
+                    sourceLang: data.sourceLang ?? "en",
+                    targetLang: data.targetLang ?? "en",
+                  });
+                  webViewRef.current?.injectJavaScript(
+                    `window.dispatchEvent(new CustomEvent('aqalaSaveResult', { detail: { success: true } })); true;`
+                  );
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : "Failed to save";
+                  webViewRef.current?.injectJavaScript(
+                    `window.dispatchEvent(new CustomEvent('aqalaSaveResult', { detail: { success: false, error: ${JSON.stringify(msg)} } })); true;`
+                  );
+                }
               } else if (data.type === "console") {
                 const prefix = `🌐 [WebView ${data.level}]`;
                 if (data.level === "error") {
