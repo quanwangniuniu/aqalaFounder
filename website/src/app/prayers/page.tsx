@@ -37,7 +37,7 @@ export default function PrayersPage() {
     <div className="min-h-screen text-white" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="px-5 py-6 border-b border-white/5">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link 
@@ -76,7 +76,7 @@ export default function PrayersPage() {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-5 py-6 space-y-6">
+      <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-5 lg:px-6 py-6 space-y-6">
         {/* Location Info */}
         {location && !loading && (
           <button 

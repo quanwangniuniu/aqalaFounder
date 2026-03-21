@@ -74,7 +74,7 @@ export default function SearchPage() {
     <div className="min-h-screen text-white">
       {/* Search Header */}
       <div className="sticky top-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 lg:px-6 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
             className="text-white/60 hover:text-white transition-colors"
@@ -122,7 +122,7 @@ export default function SearchPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto px-4 lg:px-6 py-4">
         {/* Loading */}
         {loading && (
           <div className="flex justify-center py-8">

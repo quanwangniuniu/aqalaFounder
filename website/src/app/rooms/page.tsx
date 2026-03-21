@@ -50,7 +50,7 @@ export default function RoomsPage() {
       {/* Hero Header */}
       <div className="relative overflow-hidden">
         
-        <div className="relative px-5 py-8 max-w-2xl mx-auto">
+        <div className="relative px-5 lg:px-6 py-8 max-w-2xl md:max-w-3xl lg:max-w-5xl mx-auto">
           {/* Nav */}
           <div className="flex items-center justify-between mb-8">
             <Link 
@@ -113,7 +113,7 @@ export default function RoomsPage() {
           </div>
 
       {/* Main content */}
-      <div className="max-w-2xl mx-auto px-5 pb-12 space-y-8">
+      <div className="max-w-2xl md:max-w-3xl lg:max-w-5xl mx-auto px-5 lg:px-6 pb-12 space-y-8">
         {/* Loading state */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-16">

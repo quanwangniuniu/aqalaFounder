@@ -47,7 +47,7 @@ export default function FollowingPage() {
     <div className="min-h-screen text-white">
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/5">
-        <div className="flex items-center gap-4">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto flex items-center gap-4">
           <button
             onClick={() => router.back()}
             className="text-white/60 hover:text-white transition-colors"
@@ -64,7 +64,8 @@ export default function FollowingPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-white/5">
+      <div className="border-b border-white/5">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto flex">
         <Link
           href="/following"
           className="flex-1 py-3 text-center text-sm font-medium border-b-2 border-[#D4AF37] text-[#D4AF37]"
@@ -77,6 +78,7 @@ export default function FollowingPage() {
         >
           Followers
         </Link>
+        </div>
       </div>
 
       {/* List */}

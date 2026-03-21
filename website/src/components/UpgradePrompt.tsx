@@ -36,7 +36,7 @@ export default function UpgradePrompt({
   if (variant === "banner") {
     return (
       <div className={`bg-gradient-to-r from-[#D4AF37]/10 to-[#D4AF37]/5 border-b border-[#D4AF37]/20 ${className}`}>
-        <div className="max-w-[554px] mx-auto px-4 py-2 flex items-center justify-between">
+        <div className="max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between">
           <p className="text-white/70 text-xs">
             <span className="text-[#D4AF37]">✨</span> Enjoying Aqala? Support our mission & go ad-free
           </p>

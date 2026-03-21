@@ -59,7 +59,7 @@ export default function MuslimProHomeSections() {
         <div key={i} className="py-12 md:py-16 bg-[#032117]">
           <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
             <div
-              className={`flex flex-col ${s.imageFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12`}
+              className={`flex flex-col ${s.imageFirst ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-12`}
             >
               <div className="flex-1 max-w-xl mx-auto w-full px-2 sm:px-4">
                 <div className={`relative ${s.imageAspectClass} max-h-[460px] rounded-3xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden bg-[#083726] mp-img-hover`}>
@@ -73,8 +73,8 @@ export default function MuslimProHomeSections() {
                 </div>
               </div>
               <div className="flex-1 px-4 sm:px-6 lg:px-8 min-w-0">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">{s.title}</h1>
-                <p className="text-white/70 mb-6">{s.desc}</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">{s.title}</h2>
+                <p className="text-white/70 leading-relaxed max-w-prose mb-6">{s.desc}</p>
                 {s.href.startsWith("http") ? (
                   <a
                     href={s.href}

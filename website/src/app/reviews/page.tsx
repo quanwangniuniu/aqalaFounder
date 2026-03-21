@@ -65,7 +65,7 @@ export default function ReviewsPage() {
 
         {/* Success Content */}
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="max-w-lg mx-auto text-center space-y-6">
+          <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto text-center space-y-6">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#D4AF37]/30 to-[#D4AF37]/10 flex items-center justify-center mx-auto shadow-lg shadow-[#D4AF37]/20 border border-[#D4AF37]/20">
               <span className="text-4xl">✨</span>
             </div>
@@ -106,7 +106,7 @@ export default function ReviewsPage() {
 
       {/* Main Content */}
       <div className="flex-1 px-4 py-8">
-        <div className="max-w-lg mx-auto space-y-6">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto space-y-6">
           {/* Hero Section */}
           <div className="text-center space-y-3">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center mx-auto border border-[#D4AF37]/20">

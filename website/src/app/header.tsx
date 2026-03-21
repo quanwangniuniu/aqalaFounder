@@ -35,12 +35,12 @@ export default function Header() {
     return () => unsubscribe();
   }, [user]);
 
-  // Hide header on landing page and /app routes
-  if (pathname === "/" || pathname === "/landing" || pathname?.startsWith("/app")) return null;
+  // Hide header on landing/app/auth full-screen experiences
+  if (pathname === "/" || pathname === "/landing" || pathname?.startsWith("/app") || pathname?.startsWith("/auth")) return null;
 
   return (
     <header className="relative z-50">
-      <div className="mx-auto max-w-[554px] h-[60px] px-6 flex items-center justify-between">
+      <div className="mx-auto w-full max-w-[554px] md:max-w-3xl lg:max-w-5xl h-[60px] px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Image
             src="/aqala-logo.png"

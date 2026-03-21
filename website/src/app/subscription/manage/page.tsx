@@ -55,7 +55,7 @@ export default function ManageSubscriptionPage() {
 
   return (
     <div className="min-h-[calc(100vh-68px)] text-white">
-      <div className="max-w-2xl mx-auto px-5 py-8">
+      <div className="max-w-2xl md:max-w-3xl lg:max-w-5xl mx-auto px-5 lg:px-6 py-8">
         {/* Nav */}
         <div className="flex items-center justify-between mb-8">
           <Link 
