@@ -246,7 +246,7 @@ export default function ProfilePage() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-white/5 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-4 lg:px-6 py-4 flex items-center gap-4">
           <Link
             href="/"
             className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
@@ -259,7 +259,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto px-4 py-8">
+      <main className="max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-4 lg:px-6 py-8">
         {/* Profile Photo */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">

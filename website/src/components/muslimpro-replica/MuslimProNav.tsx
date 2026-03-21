@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import DownloadModal from "./DownloadModal";
+import { useAuth } from "@/contexts/AuthContext";
+import UserAvatar from "@/components/UserAvatar";
 
 const SCROLL_HIDE_AFTER = 900;
 
@@ -31,7 +32,7 @@ const NAV_LINKS = [
       { label: "Shared Listening", href: "/app/qalbox" },
     ],
   },
-  { label: "Premium", href: "/subscription" },
+  { label: "Premium", href: "/app/premium" },
   { label: "Donate", href: "/donate" },
 ];
 
@@ -39,10 +40,10 @@ const DROPDOWN_FADE_MS = 200;
 
 export default function MuslimProNav() {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [closingDropdown, setClosingDropdown] = useState<string | null>(null);
-  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollYRef = useRef(0);
   const navRef = useRef<HTMLDivElement>(null);
@@ -118,7 +119,7 @@ export default function MuslimProNav() {
       <nav className="bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 md:h-16 gap-8">
-            <Link href="/" className="flex items-center shrink-0 mr-8 md:mr-12" aria-label="Back to Aqala home">
+            <Link href="/app" className="flex items-center shrink-0 mr-8 md:mr-12" aria-label="Back to Aqala home">
               <img src="/aqala-logo.png" alt="Aqala" className="h-8 md:h-9 w-auto object-contain invert" />
             </Link>
 
@@ -158,13 +159,28 @@ export default function MuslimProNav() {
                 )
               )}
               <div className="flex items-center gap-4 ml-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setDownloadModalOpen(true)}
-                  className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
-                >
-                  Open Aqala
-                </button>
+                {!loading && (
+                  <>
+                    {user ? (
+                      <UserAvatar className="w-10 h-10" />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href="/auth/login?returnUrl=/app"
+                          className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-colors"
+                        >
+                          Sign in
+                        </Link>
+                        <Link
+                          href="/auth/register?returnUrl=/app"
+                          className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
+                        >
+                          Register
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -211,23 +227,41 @@ export default function MuslimProNav() {
         </div>
       )}
 
-      <DownloadModal isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} />
-
       {/* Mobile menu */}
       {mobileMenuOpen && (
           <div className="md:hidden bg-[#032117] py-4 border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex flex-col gap-2 mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setDownloadModalOpen(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold text-center"
-              >
-                Open Aqala
-              </button>
+              {!loading && (
+                <>
+                  {user ? (
+                    <Link
+                      href={`/user/${user.uid}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full py-3 rounded-lg bg-white/5 border border-white/10 text-white font-semibold text-center hover:bg-white/10 hover:border-white/20 transition-colors"
+                    >
+                      Profile
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/auth/login?returnUrl=/app"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-3 rounded-lg bg-white/5 border border-white/10 text-white font-semibold text-center hover:bg-white/10 hover:border-white/20 transition-colors"
+                      >
+                        Sign in
+                      </Link>
+                      <Link
+                        href="/auth/register?returnUrl=/app"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold text-center hover:bg-[#E8D5A3] transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               {NAV_LINKS.map((link) => (

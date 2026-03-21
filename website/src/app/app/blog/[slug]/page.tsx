@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewsletter";
@@ -28,25 +29,48 @@ export default function BlogArticlePage() {
   return (
     <>
       <MuslimProAppBar />
-      <article className="bg-white">
-        <header className="py-12 md:py-16">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-sm text-gray-500 mb-2">{post.date} · {post.author}</p>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              {post.title}
-            </h1>
+      <article className="bg-[#032117] text-white">
+        <header className="relative">
+          <div className="relative h-[260px] md:h-[340px]">
+            <Image
+              src={post.thumbnail}
+              alt={post.title}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-[#032117]/75" />
+          </div>
+          <div className="relative -mt-24 md:-mt-28 pb-8">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="rounded-3xl border border-white/10 bg-black/20 backdrop-blur-md p-6 md:p-8">
+                <p className="text-sm text-white/70 mb-2">
+                  {post.date} · {post.author}
+                </p>
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3">
+                  {post.title}
+                </h1>
+                <p className="text-lg text-white/80 leading-relaxed">
+                  {post.excerpt}
+                </p>
+              </div>
+            </div>
           </div>
         </header>
 
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          <p className="text-lg text-gray-700 leading-relaxed mb-8">{post.excerpt}</p>
-          <p className="text-gray-600 leading-relaxed">
-            This article is part of the Aqala blog. Full content would be loaded from your CMS or content source.
-            Article content placeholder.
-          </p>
+          <div className="prose prose-invert max-w-none">
+            {post.content.map((p, idx) => (
+              <p key={idx} className="text-white/80 leading-relaxed">
+                {p}
+              </p>
+            ))}
+          </div>
+
           <Link
             href="/app/blog"
-            className="inline-flex items-center gap-2 mt-8 text-[#00a651] font-semibold hover:underline"
+            className="inline-flex items-center gap-2 mt-10 text-[#D4AF37] font-semibold hover:underline"
           >
             ← Back to Blog
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -24,8 +24,8 @@ export default function LoginPage() {
       <div className="absolute top-1/2 left-1/3 w-[300px] h-[300px] hero-orb hero-orb-3" />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
-        <div className="w-full max-w-md hero-fade-in">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 md:px-6 lg:px-8 py-12">
+        <div className="w-full max-w-md md:max-w-lg hero-fade-in">
           {/* Logo */}
           <div className="flex justify-center mb-8 hero-fade-in hero-fade-in-delay-1">
             <Link href="/" className="transition-transform hover:scale-105">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewsletter";
@@ -50,8 +51,15 @@ export default function MuslimProBlogPage() {
                 key={post.slug}
                 className="group mp-card-hover border border-white/10 rounded-2xl overflow-hidden hover:border-[#D4AF37]/30 bg-white/[0.03]"
               >
-                <div className="h-40 bg-gradient-to-br from-[#D4AF37]/10 to-[#06402B] flex items-center justify-center">
-                  <span className="text-4xl text-[#D4AF37]/30">﴾</span>
+                <div className="relative h-44 bg-[#021a12]">
+                  <Image
+                    src={post.thumbnail}
+                    alt={post.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#032117] via-[#032117]/20 to-transparent" />
                 </div>
                 <div className="p-6">
                   <h3 className="font-bold text-white mb-2 group-hover:text-[#D4AF37] transition-colors line-clamp-2">

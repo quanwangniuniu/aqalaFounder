@@ -10,6 +10,60 @@ export interface BlogPost {
   author: string;
   category: "all" | "ramadan" | "deen" | "lifestyle" | "quran" | "rooms";
   href: string;
+  thumbnail: string;
+  content: string[];
+}
+
+function contentTemplate(post: Pick<BlogPost, "title" | "excerpt" | "category">) {
+  const intro = post.excerpt;
+  const blocks: Record<BlogPost["category"], string[]> = {
+    all: [],
+    ramadan: [
+      "Ramadan is not a performance — it’s a return. When the days feel heavy or inconsistent, the Sunnah gives us a merciful path: keep showing up with sincerity, even in small ways.",
+      "Start with one anchor habit: a short Qur’an portion, a consistent dua at suhoor or iftar, or a daily act of charity. Consistency beats intensity.",
+      "If you miss a day or feel spiritually dry, don’t spiral into guilt. Reset your intention, ask Allah for help, and re-enter with humility.",
+      "Practical tip: protect your best worship window by planning around sleep, food, and obligations. A small schedule can preserve your heart.",
+    ],
+    deen: [
+      "Deen grows through clarity and practice. When something feels confusing, return to the basics: intention, sincerity, and learning with humility.",
+      "The Prophet ﷺ taught us that the best deeds are those that are consistent, even if they are small. Pick one habit and protect it.",
+      "Community matters. Surround yourself with people and spaces that raise your iman — even if that is a weekly circle or a trusted teacher online.",
+      "Ask: what is one change I can make this week that Allah loves? Then take a step and make tawbah when you slip.",
+    ],
+    lifestyle: [
+      "A balanced Muslim life isn’t split between ‘world’ and ‘religion’ — it’s one life lived with intention. Small choices carry spiritual weight.",
+      "When you feel overwhelmed, simplify: sleep, dhikr, and a manageable to‑do list. Barakah often comes with clarity.",
+      "Build rhythms instead of bursts. A short morning routine and a short evening reset can transform your week.",
+      "Keep your heart soft: gratitude, service, and forgiveness. These are not ‘extras’ — they are the fuel of steadiness.",
+    ],
+    quran: [
+      "The Qur’an is guidance, healing, and light — but it opens for the one who approaches it with patience and consistency.",
+      "If your goal is completion, make it small and measurable. If your goal is reflection, choose a short surah and revisit it repeatedly.",
+      "Tajweed and memorization are beautiful, but don’t neglect meaning. Pair recitation with translation in a language you understand.",
+      "A powerful practice: take one ayah, write one takeaway, and make one dua from it. This turns reading into living.",
+    ],
+    rooms: [
+      "Learning together is a Sunnah of the Ummah. Shared listening rooms make it easier to stay consistent, ask questions, and grow with others.",
+      "If you host a room, set a simple structure: opening dua, a short audio/lecture segment, then a reflection prompt for the group.",
+      "If you join a room, come with one intention: benefit and adab. Respect the speaker, listen well, and contribute gently.",
+      "Consistency again wins: one room a week can compound into real transformation over months.",
+    ],
+  };
+
+  const middle = blocks[post.category] || blocks.deen;
+  return [
+    intro,
+    ...middle,
+    "May Allah grant us beneficial knowledge, sincere hearts, and steady action. If this helped you, share it with a friend who might need it too.",
+  ];
+}
+
+function pickThumbnail(category: BlogPost["category"]) {
+  if (category === "ramadan") return "/aqala-assets/aqala-hero-mosque.jpg";
+  if (category === "quran") return "/aqala-assets/aqala-quran-premium.jpg";
+  if (category === "lifestyle") return "/aqala-assets/aqala-translation-concept.jpg";
+  if (category === "rooms") return "/aqala-assets/aqala-shared-listening.jpg";
+  return "/aqala-assets/aqala-landing-quran.jpg";
 }
 
 export const BLOG_POSTS: BlogPost[] = [
@@ -21,6 +75,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "ramadan",
     href: "/app/blog/ramadan-recharge-2026",
+    thumbnail: pickThumbnail("ramadan"),
+    content: contentTemplate({ title: "Ramadan 2026: A Note from the Aqala Team", excerpt: "Staying present in worship when life gets heavy. How we built Aqala to support your journey.", category: "ramadan" }),
   },
   {
     slug: "laylat-al-qadr",
@@ -30,6 +86,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/laylat-al-qadr",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Laylat al-Qadr: When the Heavens Open", excerpt: "One night worth a thousand months. A practical guide to seeking this blessed night.", category: "deen" }),
   },
   {
     slug: "last-10-nights",
@@ -39,6 +97,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "ramadan",
     href: "/app/blog/last-10-nights",
+    thumbnail: pickThumbnail("ramadan"),
+    content: contentTemplate({ title: "Ramadan's Final Ten Nights: A Practical Guide", excerpt: "Not about pushing limits — about showing up tired, busy, and human.", category: "ramadan" }),
   },
   {
     slug: "itikaf-during-ramadan",
@@ -48,6 +108,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/itikaf-during-ramadan",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "I'tikaf: Stepping Back to Reconnect", excerpt: "When the world feels too loud, retreat into the mosque. A step-by-step guide.", category: "deen" }),
   },
   {
     slug: "heart-feels-tired",
@@ -57,6 +119,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/heart-feels-tired",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "When Ramadan Feels Flat: What's Really Going On", excerpt: "The mid-Ramadan slump isn't failure. Understanding the spiritual rhythm.", category: "deen" }),
   },
   {
     slug: "simple-ramadan-dhikr",
@@ -66,6 +130,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/simple-ramadan-dhikr",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Dhikr You Can Do Anywhere This Ramadan", excerpt: "Short, powerful remembrances for commutes, breaks, and quiet moments.", category: "deen" }),
   },
   {
     slug: "four-page-rule",
@@ -75,6 +141,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/four-page-rule",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Finishing the Quran in 30 Days: The Four-Page Method", excerpt: "A simple daily target that adds up. How to pace yourself without burnout.", category: "quran" }),
   },
   {
     slug: "taraweeh-prayers",
@@ -84,6 +152,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/taraweeh-prayers",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Taraweeh: A Guide to the Night Prayers of Ramadan", excerpt: "Understanding the structure, intention, and beauty of these special prayers.", category: "deen" }),
   },
   {
     slug: "sahur-guide",
@@ -93,6 +163,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "ramadan",
     href: "/app/blog/sahur-guide",
+    thumbnail: pickThumbnail("ramadan"),
+    content: contentTemplate({ title: "Sahur: Starting Your Fast With Intention", excerpt: "The pre-dawn meal, the dua, and how to fuel your body and soul.", category: "ramadan" }),
   },
   {
     slug: "ramadan-duas",
@@ -102,6 +174,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/ramadan-duas",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Duas to Make Throughout Ramadan", excerpt: "Essential supplications for the month — from opening the fast to seeking Laylat al-Qadr.", category: "deen" }),
   },
   {
     slug: "habits-diminish-fasting",
@@ -111,6 +185,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/habits-diminish-fasting",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Five Things That Can Weaken Your Fast's Reward", excerpt: "Fasting goes beyond abstaining from food. Steer clear of these habits to protect your spiritual gains.", category: "deen" }),
   },
   {
     slug: "sadaqah-acts-ramadan",
@@ -120,6 +196,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/sadaqah-acts-ramadan",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Ten Acts of Charity That Don't Require Money", excerpt: "From patience in traffic to visiting the sick — small deeds that multiply your Ramadan rewards.", category: "deen" }),
   },
   {
     slug: "guilty-not-fasting-pregnant",
@@ -129,6 +207,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/guilty-not-fasting-pregnant",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Not Fasting While Pregnant: Finding Peace in the Exemption", excerpt: "You're not skipping Ramadan — you're living it differently. How to release guilt and embrace the concession.", category: "deen" }),
   },
   {
     slug: "dua-after-breaking-fast",
@@ -138,6 +218,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/dua-after-breaking-fast",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "The Power of Dua at Iftar Time", excerpt: "The moments after breaking your fast are among the most accepted for supplication. Learn the dua and why it matters.", category: "deen" }),
   },
   {
     slug: "ramadan-niyyah-iftar-dua",
@@ -147,6 +229,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/ramadan-niyyah-iftar-dua",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Niyyah and Iftar Dua: Getting the Basics Right", excerpt: "Worried about saying the intention correctly? A simple guide to starting and ending your fast with clarity.", category: "deen" }),
   },
   {
     slug: "new-muslim-first-ramadan",
@@ -156,6 +240,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/new-muslim-first-ramadan",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Your First Ramadan: A Revert's Guide", excerpt: "A milestone for every new Muslim. How to navigate the physical and emotional journey of your first fasting month.", category: "deen" }),
   },
   {
     slug: "fasting-special-cases",
@@ -165,6 +251,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/fasting-special-cases",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "When Fasting Isn't Required: Exemptions and Making Up Days", excerpt: "Health comes first. A look at who is exempt and how to compensate for missed fasts.", category: "deen" }),
   },
   {
     slug: "history-madinah",
@@ -174,6 +262,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/history-madinah",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Madinah: From Yathrib to the City of Light", excerpt: "How the Hijrah in 622 CE turned a divided oasis into the heart of the first Muslim community.", category: "deen" }),
   },
   {
     slug: "where-is-al-madinah",
@@ -183,6 +273,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/where-is-al-madinah",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Visiting Madinah: A Practical Guide", excerpt: "Location, preparation, and what to know before visiting the second holiest city in Islam.", category: "deen" }),
   },
   {
     slug: "what-makes-madinah-special",
@@ -192,6 +284,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "deen",
     href: "/app/blog/what-makes-madinah-special",
+    thumbnail: pickThumbnail("deen"),
+    content: contentTemplate({ title: "Why Madinah Matters: History and Significance", excerpt: "The City of the Prophet — a brief look at its place in Islamic history and the hearts of believers.", category: "deen" }),
   },
   // Quran category posts
   {
@@ -202,6 +296,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/powerful-quranic-quotes",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Quranic Verses for Peace, Patience, and Gratitude", excerpt: "A selection of verses to carry through your day — for reflection and strength.", category: "quran" }),
   },
   {
     slug: "quran-revelation",
@@ -211,6 +307,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/quran-revelation",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "How the Quran Was Revealed and Preserved", excerpt: "The gradual revelation over 23 years and the preservation of Allah's word.", category: "quran" }),
   },
   {
     slug: "tajweed-rules",
@@ -220,6 +318,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/tajweed-rules",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Essential Tajweed Rules for Clear Recitation", excerpt: "Core rules that build confidence. Start here and grow your recitation over time.", category: "quran" }),
   },
   {
     slug: "tajweed-complete-guide",
@@ -229,6 +329,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/tajweed-complete-guide",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Tajweed: A Guide to Reciting the Quran Correctly", excerpt: "Clarity, beauty, and correctness — the foundations of proper recitation.", category: "quran" }),
   },
   {
     slug: "5-tips-khatam-quran",
@@ -238,6 +340,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/5-tips-khatam-quran",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Five Ways to Complete the Quran This Ramadan", excerpt: "Whether you're new or experienced, practical steps to finish the Book in 30 days.", category: "quran" }),
   },
   {
     slug: "5-reasons-khatam-quran",
@@ -247,6 +351,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/5-reasons-khatam-quran",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Why Complete the Quran in Ramadan?", excerpt: "The spiritual reward and personal growth that come with finishing the Book.", category: "quran" }),
   },
   {
     slug: "significance-masjid-al-aqsa",
@@ -256,6 +362,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/significance-masjid-al-aqsa",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Masjid Al-Aqsa: Its Place in Islamic History", excerpt: "Jerusalem's Al-Aqsa — a site of profound spiritual and historical meaning.", category: "quran" }),
   },
   {
     slug: "surah-al-fil-story",
@@ -265,6 +373,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/surah-al-fil-story",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Surah Al-Fil: The Story of the Elephant", excerpt: "How Allah protected the Kaaba — a lesson in divine power and mercy.", category: "quran" }),
   },
   {
     slug: "surah-al-fatihah-benefits",
@@ -274,6 +384,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "quran",
     href: "/app/blog/surah-al-fatihah-benefits",
+    thumbnail: pickThumbnail("quran"),
+    content: contentTemplate({ title: "Surah Al-Fatihah: More Than an Opening", excerpt: "The spiritual depth and benefits of the chapter we recite in every rak'ah.", category: "quran" }),
   },
   // Lifestyle category posts
   {
@@ -284,6 +396,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "lifestyle",
     href: "/app/blog/avoid-burnout-eid",
+    thumbnail: pickThumbnail("lifestyle"),
+    content: contentTemplate({ title: "Staying Grounded During Eid: Avoiding Exhaustion", excerpt: "Joy and celebration can be draining. How to enjoy Eid without burning out.", category: "lifestyle" }),
   },
   {
     slug: "maintain-progress-after-ramadan",
@@ -293,6 +407,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "lifestyle",
     href: "/app/blog/maintain-progress-after-ramadan",
+    thumbnail: pickThumbnail("lifestyle"),
+    content: contentTemplate({ title: "Carrying Ramadan's Growth Into the Rest of the Year", excerpt: "Practical ways to keep the spiritual momentum after the month ends.", category: "lifestyle" }),
   },
   {
     slug: "year-end-reflections",
@@ -302,6 +418,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "lifestyle",
     href: "/app/blog/year-end-reflections",
+    thumbnail: pickThumbnail("lifestyle"),
+    content: contentTemplate({ title: "Year-End Reflection: An Islamic Approach", excerpt: "Seven steps to look back and plan ahead with intention.", category: "lifestyle" }),
   },
   {
     slug: "acts-of-kindness",
@@ -311,6 +429,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "lifestyle",
     href: "/app/blog/acts-of-kindness",
+    thumbnail: pickThumbnail("lifestyle"),
+    content: contentTemplate({ title: "Kindness in Islam: From Theory to Practice", excerpt: "The essence of kindness and how to live it in daily life.", category: "lifestyle" }),
   },
   {
     slug: "intentionally-choosing-hijab",
@@ -320,6 +440,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "lifestyle",
     href: "/app/blog/intentionally-choosing-hijab",
+    thumbnail: pickThumbnail("lifestyle"),
+    content: contentTemplate({ title: "Choosing Hijab With Intention", excerpt: "A reflection on the meaning and beauty behind the decision to wear hijab.", category: "lifestyle" }),
   },
   {
     slug: "value-of-women-in-islam",
@@ -329,6 +451,8 @@ export const BLOG_POSTS: BlogPost[] = [
     author: "Aqala Team",
     category: "lifestyle",
     href: "/app/blog/value-of-women-in-islam",
+    thumbnail: pickThumbnail("lifestyle"),
+    content: contentTemplate({ title: "Women's Place and Value in Islamic Teachings", excerpt: "How Islam honours women's unique role and dignity.", category: "lifestyle" }),
   },
 ];
 
