@@ -97,13 +97,6 @@ export default function MuslimProQuranDetectionSection() {
             />
             <button
               type="button"
-              onClick={loadFromLiveListening}
-              className="px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-white/90 hover:bg-white/10 transition-colors text-sm font-semibold"
-            >
-              Import from /listen
-            </button>
-            <button
-              type="button"
               onClick={() => runDetect()}
               disabled={!cleanedQuery || loading}
               className="px-6 py-3 rounded-xl bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mp-btn-hover"
