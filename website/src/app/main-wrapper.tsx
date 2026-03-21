@@ -11,10 +11,19 @@ export default function MainWrapper({
   const isHome = pathname === "/";
   const isLanding = pathname === "/landing";
   const isAppSection = pathname?.startsWith("/app");
+  const isAuthRoute = pathname?.startsWith("/auth");
   const isListen = pathname === "/listen";
   const isDonate = pathname === "/donate";
-  const isFullWidth = isHome || isLanding || isAppSection || isListen || isDonate || pathname?.startsWith("/rooms") || pathname?.startsWith("/admin");
-  const padTop = isHome || isLanding || isAppSection ? "" : "pt-[20px]";
+  const isFullWidth =
+    isHome ||
+    isLanding ||
+    isAppSection ||
+    isAuthRoute ||
+    isListen ||
+    isDonate ||
+    pathname?.startsWith("/rooms") ||
+    pathname?.startsWith("/admin");
+  const padTop = isHome || isLanding || isAppSection || isAuthRoute ? "" : "pt-[20px]";
   
   // Full-width pages (homepage, listen, donate, rooms, admin)
   if (isFullWidth) {
@@ -27,8 +36,8 @@ export default function MainWrapper({
 
   // Centered content pages
   return (
-    <main className={`relative z-10 flex-1 flex justify-center ${padTop}`}>
-      <div className="w-full max-w-[554px] min-h-full flex flex-col">
+    <main className={`relative z-10 flex-1 flex justify-center px-4 sm:px-6 lg:px-8 ${padTop}`}>
+      <div className="w-full max-w-[554px] md:max-w-3xl lg:max-w-5xl min-h-full flex flex-col">
         {children}
       </div>
     </main>

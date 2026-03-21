@@ -101,7 +101,7 @@ export function StickyBottomAd({ className = "" }: { className?: string }) {
 
   return (
     <div className={`fixed bottom-0 left-0 right-0 z-40 bg-[#0a1f16]/95 backdrop-blur-sm border-t border-white/5 safe-area-inset-bottom ${className}`}>
-      <div className="max-w-[554px] mx-auto">
+      <div className="max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto">
         <AdBanner
           adFormat="horizontal"
           className="py-2"

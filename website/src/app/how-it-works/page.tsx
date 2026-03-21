@@ -11,7 +11,7 @@ export default function HowItWorksPage() {
     <div className="min-h-[calc(100vh-60px)] flex flex-col">
       {/* Header */}
       <div className="px-4 py-4 border-b border-white/10">
-        <div className="flex items-center justify-between max-w-[554px] mx-auto">
+        <div className="flex items-center justify-between max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto">
           <Link
             href="/"
             className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
@@ -28,7 +28,7 @@ export default function HowItWorksPage() {
 
       {/* Content */}
       <div className="flex-1 px-4 py-8">
-        <div className="max-w-[554px] mx-auto space-y-8">
+        <div className="max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto space-y-8">
           {/* How It Works */}
           <section>
             <h2 className="text-base font-semibold text-white mb-2">How Aqala Works</h2>

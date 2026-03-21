@@ -7,7 +7,7 @@ export default function TermsOfServicePage() {
     <div className="min-h-screen text-white">
       {/* Header */}
       <div className="px-5 py-6 border-b border-white/5">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
+        <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto flex items-center gap-3">
           <Link
             href="/"
             className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
@@ -20,7 +20,7 @@ export default function TermsOfServicePage() {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto p-5 space-y-8 pb-16">
+      <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto p-5 lg:px-6 space-y-8 pb-16">
         {/* Last Updated */}
         <p className="text-sm text-white/40">Last updated: February 17, 2026</p>
 

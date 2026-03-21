@@ -24,8 +24,8 @@ export default function RegisterPage() {
       <div className="absolute top-1/2 left-1/3 w-[300px] h-[300px] hero-orb hero-orb-3" />
       
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
-        <div className="w-full max-w-md hero-fade-in">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 md:px-6 lg:px-8 py-12">
+        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl hero-fade-in">
           {/* Logo */}
           <div className="flex justify-center mb-8 hero-fade-in hero-fade-in-delay-1">
             <Link href="/" className="transition-transform hover:scale-105">
@@ -45,7 +45,7 @@ export default function RegisterPage() {
             <div className="absolute -inset-1 bg-gradient-to-r from-[#D4AF37]/20 via-transparent to-[#D4AF37]/20 rounded-3xl blur-xl opacity-50" />
             
             {/* Card content */}
-            <div className="relative bg-[#021a12]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+            <div className="relative bg-gradient-to-b from-[#032117]/88 to-[#021a12]/85 backdrop-blur-xl border border-white/8 rounded-3xl p-8 md:p-10 shadow-[0_30px_80px_-36px_rgba(0,0,0,0.85)]">
               {/* Header */}
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>

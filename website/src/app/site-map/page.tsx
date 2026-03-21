@@ -30,7 +30,7 @@ export default function SitemapPage() {
     <div className="min-h-[calc(100vh-60px)] flex flex-col">
       {/* Header */}
       <div className="px-4 py-4 border-b border-white/10">
-        <div className="flex items-center justify-between max-w-[554px] mx-auto">
+        <div className="flex items-center justify-between max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto">
           <Link
             href="/"
             className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
@@ -47,7 +47,7 @@ export default function SitemapPage() {
 
       {/* Content */}
       <div className="flex-1 px-4 py-8">
-        <div className="max-w-[554px] mx-auto space-y-6">
+        <div className="max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto space-y-6">
           <p className="text-white/60 text-sm">
             Main pages and sections of Aqala. For the machine-readable sitemap used by search engines, see{" "}
             <a href="/sitemap.xml" className="text-[#D4AF37] hover:underline">

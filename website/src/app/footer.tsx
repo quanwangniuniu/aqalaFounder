@@ -26,8 +26,8 @@ export default function Footer() {
     }
   }, [showLangMenu]);
 
-  // Hide footer on listen, messages, /app pages
-  if (pathname === "/listen" || pathname?.startsWith("/messages") || pathname?.startsWith("/app")) {
+  // Hide footer on immersive full-screen flows
+  if (pathname === "/listen" || pathname?.startsWith("/messages") || pathname?.startsWith("/app") || pathname?.startsWith("/auth")) {
     return null;
   }
 
@@ -37,7 +37,7 @@ export default function Footer() {
   return (
     <footer className="mt-auto relative z-50 bg-black/20 backdrop-blur-md border-t border-white/5" dir={isRTL ? "rtl" : "ltr"}>
       
-      <div className="relative mx-auto max-w-[600px] px-6 py-5">
+      <div className="relative mx-auto w-full max-w-[600px] md:max-w-3xl lg:max-w-5xl px-4 sm:px-6 lg:px-8 py-5">
         {/* Policy / site info links */}
         <div className="flex items-center justify-center gap-4 mb-4 text-sm flex-wrap">
           <Link

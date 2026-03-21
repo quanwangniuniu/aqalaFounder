@@ -32,6 +32,7 @@ import { useLiveKitBroadcast, BroadcastMessage } from "@/hooks/useLiveKitBroadca
 
 // Client-side API key - must be prefixed with NEXT_PUBLIC_ to be available in browser
 const SONIOX_API_KEY = process.env.NEXT_PUBLIC_SONIOX_API_KEY || "";
+const QURAN_DETECT_BRIDGE_KEY = "aqala_quran_detect_live_source";
 
 function concatReadable(...parts: string[]) {
   return parts
@@ -366,6 +367,23 @@ export default function ClientApp({
   useEffect(() => {
     detectedLangRef.current = detectedLang;
   }, [detectedLang]);
+
+  // Bridge current listening source text to Quran detection section on /app.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isListening || !srcStable.trim()) return;
+
+    const payload = {
+      text: srcStable.trim(),
+      lang: detectedLang || "unknown",
+      updatedAt: Date.now(),
+    };
+    try {
+      window.localStorage.setItem(QURAN_DETECT_BRIDGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Ignore storage quota/permission issues.
+    }
+  }, [isListening, srcStable, detectedLang]);
 
   // Optionally open the donation modal on mount (from landing page secondary button)
   useEffect(() => {
@@ -1388,6 +1406,13 @@ export default function ClientApp({
     } finally {
       setIsListening(false);
       setHasStopped(true);
+      try {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(QURAN_DETECT_BRIDGE_KEY);
+        }
+      } catch {
+        // Ignore storage issues.
+      }
 
       // Clear all pending queues to prevent post-stop processing
       pendingQueueRef.current = [];

@@ -27,7 +27,7 @@ export default function AppHome() {
     <div className="relative min-h-screen overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
       <div className="relative z-10 min-h-screen flex flex-col">
         <header className="w-full px-4 pt-4 pb-2">
-          <div className="max-w-[554px] mx-auto flex items-center justify-between">
+          <div className="max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto flex items-center justify-between">
             <Link href="/app" className="hero-fade-in" aria-label="Enter Aqala app">
               <Image
                 src="/aqala-logo.png"
@@ -98,7 +98,7 @@ export default function AppHome() {
         </header>
 
         <main className="flex-1 flex flex-col px-4 pb-6">
-          <div className="max-w-[554px] mx-auto w-full flex-1 flex flex-col">
+          <div className="max-w-[554px] md:max-w-3xl lg:max-w-5xl mx-auto w-full flex-1 flex flex-col">
             <section className="hero-fade-in hero-fade-in-delay-1 mt-4 sm:mt-8">
               <div className="relative overflow-hidden rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 p-6 sm:p-8">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2" />
