@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import MuslimProPremiumSubtabs from "@/components/muslimpro-replica/MuslimProPremiumSubtabs";
 
 const RETURN_URL = "/subscription";
 
@@ -51,7 +52,7 @@ export default function PremiumFeaturesPage() {
   return (
     <div className="min-h-[calc(100vh-56px)] bg-[#032117] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-8">
           <Link href="/app" className="text-white/70 hover:text-white transition-colors text-sm">
             ← Back to /app
           </Link>
@@ -59,9 +60,11 @@ export default function PremiumFeaturesPage() {
             href="/subscription"
             className="text-[#D4AF37] hover:text-[#E8D5A3] transition-colors text-sm font-semibold"
           >
-            View upgrade page
+            Checkout
           </Link>
         </div>
+
+        <MuslimProPremiumSubtabs />
 
         <div className="text-center mb-10 md:mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 mb-4">
@@ -72,7 +75,9 @@ export default function PremiumFeaturesPage() {
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Go Premium. Understand more, distraction-free.</h1>
           <p className="text-white/70 max-w-3xl mx-auto">
-            Premium unlocks the best Aqala experience. Here’s what you get compared to the free plan.
+            Premium unlocks the best Aqala experience. Purchases run through{" "}
+            <strong className="text-white/85">Premium → Unlock / Gift</strong> and checkout. Here&apos;s what you get compared to
+            the free plan.
           </p>
         </div>
 

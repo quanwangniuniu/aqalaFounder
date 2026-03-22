@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, LANGUAGE_OPTIONS, type LanguageOption } from "@/contexts/LanguageContext";
 import UserAvatar from "@/components/UserAvatar";
-import AdLink from "@/components/AdLink";
+import AvatarSkeleton from "@/components/AvatarSkeleton";
 
 function LanguageSelector({
   language,
@@ -132,32 +132,29 @@ export default function LandingNav() {
             isRTL={isRTL}
           />
 
-          {!authLoading && (
+          {authLoading ? (
+            <AvatarSkeleton className="h-9 w-9 sm:h-10 sm:w-10" />
+          ) : user ? (
             <>
-              {user && (
-                <>
-                  <Link
-                    href="/search"
-                    className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all flex items-center justify-center"
-                    aria-label="Search"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.3-4.3" />
-                    </svg>
-                  </Link>
-                  <UserAvatar className="w-10 h-10" />
-                </>
-              )}
-              {!user && (
-                <Link
-                  href="/auth/login"
-                  className="px-3 py-2 h-9 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all text-sm font-medium text-white flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
-                >
-                  {t("landing.signIn")}
-                </Link>
-              )}
+              <Link
+                href="/search"
+                className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all flex items-center justify-center"
+                aria-label="Search"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </Link>
+              <UserAvatar key={`${user.uid}-${user.photoURL ?? ""}`} className="w-10 h-10" priority />
             </>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="px-3 py-2 h-9 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/30 hover:bg-white/10 transition-all text-sm font-medium text-white flex items-center focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 focus:ring-offset-2 focus:ring-offset-[#032117]"
+            >
+              {t("landing.signIn")}
+            </Link>
           )}
         </div>
       </div>

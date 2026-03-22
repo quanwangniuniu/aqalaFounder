@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
+import AvatarSkeleton from "@/components/AvatarSkeleton";
 
 const SCROLL_HIDE_AFTER = 900;
 
@@ -14,10 +15,10 @@ const NAV_LINKS = [
     label: "Features",
     href: "/app/features",
     dropdown: [
-      { label: "Core Features", href: "/app/features" },
-      { label: "Islamic Calendar", href: "/app/islamic-calendar" },
-      { label: "Listen", href: "/listen" },
-      { label: "Shared Listening", href: "/rooms" },
+      { label: "All features", href: "/app/features" },
+      { label: "Translation", href: "/listen" },
+      { label: "Qibla Finder", href: "/qibla" },
+      { label: "Prayer Times & Calendar", href: "/app/prayer-times" },
     ],
   },
   {
@@ -32,8 +33,16 @@ const NAV_LINKS = [
       { label: "Shared Listening", href: "/app/qalbox" },
     ],
   },
-  { label: "Premium", href: "/app/premium" },
-  { label: "Donate", href: "/donate" },
+  {
+    label: "Premium",
+    href: "/app/premium",
+    dropdown: [
+      { label: "Unlock premium", href: "/app/premium" },
+      { label: "Gift Premium", href: "/app/premium/gift" },
+      { label: "Redeem Premium", href: "/app/premium/redeem" },
+    ],
+  },
+  { label: "Support Us", href: "/donate" },
 ];
 
 const DROPDOWN_FADE_MS = 200;
@@ -159,27 +168,25 @@ export default function MuslimProNav() {
                 )
               )}
               <div className="flex items-center gap-4 ml-auto shrink-0">
-                {!loading && (
-                  <>
-                    {user ? (
-                      <UserAvatar className="w-10 h-10" />
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href="/auth/login?returnUrl=/app"
-                          className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-colors"
-                        >
-                          Sign in
-                        </Link>
-                        <Link
-                          href="/auth/register?returnUrl=/app"
-                          className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
-                        >
-                          Register
-                        </Link>
-                      </div>
-                    )}
-                  </>
+                {loading ? (
+                  <AvatarSkeleton className="h-10 w-10" />
+                ) : user ? (
+                  <UserAvatar key={`${user.uid}-${user.photoURL ?? ""}`} className="w-10 h-10" priority />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href="/auth/login?returnUrl=/app"
+                      className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-colors"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/auth/register?returnUrl=/app"
+                      className="px-4 py-2 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
+                    >
+                      Register
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
@@ -232,34 +239,34 @@ export default function MuslimProNav() {
           <div className="md:hidden bg-[#032117] py-4 border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex flex-col gap-2 mb-4">
-              {!loading && (
+              {loading ? (
+                <div className="flex justify-center py-2">
+                  <AvatarSkeleton className="h-10 w-10" />
+                </div>
+              ) : user ? (
+                <Link
+                  href={`/user/${user.uid}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 rounded-lg bg-white/5 border border-white/10 text-white font-semibold text-center hover:bg-white/10 hover:border-white/20 transition-colors"
+                >
+                  Profile
+                </Link>
+              ) : (
                 <>
-                  {user ? (
-                    <Link
-                      href={`/user/${user.uid}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="w-full py-3 rounded-lg bg-white/5 border border-white/10 text-white font-semibold text-center hover:bg-white/10 hover:border-white/20 transition-colors"
-                    >
-                      Profile
-                    </Link>
-                  ) : (
-                    <>
-                      <Link
-                        href="/auth/login?returnUrl=/app"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="w-full py-3 rounded-lg bg-white/5 border border-white/10 text-white font-semibold text-center hover:bg-white/10 hover:border-white/20 transition-colors"
-                      >
-                        Sign in
-                      </Link>
-                      <Link
-                        href="/auth/register?returnUrl=/app"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="w-full py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold text-center hover:bg-[#E8D5A3] transition-colors"
-                      >
-                        Register
-                      </Link>
-                    </>
-                  )}
+                  <Link
+                    href="/auth/login?returnUrl=/app"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-3 rounded-lg bg-white/5 border border-white/10 text-white font-semibold text-center hover:bg-white/10 hover:border-white/20 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/register?returnUrl=/app"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold text-center hover:bg-[#E8D5A3] transition-colors"
+                  >
+                    Register
+                  </Link>
                 </>
               )}
             </div>

@@ -206,7 +206,7 @@ export default function AppHome() {
                       </svg>
                     </div>
                     <p className="text-xs text-white/50 mb-0.5">Support</p>
-                    <p className="text-sm font-medium text-white">Donate</p>
+                    <p className="text-sm font-medium text-white">Support Us</p>
                     <p className="text-xs text-white/40">{t("home.helpKeepFree")}</p>
                   </div>
                 </Link>

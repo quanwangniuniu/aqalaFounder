@@ -18,13 +18,24 @@ export default function MuslimProAboutPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-8">
             Aqala | About Us
           </h1>
-          <p className="text-lg text-white/80 leading-relaxed mb-8 max-w-4xl">
+          <p className="text-lg text-white/80 leading-relaxed mb-12 max-w-4xl">
             At Aqala, we focus on connecting Muslims through comprehension. We provide real-time translation and essential Islamic tools — prayer times, Qibla, Quran — so that language is no longer a barrier to understanding and engaging with Islamic content.
           </p>
-          <h2 className="text-2xl font-bold mb-4">Your Islamic App Companion</h2>
+
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Meet our Leadership team</h2>
           <p className="text-white/80 leading-relaxed mb-10 max-w-4xl">
-            Aqala helps Muslims across the world access accurate prayer times, find the Qibla direction, and understand the Qur&apos;an, khutbahs, and lectures in real time — in 20+ languages. Whether you&apos;re listening to a sermon in Arabic or exploring a lecture, Aqala translates spoken Islamic content into clear meaning, anytime, anywhere.
+            Aqala is led by a team of passionate and driven leaders who seek to help Muslims all over the world to practise their faith purposefully and intentionally wherever they are and anywhere they go.
           </p>
+
+          <div className="mb-14 max-w-4xl rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
+            <h3 className="text-xl font-bold text-white mb-1">Nafees Khundker</h3>
+            <p className="text-[#D4AF37] font-medium text-sm md:text-base mb-4">
+              Chief Executive Officer &amp; Group Managing Director
+            </p>
+            <p className="text-white/75 leading-relaxed">
+              Nafees is a seasoned leader with over 20 years of experience in Corporate &amp; Investment Banking, having held leadership roles at Deutsche Bank and Standard Chartered across Asia Pacific and the Middle East. As a Venture Capital Partner and entrepreneur, he has successfully scaled businesses in IT, retail, and finance. Passionate about sustainability, Nafees supports various non-profit organizations and enjoys sports, particularly tennis and cricket.
+            </p>
+          </div>
 
           <h2 className="text-2xl font-bold mb-8">The Journey of Aqala</h2>
           <div className="space-y-8">

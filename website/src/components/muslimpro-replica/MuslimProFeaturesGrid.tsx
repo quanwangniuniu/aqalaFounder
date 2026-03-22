@@ -11,7 +11,7 @@ const FEATURES = [
   { title: "Islamic Calendar", href: "/app/islamic-calendar", Icon: IconCalendar },
   { title: "Blog & Articles", href: "/app/blog", Icon: IconBlog },
   { title: "Quran Explorer", href: "/app/quran", Icon: IconQuran },
-  { title: "Donate", href: "/donate", Icon: IconDonate },
+  { title: "Support Us", href: "/donate", Icon: IconDonate },
 ];
 
 function IconTranslate({ className }: { className?: string }) {

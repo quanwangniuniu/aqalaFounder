@@ -6,11 +6,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
+import AvatarSkeleton from "@/components/AvatarSkeleton";
 import { subscribeToUnreadCount } from "@/lib/firebase/messages";
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, partnerInfo } = useAuth();
+  const { user, partnerInfo, loading: authLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
   const prevUnreadRef = useRef(0);
@@ -109,7 +110,11 @@ export default function Header() {
           )}
 
           {/* Profile */}
-          {user && <UserAvatar />}
+          {authLoading ? (
+            <AvatarSkeleton className="h-10 w-10" />
+          ) : (
+            user && <UserAvatar key={`${user.uid}-${user.photoURL ?? ""}`} priority />
+          )}
         </div>
       </div>
     </header>

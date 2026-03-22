@@ -75,17 +75,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         // Save user profile to Firestore when logged in
-          try {
-            await createOrUpdateUserProfile(firebaseUser.uid, {
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL,
-              provider: getAuthProvider(firebaseUser),
-            });
-          
+        try {
+          await createOrUpdateUserProfile(firebaseUser.uid, {
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            provider: getAuthProvider(firebaseUser),
+          });
+
           // Fetch the full profile including username and photoURL from Firestore
           const profile = await getUserProfile(firebaseUser.uid);
-          
+
           // Use Firestore profile data, falling back to Firebase Auth data
           setUser({
             uid: firebaseUser.uid,
@@ -97,11 +97,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             listenerTitle: profile?.listenerTitle || undefined,
             level: profile?.level ?? undefined,
           });
-          
+
           // Fetch partner info after profile is updated
           await fetchPartnerInfo(firebaseUser.uid);
-          } catch (err) {
-            console.error("Failed to save user profile:", err);
+        } catch (err) {
+          console.error("Failed to save user profile:", err);
           // Still set user even if profile save fails
           const mappedUser = mapFirebaseUser(firebaseUser, null, false);
           setUser(mappedUser);
