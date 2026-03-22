@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import MuslimProPremiumBanner from "@/components/muslimpro-replica/MuslimProPremiumBanner";
 import MuslimProFeaturesGrid from "@/components/muslimpro-replica/MuslimProFeaturesGrid";
+import MuslimProFeaturesTranslationSection from "@/components/muslimpro-replica/MuslimProFeaturesTranslationSection";
 
 const TESTIMONIALS = [
   { quote: "Finally I can follow khutbahs in my language. The real-time translation is a game-changer — I used to zone out when the imam spoke Arabic. Now I understand every word. JazakAllahu Khairan to the Aqala team.", author: "Yusuf K." },
@@ -16,8 +17,8 @@ const TESTIMONIALS = [
 // Aqala feature blocks — unique premium AI-generated images
 const FEATURE_BLOCKS = [
   {
-    title: "Prayer Times, Qibla, & Adhan",
-    desc: "Never miss a prayer again with accurate prayer times, Qibla finder, and timely adhan notifications - even when you are traveling!",
+    title: "Prayer Times, Qibla & Adhan Alerts",
+    desc: "Access precise, verified and customisable prayer times for anywhere around the world. Easy-to-use Qibla finder and real-time Adhan notifications provides everything you need in one place.",
     image: "/aqala-assets/aqala-prayer-times.jpg",
     imageAlt: "Prayer times — serene worship",
     textFirst: true,
@@ -29,14 +30,6 @@ const FEATURE_BLOCKS = [
     image: "/aqala-quran-detection.png",
     imageAlt: "Quran detection — Aqala",
     textFirst: false,
-    href: "/listen",
-  },
-  {
-    title: "Real-time translation for Islamic content",
-    desc: "Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language. 20+ languages — English, Arabic, Urdu, Hindi, Turkish, Indonesian, Bengali, French, German, Spanish, and more.",
-    image: "/aqala-shared-listening.png",
-    imageAlt: "Real-time translation — Aqala",
-    textFirst: true,
     href: "/listen",
   },
   {
@@ -116,10 +109,41 @@ export default function MuslimProFeaturesPage() {
       {/* Feature blocks */}
       <section className="py-12 md:py-20 bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {FEATURE_BLOCKS.map((block) => (
+          {FEATURE_BLOCKS.slice(0, 2).map((block) => (
             <div
               key={block.title}
-              className={`flex flex-col ${block.textFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12 mb-16 md:mb-24 last:mb-0`}
+              className={`flex flex-col ${block.textFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12 mb-16 md:mb-24`}
+            >
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
+                  {block.title}
+                </h2>
+                <p className="text-white/70 mb-4">{block.desc}</p>
+                <Link
+                  href={block.href}
+                  className="text-[#D4AF37] font-semibold hover:underline"
+                >
+                  Learn more →
+                </Link>
+              </div>
+              <div className="flex-1 flex justify-center max-w-[320px] md:max-w-[400px]">
+                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
+                  <Image
+                    src={block.image}
+                    alt={block.imageAlt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 320px, 400px"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <MuslimProFeaturesTranslationSection />
+          {FEATURE_BLOCKS.slice(2).map((block) => (
+            <div
+              key={block.title}
+              className={`flex flex-col ${block.textFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12`}
             >
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
