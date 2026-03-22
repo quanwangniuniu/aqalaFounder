@@ -24,10 +24,10 @@ export default function MuslimProHero() {
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white py-14 md:py-16">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4">
-          Understand Islamic Content in Your Language
+          Never Miss the Meaning Again.
         </h1>
         <p className="text-xl sm:text-2xl text-white/95 mb-8 md:mb-10">
-          Real-time translation for khutbahs, lectures, and Quran
+          Live translation for khutbahs, lectures, and Quran — in 20+ languages.
         </p>
 
         {/* Aqala: Open in Browser (no store badges until mobile apps exist) */}
@@ -44,12 +44,12 @@ export default function MuslimProHero() {
           </Link>
           <Link
             href="/app#get-aqala-app"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/80 text-white font-bold hover:bg-white/10 transition-colors mp-btn-hover"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#e2ffbc] text-[#032117] font-bold hover:brightness-95 transition-colors mp-btn-hover border-2 border-[#e2ffbc]/90"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
             </svg>
-            Get Aqala app
+            Download the App
           </Link>
         </div>
       </div>

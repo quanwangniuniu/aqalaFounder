@@ -3,11 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 
+/**
+ * Section images (replace when you have app screenshots):
+ * - 4:3 blocks: 1600 × 1200 px (min 1200 × 900), JPEG/WebP ~80%
+ * - 16:9 (Quran block): 1920 × 1080 px (min 1600 × 900)
+ * Images use object-cover inside rounded frames; safe area centre-weighted.
+ */
 type HomeSection = {
   title: string;
-  desc: string;
-  cta: string;
-  href: string;
+  paragraphs: string[];
+  cta?: string;
+  href?: string;
   image: string;
   imageAlt: string;
   imageFirst: boolean;
@@ -15,12 +21,16 @@ type HomeSection = {
   imageAspectClass: string;
 };
 
-// Aqala premium sections — unique AI-generated images per section
 const SECTIONS: HomeSection[] = [
   {
-    title: "Real-time translation for Islamic content",
-    desc: "Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language. 20+ languages — English, Arabic, Urdu, Hindi, Turkish, Indonesian, Bengali, French, German, Spanish, and more. Sources & methodology",
-    cta: "Get Aqala app",
+    title: "Real-time translation",
+    paragraphs: [
+      "Follow khutbahs, lectures, and Quran recitation in your own language — live.",
+      "Aqala delivers real-time translation with care, helping you understand not just the words, but the meaning.",
+      "Listen, understand and stay connected across 20+ languages including Arabic, Urdu, and Turkish — with prayer times, Qibla finder, and more.",
+      "Built for the Ummah, by the Ummah.",
+    ],
+    cta: "Download the App",
     href: "/app#get-aqala-app",
     image: "/aqala-shared-listening.png",
     imageAlt: "Real-time translation — Aqala",
@@ -29,8 +39,10 @@ const SECTIONS: HomeSection[] = [
     imageAspectClass: "aspect-[4/3]",
   },
   {
-    title: "Automatic Quran detection",
-    desc: "When you hear Quranic verses, Aqala automatically detects them and shows the surah, verse reference, and translation. Tap any verse to explore details and verify on Quran.com. Aqala automatically detects Quran verses and shows surah details, Arabic text, and translation. Explore what you hear with links to Quran.com. Sources & AI transparency",
+    title: "Automatic Quran Detection",
+    paragraphs: [
+      "As you listen, Aqala automatically detects Quranic verses and displays the surah, verse reference, and translation in real time. Tapping the highlighted verse whilst listening allows you to explore deeper, bringing those unknown verses that your heart connects with to light.",
+    ],
     cta: "Try Quran detection",
     href: "/app#quran-detection",
     image: "/aqala-quran-detection.png",
@@ -40,12 +52,12 @@ const SECTIONS: HomeSection[] = [
     imageAspectClass: "aspect-video",
   },
   {
-    title: "Shared listening rooms",
-    desc: "Join rooms with others to listen and translate together. Perfect for mosques, study circles, or connecting with the Ummah across languages.",
-    cta: "Join a Room",
-    href: "/rooms",
+    title: "Shared Listening rooms - Coming soon…",
+    paragraphs: [
+      "Keep an eye out for this feature, coming soon inshallah 🤲",
+    ],
     image: "/aqala-shared-listening.png",
-    imageAlt: "Shared listening — Aqala",
+    imageAlt: "Shared listening — coming soon",
     imageFirst: true,
     imageFit: "cover",
     imageAspectClass: "aspect-[4/3]",
@@ -68,30 +80,36 @@ export default function MuslimProHomeSections() {
                     alt={s.imageAlt}
                     fill
                     className={s.imageFit === "contain" ? "object-contain" : "object-cover"}
-                    sizes="(max-width: 768px) 100vw, 400px"
+                    sizes="(max-width: 768px) 100vw, 560px"
                   />
                 </div>
               </div>
               <div className="flex-1 px-4 sm:px-6 lg:px-8 min-w-0">
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">{s.title}</h2>
-                <p className="text-white/70 leading-relaxed max-w-prose mb-6">{s.desc}</p>
-                {s.href.startsWith("http") ? (
-                  <a
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors mp-btn-hover"
-                  >
-                    {s.cta}
-                  </a>
-                ) : (
-                  <Link
-                    href={s.href}
-                    className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors mp-btn-hover"
-                  >
-                    {s.cta}
-                  </Link>
-                )}
+                <div className="flex flex-col gap-4 text-white/70 leading-relaxed max-w-prose mb-6">
+                  {s.paragraphs.map((para, j) => (
+                    <p key={j}>{para}</p>
+                  ))}
+                </div>
+                {s.cta && s.href ? (
+                  s.href.startsWith("http") ? (
+                    <a
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors mp-btn-hover"
+                    >
+                      {s.cta}
+                    </a>
+                  ) : (
+                    <Link
+                      href={s.href}
+                      className="inline-flex px-6 py-3 rounded-lg bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors mp-btn-hover"
+                    >
+                      {s.cta}
+                    </Link>
+                  )
+                ) : null}
               </div>
             </div>
           </div>

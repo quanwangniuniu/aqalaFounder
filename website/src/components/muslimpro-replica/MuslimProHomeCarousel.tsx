@@ -4,31 +4,61 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-// Aqala premium carousel — unique AI-generated images, no repetition
+/**
+ * Background images: export at 2400 × 1000 px (JPEG or WebP, ~80% quality).
+ * Covers full-bleed carousel at md:h-[500px] with 2× retina; min safe 1920 × 800 px.
+ * Filenames below are placeholders — replace with your supplied assets when ready.
+ */
 const SLIDES = [
   {
-    title: "Real-time translation for Islamic content",
-    desc: "Listen to khutbahs, join rooms, and converse across languages. Quran verses, tafsir, and AI summaries — all from any language to any language. 20+ languages including English, Arabic, Urdu, Hindi, Turkish, Indonesian, Bengali, French, German, Spanish, and more.",
-    cta: "Get Aqala app",
-    href: "/app#get-aqala-app",
+    kind: "reviews" as const,
+    title: "Reviews",
+    reviews: [
+      {
+        quote:
+          "Finally I can follow khutbahs in my language. The real-time translation is a game-changer — I used to zone out when the imam spoke Arabic. Now I understand every word. JazakAllahu Khairan to the Aqala team.",
+        author: "Yusuf K.",
+      },
+      {
+        quote:
+          "I listen to Quran recitation with Urdu translation side by side. My kids and I use the shared listening room during family time. Aqala has brought us closer to the Book. MashaAllah.",
+        author: "Amina R.",
+      },
+      {
+        quote:
+          "As a revert, I struggled with Arabic lectures. Aqala's live translation lets me learn at my own pace. The AI enhancement makes complex terms clearer. May Allah bless this project.",
+        author: "James M.",
+      },
+    ],
+    cta: "Read more reviews",
+    href: "/reviews",
     image: "/aqala-shared-listening.png",
-    imageAlt: "Real-time translation — Aqala",
+    imageAlt: "Aqala — community reviews",
   },
   {
-    title: "Automatic Quran detection",
-    desc: "When you hear Quranic verses, Aqala automatically detects them and shows the surah, verse reference, and translation. Tap any verse to explore details and verify on Quran.com. Explore what you hear!",
-    cta: "View on Quran.com",
-    href: "https://quran.com",
+    kind: "text" as const,
+    title: "The gift that keeps on giving",
+    paragraphs: [
+      "Understanding and seeking for knowledge is an amanah (trust) by Allah. Aqala allows you to understand knowledge which previously remained hidden, unlocking immense rewards and hasanat.",
+    ],
+    cta: "Gift Premium",
+    href: "/app/premium/gift",
     image: "/aqala-quran-detection.png",
-    imageAlt: "Quran detection — Aqala",
+    imageAlt: "Aqala — knowledge and reward",
   },
   {
-    title: "Aqala Premium — No ads, unlimited translation, AI enhancement",
-    desc: "Go ad-free, enjoy unlimited translation time, and invite friends to get $10 off. AI enhancement makes translations clearer. One-time payment, lifetime access.",
+    kind: "text" as const,
+    title: "Subscribe to Aqala Premium!",
+    paragraphs: [
+      "Ads help us keep running and aoptimise for our users.",
+      "Upgrading to premium removes noise and provides an ad free experience free from distraction, but most importantly it directly supports the apps growth and development.",
+      "Did you know: You can gift our premium lifetime subcription to anyone of your choice and have it act as sadaqa jariye on your behalf?",
+      "Did someone say Jannah?!",
+    ],
     cta: "Upgrade to Premium",
     href: "/subscription",
     image: "/aqala-assets/aqala-ai-premium.jpg",
-    imageAlt: "Aqala Premium — exclusive experience",
+    imageAlt: "Aqala Premium",
   },
 ];
 
@@ -70,7 +100,6 @@ export default function MuslimProHomeCarousel() {
         />
         <div className="absolute inset-0 bg-[#032117]/80" />
 
-        {/* Arrow controls */}
         <button
           type="button"
           onClick={() => {
@@ -100,29 +129,51 @@ export default function MuslimProHomeCarousel() {
           </svg>
         </button>
 
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 text-center text-white">
-          <h3 className="text-2xl md:text-3xl font-bold mb-4 max-w-3xl">{s.title}</h3>
-          <p className="text-base md:text-lg text-white/95 mb-6 max-w-2xl">{s.desc}</p>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-3 sm:px-6 lg:px-8 text-center text-white overflow-y-auto py-6 md:py-8">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 max-w-4xl shrink-0">{s.title}</h3>
+
+          {s.kind === "reviews" ? (
+            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6 text-left">
+              {s.reviews.map((r, i) => (
+                <blockquote
+                  key={i}
+                  className="rounded-xl border border-white/15 bg-black/25 backdrop-blur-sm px-3 py-3 md:px-4 md:py-3.5 text-xs sm:text-sm text-white/90 leading-snug"
+                >
+                  <p className="line-clamp-5 md:line-clamp-6">&ldquo;{r.quote}&rdquo;</p>
+                  <footer className="mt-2 text-[#D4AF37] text-xs font-medium">— {r.author}</footer>
+                  <div className="mt-1.5 text-[#D4AF37] text-xs tracking-tight" aria-label="5 stars">
+                    ★★★★★
+                  </div>
+                </blockquote>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 md:gap-5 mb-4 md:mb-6 max-w-2xl text-sm sm:text-base md:text-lg text-white/95 leading-relaxed">
+              {s.paragraphs.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
+          )}
+
           {s.href.startsWith("http") ? (
             <a
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#b8944d] transition-colors mp-btn-hover"
+              className="inline-flex shrink-0 px-6 py-3 md:px-8 md:py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#b8944d] transition-colors mp-btn-hover text-sm md:text-base"
             >
               {s.cta}
             </a>
           ) : (
             <Link
               href={s.href}
-              className="inline-flex px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#b8944d] transition-colors mp-btn-hover"
+              className="inline-flex shrink-0 px-6 py-3 md:px-8 md:py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#b8944d] transition-colors mp-btn-hover text-sm md:text-base"
             >
               {s.cta}
             </Link>
           )}
         </div>
       </div>
-      {/* Pagination */}
       <div className="flex justify-center gap-2 py-4 bg-[#032117]">
         {SLIDES.map((_, i) => (
           <button

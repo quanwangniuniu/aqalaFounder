@@ -1,65 +1,59 @@
 "use client";
 
-import Link from "next/link";
 import MuslimProHero from "@/components/muslimpro-replica/MuslimProHero";
 import MuslimProIntro from "@/components/muslimpro-replica/MuslimProIntro";
 import MuslimProHomeCarousel from "@/components/muslimpro-replica/MuslimProHomeCarousel";
 import MuslimProHomeSections from "@/components/muslimpro-replica/MuslimProHomeSections";
-import MuslimProQalboxHomeSection from "@/components/muslimpro-replica/MuslimProQalboxHomeSection";
 import MuslimProStats from "@/components/muslimpro-replica/MuslimProStats";
 import MuslimProComparisonSection from "@/components/muslimpro-replica/MuslimProComparisonSection";
 import MuslimProHomeTestimonial from "@/components/muslimpro-replica/MuslimProHomeTestimonial";
-import MuslimProBlogSection from "@/components/muslimpro-replica/MuslimProBlogSection";
 import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewsletter";
-import MuslimProAsSeenOn from "@/components/muslimpro-replica/MuslimProAsSeenOn";
 import MuslimProDownloadSection from "@/components/muslimpro-replica/MuslimProDownloadSection";
 import MuslimProScrollReveal from "@/components/muslimpro-replica/MuslimProScrollReveal";
 import MuslimProQuranDetectionSection from "@/components/muslimpro-replica/MuslimProQuranDetectionSection";
+import MuslimProHelpCenterSection from "@/components/muslimpro-replica/MuslimProHelpCenterSection";
+import MuslimProContactSection from "@/components/muslimpro-replica/MuslimProContactSection";
 
 /**
- * Aqala /app — Features, blog, and resources
+ * Aqala /app — marketing home
  */
 export default function MuslimProDemoPage() {
   return (
     <>
       <MuslimProHero />
-      <MuslimProScrollReveal><MuslimProIntro /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProHomeCarousel /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProHomeSections /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProQuranDetectionSection /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProComparisonSection /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProQalboxHomeSection /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProStats /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProDownloadSection /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProHomeTestimonial /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProBlogSection /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProNewsletter /></MuslimProScrollReveal>
-      <MuslimProScrollReveal><MuslimProAsSeenOn /></MuslimProScrollReveal>
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore Aqala</h2>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/app/features" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
-              Features
-            </Link>
-            <Link href="/app/prayer-times" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
-              Prayer Times
-            </Link>
-            <Link href="/app/app" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
-              Open App
-            </Link>
-            <Link href="/app/quran" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
-              Quran
-            </Link>
-            <Link href="/app/blog" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
-              Blog
-            </Link>
-            <Link href="/app/about" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3]">
-              About Us
-            </Link>
-          </div>
-        </div>
-      </section>
+      <MuslimProScrollReveal>
+        <MuslimProIntro />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProHomeCarousel />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProHomeSections />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProQuranDetectionSection />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProComparisonSection />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProStats />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProDownloadSection />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProHomeTestimonial />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProHelpCenterSection />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProContactSection />
+      </MuslimProScrollReveal>
+      <MuslimProScrollReveal>
+        <MuslimProNewsletter />
+      </MuslimProScrollReveal>
     </>
   );
 }
