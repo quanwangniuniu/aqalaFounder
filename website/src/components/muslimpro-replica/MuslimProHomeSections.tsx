@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import {
+  mpPhoneShotFrameClass,
+  mpPhoneShotInnerRoundedClass,
+  mpPhoneShotImgFeatureClass,
+} from "@/components/muslimpro-replica/marketingImageClasses";
 
-/**
- * Section images (replace when you have app screenshots):
- * - 4:3 blocks: 1600 × 1200 px (min 1200 × 900), JPEG/WebP ~80%
- * - 16:9 (Quran block): 1920 × 1080 px (min 1600 × 900)
- * Images use object-cover inside rounded frames; safe area centre-weighted.
- */
+/** Portrait phone screenshots: framed with w-fit to avoid letterboxing in wide boxes. */
 type HomeSection = {
   title: string;
   paragraphs: string[];
@@ -17,8 +17,6 @@ type HomeSection = {
   image: string;
   imageAlt: string;
   imageFirst: boolean;
-  imageFit: "cover" | "contain";
-  imageAspectClass: string;
 };
 
 const SECTIONS: HomeSection[] = [
@@ -32,11 +30,33 @@ const SECTIONS: HomeSection[] = [
     ],
     cta: "Try Beta Now",
     href: "/listen",
-    image: "/aqala-shared-listening.png",
+    image: "/aqala-about/journey-2025-translation.jpg",
     imageAlt: "Real-time translation — Aqala",
     imageFirst: true,
-    imageFit: "cover",
-    imageAspectClass: "aspect-[4/3]",
+  },
+  {
+    title: "Prayer times & Qibla",
+    paragraphs: [
+      "Stay on time with prayer notifications and a clear Qibla direction wherever you are.",
+      "Built alongside listening and translation so your day stays grounded in salah and understanding.",
+    ],
+    cta: "Open app",
+    href: "/app",
+    image: "/aqala-about/journey-2025-prayer-qibla.jpg",
+    imageAlt: "Aqala prayer times and Qibla finder",
+    imageFirst: false,
+  },
+  {
+    title: "20+ languages",
+    paragraphs: [
+      "Choose the language that fits you and your family — from Arabic and Urdu to Turkish and beyond.",
+      "One Ummah, many tongues: Aqala is built to help everyone follow along with clarity.",
+    ],
+    cta: "Learn more",
+    href: "/app/features",
+    image: "/aqala-about/journey-2025-languages.jpg",
+    imageAlt: "Aqala translates to over 20 languages",
+    imageFirst: true,
   },
 ];
 
@@ -47,20 +67,23 @@ export default function MuslimProHomeSections() {
         <div key={i} className="py-12 md:py-16 bg-[#032117]">
           <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12">
             <div
-              className={`flex flex-col ${s.imageFirst ? "lg:flex-row" : "lg:flex-row-reverse"} items-center gap-8 lg:gap-12`}
+              className={`flex flex-col ${s.imageFirst ? "lg:flex-row" : "lg:flex-row-reverse"} lg:items-start gap-8 lg:gap-12`}
             >
-              <div className="flex-1 max-w-xl mx-auto w-full px-2 sm:px-4">
-                <div className={`relative ${s.imageAspectClass} max-h-[460px] rounded-3xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden bg-[#083726] mp-img-hover`}>
-                  <Image
-                    src={s.image}
-                    alt={s.imageAlt}
-                    fill
-                    className={s.imageFit === "contain" ? "object-contain" : "object-cover"}
-                    sizes="(max-width: 768px) 100vw, 560px"
-                  />
+              <div className="shrink-0 flex justify-center w-full lg:w-auto lg:min-w-[280px] px-2 sm:px-4 lg:pt-1">
+                <div className={`${mpPhoneShotFrameClass} shadow-2xl shadow-black/40 mp-img-hover`}>
+                  <div className={mpPhoneShotInnerRoundedClass}>
+                    <Image
+                      src={s.image}
+                      alt={s.imageAlt}
+                      width={473}
+                      height={1024}
+                      className={mpPhoneShotImgFeatureClass}
+                      sizes="(max-width: 1024px) 90vw, 300px"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="flex-1 px-4 sm:px-6 lg:px-8 min-w-0">
+              <div className="flex-1 min-w-0 max-w-2xl px-4 sm:px-6 lg:px-8 mx-auto lg:mx-0 w-full">
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">{s.title}</h2>
                 <div className="flex flex-col gap-4 text-white/70 leading-relaxed max-w-prose mb-6">
                   {s.paragraphs.map((para, j) => (

@@ -3,7 +3,13 @@
 import Link from "next/link";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 
-const JOURNEY_TIMELINE = [
+type JourneyItem = {
+  year: string;
+  title: string;
+  desc: string;
+};
+
+const JOURNEY_TIMELINE: JourneyItem[] = [
   {
     year: "2024",
     title: "Concept & Vision",
@@ -40,6 +46,13 @@ export default function MuslimProAboutPage() {
                 should never be a mystery. We are driven by a singular, urgent purpose: to empower Muslims everywhere
                 to practice their Deen with <strong className="text-white">unwavering intentionality, clarity and deep purpose</strong>, no matter where their
                 journey takes them.
+              </p>
+              <p className="text-white/55 text-sm mt-6 max-w-2xl mx-auto">
+                Product screenshots and feature walkthroughs live on the{" "}
+                <Link href="/app/features" className="text-[#D4AF37] underline-offset-2 hover:underline font-medium">
+                  Features
+                </Link>{" "}
+                page.
               </p>
             </section>
 
@@ -91,18 +104,20 @@ export default function MuslimProAboutPage() {
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
                 The Journey of Aqala
               </h2>
-              <div className="space-y-8 max-w-4xl mx-auto">
+              <div className="space-y-12 max-w-5xl mx-auto">
                 {JOURNEY_TIMELINE.map((item) => (
                   <div
                     key={item.year}
-                    className="flex flex-col sm:flex-row gap-3 sm:gap-6 p-5 rounded-2xl border border-white/10 bg-[#032117]/40"
+                    className="p-5 md:p-6 rounded-2xl border border-white/10 bg-[#032117]/40"
                   >
-                    <div className="flex-shrink-0 w-24 font-bold uppercase tracking-wide text-[#D4AF37]">
-                      {item.year}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white mb-2">{item.title}</h3>
-                      <p className="text-white/75 leading-relaxed">{item.desc}</p>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                      <div className="flex-shrink-0 w-24 font-bold uppercase tracking-wide text-[#D4AF37]">
+                        {item.year}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white mb-2 text-lg">{item.title}</h3>
+                        <p className="text-white/75 leading-relaxed">{item.desc}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
