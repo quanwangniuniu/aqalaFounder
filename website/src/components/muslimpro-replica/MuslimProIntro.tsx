@@ -35,8 +35,8 @@ export default function MuslimProIntro() {
               <div className={mpPhoneShotInnerRoundedClass}>
                 <Image
                   {...mpAqalaAboutImageProps}
-                  src="/aqala-about/mission-listen-home.jpg"
-                  alt="Aqala home — Don\u2019t just listen. Understand."
+                  src="/aqala-about/journey-2024-concept.jpg"
+                  alt="Aqala brand and app — Connecting through comprehension"
                   width={473}
                   height={1024}
                   className={mpPhoneShotImgFeatureClass}
@@ -45,7 +45,7 @@ export default function MuslimProIntro() {
               </div>
             </div>
             <figcaption className="text-white/45 text-xs mt-3 text-center lg:text-right w-[280px] sm:w-[300px] max-w-full leading-snug">
-              Live understanding, reminders, and insights in one place.
+              Our brand &amp; vision 
             </figcaption>
           </figure>
         </div>
