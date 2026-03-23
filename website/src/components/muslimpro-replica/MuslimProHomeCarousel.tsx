@@ -6,7 +6,7 @@ import Image from "next/image";
 
 /**
  * Background images: export at 2400 × 1000 px (JPEG or WebP, ~80% quality).
- * Covers full-bleed carousel at md:h-[500px] with 2× retina; min safe 1920 × 800 px.
+ * Covers full-bleed carousel at md:h-[400px] with 2× retina; min safe 1920 × 800 px.
  * Filenames below are placeholders — replace with your supplied assets when ready.
  */
 const SLIDES = [
@@ -21,7 +21,7 @@ const SLIDES = [
       },
       {
         quote:
-          "I listen to Quran recitation with Urdu translation side by side. My kids and I use the shared listening room during family time. Aqala has brought us closer to the Book. MashaAllah.",
+          "I listen to Quran recitation with Urdu translation side by side. Aqala has brought my family closer to the Book. MashaAllah.",
         author: "Amina R.",
       },
       {
@@ -32,7 +32,7 @@ const SLIDES = [
     ],
     cta: "Read more reviews",
     href: "/reviews",
-    image: "/aqala-shared-listening.png",
+    image: "/aqala-about/journey-2025-translation.jpg",
     imageAlt: "Aqala — community reviews",
   },
   {
@@ -43,7 +43,7 @@ const SLIDES = [
     ],
     cta: "Gift Premium",
     href: "/app/premium/gift",
-    image: "/aqala-quran-detection.png",
+    image: "/aqala-about/journey-present-suite.jpg",
     imageAlt: "Aqala — knowledge and reward",
   },
   {
@@ -89,7 +89,7 @@ export default function MuslimProHomeCarousel() {
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <div className="relative h-[400px] md:h-[500px]">
+      <div className="relative h-[320px] sm:h-[360px] md:h-[400px]">
         <Image
           src={s.image}
           alt={s.imageAlt}
@@ -97,6 +97,7 @@ export default function MuslimProHomeCarousel() {
           className="object-cover"
           sizes="100vw"
           priority={index === 0}
+          unoptimized={s.image.startsWith("/aqala-about/")}
         />
         <div className="absolute inset-0 bg-[#032117]/80" />
 

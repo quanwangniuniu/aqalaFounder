@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/qibla`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/prayers`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/translate`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${baseUrl}/rooms`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${baseUrl}/quran`, lastModified: now, changeFrequency: "weekly", priority: 0.75 },
     { url: `${baseUrl}/subscription`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/auth/login`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${baseUrl}/auth/register`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },

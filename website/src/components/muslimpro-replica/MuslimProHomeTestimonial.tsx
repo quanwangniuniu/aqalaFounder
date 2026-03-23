@@ -8,7 +8,7 @@ const REVIEWS = [
   },
   {
     quote:
-      "I listen to Quran recitation with Urdu translation side by side. My kids and I use the shared listening room during family time. Aqala has brought us closer to the Book. MashaAllah.",
+      "I listen to Quran recitation with Urdu translation side by side. Aqala has brought my family closer to the Book. MashaAllah.",
     author: "Amina R.",
   },
   {

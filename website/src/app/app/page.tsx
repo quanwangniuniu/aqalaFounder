@@ -10,7 +10,6 @@ import MuslimProHomeTestimonial from "@/components/muslimpro-replica/MuslimProHo
 import MuslimProNewsletter from "@/components/muslimpro-replica/MuslimProNewsletter";
 import MuslimProDownloadSection from "@/components/muslimpro-replica/MuslimProDownloadSection";
 import MuslimProScrollReveal from "@/components/muslimpro-replica/MuslimProScrollReveal";
-import MuslimProQuranDetectionSection from "@/components/muslimpro-replica/MuslimProQuranDetectionSection";
 import MuslimProHelpCenterSection from "@/components/muslimpro-replica/MuslimProHelpCenterSection";
 import MuslimProContactSection from "@/components/muslimpro-replica/MuslimProContactSection";
 
@@ -29,9 +28,6 @@ export default function MuslimProDemoPage() {
       </MuslimProScrollReveal>
       <MuslimProScrollReveal>
         <MuslimProHomeSections />
-      </MuslimProScrollReveal>
-      <MuslimProScrollReveal>
-        <MuslimProQuranDetectionSection />
       </MuslimProScrollReveal>
       <MuslimProScrollReveal>
         <MuslimProComparisonSection />

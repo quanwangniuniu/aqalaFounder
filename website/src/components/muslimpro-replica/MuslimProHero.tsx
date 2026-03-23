@@ -31,7 +31,7 @@ export default function MuslimProHero() {
         </p>
 
         {/* Aqala: Open in Browser (no store badges until mobile apps exist) */}
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-col items-center gap-3">
           <Link
             href="/listen"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors mp-btn-hover"
@@ -40,17 +40,9 @@ export default function MuslimProHero() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            Open in Browser
+            Try Beta Now
           </Link>
-          <Link
-            href="/app#get-aqala-app"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-[#e2ffbc] text-[#032117] font-bold hover:brightness-95 transition-colors mp-btn-hover border-2 border-[#e2ffbc]/90"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-            </svg>
-            Download the App
-          </Link>
+          <p className="text-sm md:text-base text-white/80">Aqala app coming soon.</p>
         </div>
       </div>
     </section>

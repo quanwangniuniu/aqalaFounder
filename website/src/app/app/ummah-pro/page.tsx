@@ -4,8 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * Ummah Pro redirects to Core Features.
- * Aqala community features are in Shared Listening (/rooms), not a separate social feed.
+ * Ummah Pro redirects to Core Features (legacy route).
  */
 export default function UmmahProRedirectPage() {
   const router = useRouter();

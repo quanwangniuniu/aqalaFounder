@@ -8,7 +8,7 @@ export interface BlogPost {
   excerpt: string;
   date: string;
   author: string;
-  category: "all" | "ramadan" | "deen" | "lifestyle" | "quran" | "rooms";
+  category: "all" | "ramadan" | "deen" | "lifestyle" | "quran";
   href: string;
   thumbnail: string;
   content: string[];
@@ -42,12 +42,6 @@ function contentTemplate(post: Pick<BlogPost, "title" | "excerpt" | "category">)
       "Tajweed and memorization are beautiful, but don’t neglect meaning. Pair recitation with translation in a language you understand.",
       "A powerful practice: take one ayah, write one takeaway, and make one dua from it. This turns reading into living.",
     ],
-    rooms: [
-      "Learning together is a Sunnah of the Ummah. Shared listening rooms make it easier to stay consistent, ask questions, and grow with others.",
-      "If you host a room, set a simple structure: opening dua, a short audio/lecture segment, then a reflection prompt for the group.",
-      "If you join a room, come with one intention: benefit and adab. Respect the speaker, listen well, and contribute gently.",
-      "Consistency again wins: one room a week can compound into real transformation over months.",
-    ],
   };
 
   const middle = blocks[post.category] || blocks.deen;
@@ -62,7 +56,6 @@ function pickThumbnail(category: BlogPost["category"]) {
   if (category === "ramadan") return "/aqala-assets/aqala-hero-mosque.jpg";
   if (category === "quran") return "/aqala-assets/aqala-quran-premium.jpg";
   if (category === "lifestyle") return "/aqala-assets/aqala-translation-concept.jpg";
-  if (category === "rooms") return "/aqala-assets/aqala-shared-listening.jpg";
   return "/aqala-assets/aqala-landing-quran.jpg";
 }
 
