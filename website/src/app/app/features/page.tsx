@@ -17,8 +17,8 @@ const TESTIMONIALS = [
 // Aqala feature blocks — unique premium AI-generated images
 const FEATURE_BLOCKS = [
   {
-    title: "Prayer Times, Qibla & Adhan Alerts",
-    desc: "Access precise, verified and customisable prayer times for anywhere around the world. Easy-to-use Qibla finder and real-time Adhan notifications provides everything you need in one place.",
+    title: "Qibla Finder: Precision for Every Prayer",
+    desc: "Wherever you are, we garuntee you're aligned. No matter where you are in the world faith doesn't stop when you travel. Whether you're on a business trip, hiking in the mountains, or in a new city, finding your direction shouldn't be a moment of doubt. Aqala's Qibla Finder isn't just a digital needle, it's a high-precision tool engineered to give you peace of mind before you say Allahu Akbar.",
     image: "/aqala-assets/aqala-prayer-times.jpg",
     imageAlt: "Prayer times — serene worship",
     textFirst: true,

@@ -3,56 +3,78 @@
 import Link from "next/link";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 
-const TIMELINE = [
-  { year: "2024", title: "Concept & Vision", desc: "Aqala was conceived with the vision of connecting Muslims through comprehension. Language should not be a barrier to understanding the Qur'an, khutbahs, or Islamic lectures. We set out to build real-time translation for spoken Islamic content." },
-  { year: "2025", title: "Launch", desc: "Aqala launched as a web app, offering prayer times, Qibla finder, and real-time translation for Qur'an, khutbahs, and lectures. Users can listen in any language and see translations in 20+ languages." },
-  { year: "present", title: "Expansion & New Features", desc: "Aqala continues to add features: Quran verse detection, room-based shared listening, and improved translation. Our goal is to make Islamic knowledge accessible to the global Ummah, regardless of language." },
-];
-
 export default function MuslimProAboutPage() {
   return (
     <>
       <MuslimProAppBar />
       <section className="py-16 md:py-24 bg-[#032117] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center">
             Aqala | About Us
           </h1>
-          <p className="text-lg text-white/80 leading-relaxed mb-12 max-w-4xl">
-            At Aqala, we focus on connecting Muslims through comprehension. We provide real-time translation and essential Islamic tools — prayer times, Qibla, Quran — so that language is no longer a barrier to understanding and engaging with Islamic content.
-          </p>
+          <div className="space-y-12 md:space-y-16 max-w-5xl mx-auto">
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#D4AF37] mb-4">
+                Our Mission: Clarity for the Heart, Direction for the Soul
+              </h2>
+              <p className="text-white/80 leading-relaxed max-w-4xl mx-auto">
+                Aqala is fueled by a relentless team of visionaries, seekers, and innovators who believe that faith
+                should never be a mystery. We are driven by a singular, urgent purpose: to empower Muslims everywhere
+                to practice their Deen with <strong className="text-white">unwavering intentionality, clarity and deep purpose</strong>, no matter where their
+                journey takes them.
+              </p>
+            </section>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Meet our Leadership team</h2>
-          <p className="text-white/80 leading-relaxed mb-10 max-w-4xl">
-            Aqala is led by a team of passionate and driven leaders who seek to help Muslims all over the world to practise their faith purposefully and intentionally wherever they are and anywhere they go.
-          </p>
-
-          <div className="mb-14 max-w-4xl rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
-            <h3 className="text-xl font-bold text-white mb-1">Nafees Khundker</h3>
-            <p className="text-[#D4AF37] font-medium text-sm md:text-base mb-4">
-              Chief Executive Officer &amp; Group Managing Director
-            </p>
-            <p className="text-white/75 leading-relaxed">
-              Nafees is a seasoned leader with over 20 years of experience in Corporate &amp; Investment Banking, having held leadership roles at Deutsche Bank and Standard Chartered across Asia Pacific and the Middle East. As a Venture Capital Partner and entrepreneur, he has successfully scaled businesses in IT, retail, and finance. Passionate about sustainability, Nafees supports various non-profit organizations and enjoys sports, particularly tennis and cricket.
-            </p>
-          </div>
-
-          <h2 className="text-2xl font-bold mb-8">The Journey of Aqala</h2>
-          <div className="space-y-8">
-            {TIMELINE.map((item) => (
-              <div key={item.year} className="flex flex-col sm:flex-row gap-3 sm:gap-6 p-5 rounded-2xl border border-white/10 bg-white/[0.03]">
-                <div className="flex-shrink-0 w-24 font-bold uppercase tracking-wide text-[#D4AF37]">{item.year}</div>
-                <div>
-                  <h3 className="font-semibold text-white mb-2">{item.title}</h3>
-                  <p className="text-white/75 leading-relaxed">{item.desc}</p>
-                </div>
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#D4AF37] mb-5 md:mb-6">
+                Why We Exist
+              </h2>
+              <div className="space-y-6 text-white/80 leading-relaxed max-w-4xl mx-auto">
+                <p>For too long, language and distance have been barriers to true understanding.</p>
+                <p>With today&apos;s technology, why can&apos;t we understand anyone, anywhere around the world?</p>
+                <p>
+                  We refuse to accept a world where believers &ldquo;follow blindly&rdquo; simply because a translation was
+                  missing or a direction was unclear. We&apos;ve seen the fog of confusion that settles when you can&apos;t
+                  understand the Friday Khutbah or when you feel disconnected from the sacred text in a new land.
+                </p>
+                <p className="text-white font-semibold pt-5 md:pt-7 border-t border-white/10">That ends with Aqala.</p>
               </div>
-            ))}
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8 text-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#D4AF37] mb-5 md:mb-6">
+                Our Commitment to You
+              </h2>
+              <div className="space-y-6 text-white/80 leading-relaxed max-w-4xl mx-auto">
+                <p>
+                  We are clearing the fog. We are tearing down the walls between the message and the listener. We
+                  don&apos;t just build tools; we build bridges, serving communities connected by one common ground.
+                </p>
+                <p className="text-white font-semibold">Islam.</p>
+                <p>
+                  By combining cutting-edge technology with a deep respect for Islamic tradition, we empower the global
+                  Ummah to move from passive listening to active reflection.
+                </p>
+                <p>
+                  We aren&apos;t just helping you find the Qibla or translate a lecture; we are helping you find your
+                  center. To move with intent & clarity. We are building a future where every Muslim, in every corner
+                  of the globe, has the wisdom to lead a life of meaning.
+                </p>
+                <p className="text-white font-semibold">
+                  Because faith isn&apos;t just about what you do-it&apos;s about what you understand.
+                </p>
+                <p className="text-[#D4AF37] font-semibold text-lg pt-6 md:pt-8 border-t border-white/10">
+                  Aqala - Connecting Through Comprehension.
+                </p>
+              </div>
+            </section>
           </div>
 
-          <Link href="/app" className="inline-flex mt-12 px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#b8944d]">
-            Back to Home
-          </Link>
+          <div className="text-center">
+            <Link href="/app" className="inline-flex mt-12 px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#b8944d]">
+              Back to Home
+            </Link>
+          </div>
         </div>
       </section>
     </>
