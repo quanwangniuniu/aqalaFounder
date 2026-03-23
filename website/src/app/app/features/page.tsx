@@ -157,7 +157,7 @@ export default function MuslimProFeaturesPage() {
           <p className="text-sm text-white/65 text-center max-w-2xl mx-auto mb-10 md:mb-12">
             Real product UI: home, translation, languages, prayer &amp; Qibla, Quran detection, and more.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {[
               {
                 src: "/aqala-about/mission-listen-home.jpg",
@@ -205,7 +205,7 @@ export default function MuslimProFeaturesPage() {
                       width={473}
                       height={1024}
                       className={mpPhoneShotImgGridClass}
-                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
+                      sizes="(max-width: 1023px) 46vw, 22vw"
                     />
                   </div>
                 </div>
