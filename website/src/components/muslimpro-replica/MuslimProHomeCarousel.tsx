@@ -97,7 +97,7 @@ export default function MuslimProHomeCarousel() {
           className="object-cover"
           sizes="100vw"
           priority={index === 0}
-          unoptimized={s.image.startsWith("/aqala-about/")}
+          unoptimized
         />
         <div className="absolute inset-0 bg-[#032117]/80" />
 
@@ -130,7 +130,7 @@ export default function MuslimProHomeCarousel() {
           </svg>
         </button>
 
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-3 sm:px-6 lg:px-8 text-center text-white overflow-y-auto py-6 md:py-8">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-start px-3 sm:px-6 lg:px-8 text-center text-white overflow-y-auto py-6 md:py-8">
           <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 max-w-4xl shrink-0">{s.title}</h3>
 
           {s.kind === "reviews" ? (

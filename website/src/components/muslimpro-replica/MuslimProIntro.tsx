@@ -44,7 +44,7 @@ export default function MuslimProIntro() {
                 />
               </div>
             </div>
-            <figcaption className="text-white/45 text-xs mt-3 text-center lg:text-right max-w-[260px] sm:max-w-[300px]">
+            <figcaption className="text-white/45 text-xs mt-3 text-center lg:text-right w-[280px] sm:w-[300px] max-w-full leading-snug">
               Live understanding, reminders, and insights in one place.
             </figcaption>
           </figure>
