@@ -16,9 +16,9 @@ export default function BlogArticlePage() {
     return (
       <>
         <MuslimProAppBar />
-        <div className="min-h-[50vh] flex flex-col items-center justify-center px-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Article not found</h1>
-          <Link href="/app/blog" className="text-[#00a651] font-semibold hover:underline">
+        <div className="min-h-[50vh] flex flex-col items-center justify-center px-4 bg-[#032117]">
+          <h1 className="text-2xl font-bold text-white mb-4">Article not found</h1>
+          <Link href="/app/blog" className="text-[#D4AF37] font-semibold hover:underline">
             ← Back to Blog
           </Link>
         </div>
