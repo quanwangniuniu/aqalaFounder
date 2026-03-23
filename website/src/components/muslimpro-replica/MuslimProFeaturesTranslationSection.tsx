@@ -65,7 +65,7 @@ export default function MuslimProFeaturesTranslationSection() {
         <div className="flex-1 flex justify-center max-w-[320px] md:max-w-[400px] w-full">
           <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
             <Image
-              src="/aqala-shared-listening.png"
+              src="/aqala-assets/aqala-landing-translation.jpg"
               alt="Real-time translation — Aqala"
               fill
               className="object-cover"

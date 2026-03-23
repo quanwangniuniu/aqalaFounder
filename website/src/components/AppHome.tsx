@@ -165,20 +165,19 @@ export default function AppHome() {
                 </div>
               </AdLink>
 
-              <AdLink href="/rooms" className="group relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-4 hover:bg-white/10 hover:border-[#D4AF37]/20 transition-all">
+              <AdLink href="/quran" className="group relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-4 hover:bg-white/10 hover:border-[#D4AF37]/20 transition-all">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2 group-hover:bg-[#D4AF37]/10 transition-colors" />
                 <div className="relative">
                   <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
-                      <path d="M3 21h18" strokeLinecap="round" />
-                      <path d="M5 21V7l7-4 7 4v14" />
-                      <path d="M9 21v-6h6v6" />
-                      <circle cx="12" cy="10" r="2" />
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" strokeLinecap="round" />
+                      <path d="M8 7h8M8 11h6" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <p className="text-xs text-white/50 mb-0.5">Mosques</p>
-                  <p className="text-sm font-medium text-white">Join a Room</p>
-                  <p className="text-xs text-white/40">Shared listening</p>
+                  <p className="text-xs text-white/50 mb-0.5">Quran</p>
+                  <p className="text-sm font-medium text-white">Read &amp; reflect</p>
+                  <p className="text-xs text-white/40">Arabic with translation</p>
                 </div>
               </AdLink>
 

@@ -125,7 +125,7 @@ const RECENT_POSTS_BY_COUNTRY: Record<string, { username: string; time: string; 
   "United States": [
     { username: "Ahmad_N", time: "1h", location: "United States", content: "Used Aqala's translation during Jummah today — finally understood the full khutbah. JazakAllahu Khairan.", avatar: "A" },
     { username: "Sara_M", time: "2h", location: "United States", content: "Ramadan Mubarak to the Ummah. May Allah accept our fasts and prayers. 🤲", avatar: "S" },
-    { username: "Omar_K", time: "2h", location: "United States", content: "Shared Listening with the family — kids loved following the Quran in Urdu. MashaAllah.", avatar: "O" },
+    { username: "Omar_K", time: "2h", location: "United States", content: "Listening with the family — kids loved following the Quran in Urdu. MashaAllah.", avatar: "O" },
     { username: "Fatima_R", time: "5h", location: "United States", content: "Prayer times are spot on for my city. BarakAllahu feekum.", avatar: "F" },
   ],
   Australia: [
@@ -155,7 +155,7 @@ const RECENT_POSTS_BY_COUNTRY: Record<string, { username: string; time: string; 
   Netherlands: [
     { username: "Rashid_A", time: "2h", location: "Netherlands", content: "Please make dua for my niece. She is going through a difficult time. JazakAllahu Khairan.", avatar: "R" },
     { username: "Sana_V", time: "2d", location: "Netherlands", content: "Assalamu Alaikum. Requesting duas for my health. May Allah reward you all.", avatar: "S" },
-    { username: "Hamza_D", time: "5d", location: "Netherlands", content: "Aqala's shared rooms helped our study circle. Everyone could follow in their language.", avatar: "H" },
+    { username: "Hamza_D", time: "5d", location: "Netherlands", content: "Aqala's live translation helped our study circle follow along in everyone's language.", avatar: "H" },
     { username: "Nadia_L", time: "1d", location: "Netherlands", content: "Dua for unity and strength of the Ummah. In Shaa Allah.", avatar: "N" },
   ],
 };
@@ -171,8 +171,7 @@ const FAQ = [
   { a: "Suhoor ends at Fajr and Iftar begins at Maghrib. These times update automatically based on your location and appear in the Ramadan section. You can enable fasting reminders in Settings." },
   { q: "Can I get reminders for each prayer?", a: "Yes. Go to Settings > Notifications and choose which prayers you'd like alerts for. Aqala will notify you at the correct time for your location." },
   { q: "How does real-time translation work?", a: "Aqala translates spoken Islamic content — khutbahs, lectures, Quran recitation — into your language as you listen. Open the Listen page, play any audio, and see the translation appear in real time. Works in 20+ languages." },
-  { q: "What is Shared Listening?", a: "Shared Listening lets you join rooms with others to listen and translate together. Perfect for mosques, study circles, or connecting with Muslims across languages. Create or join a room from the Rooms page." },
-  { q: "Is Aqala safe for families?", a: "Yes. Aqala is designed to be family-friendly. The Listen and Rooms features are suitable for all ages. Parents can use Shared Listening with children to learn together." },
+  { q: "Is Aqala safe for families?", a: "Yes. Aqala is designed to be family-friendly. The Listen experience is suitable for all ages so families can learn together." },
 ];
 
 // Premium countdown: end of day (demo)
@@ -480,8 +479,8 @@ export default function MuslimProPrayerTimesPage() {
               </article>
             ))}
           </div>
-          <Link href="/rooms" className="inline-block mt-6 text-[#D4AF37] font-semibold hover:underline">
-            Join Shared Listening Rooms →
+          <Link href="/listen" className="inline-block mt-6 text-[#D4AF37] font-semibold hover:underline">
+            Try live translation →
           </Link>
         </div>
       </section>

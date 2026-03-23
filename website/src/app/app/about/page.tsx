@@ -3,6 +3,24 @@
 import Link from "next/link";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 
+const JOURNEY_TIMELINE = [
+  {
+    year: "2024",
+    title: "Concept & Vision",
+    desc: "Aqala was conceived with the vision of connecting Muslims through comprehension. Language should not be a barrier to understanding the Qur\u2019an, khutbahs, or Islamic lectures. We set out to build real-time translation for spoken Islamic content.",
+  },
+  {
+    year: "2025",
+    title: "Launch",
+    desc: "Aqala launched as a web app, offering prayer times, Qibla finder, and real-time translation for Qur\u2019an, khutbahs, and lectures. Users can listen in any language and see translations in 20+ languages.",
+  },
+  {
+    year: "present",
+    title: "Expansion & New Features",
+    desc: "Aqala continues to add features: Quran verse detection and improved translation. Our goal is to make Islamic knowledge accessible to the global Ummah, regardless of language.",
+  },
+];
+
 export default function MuslimProAboutPage() {
   return (
     <>
@@ -66,6 +84,28 @@ export default function MuslimProAboutPage() {
                 <p className="text-[#D4AF37] font-semibold text-lg pt-6 md:pt-8 border-t border-white/10">
                   Aqala - Connecting Through Comprehension.
                 </p>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
+                The Journey of Aqala
+              </h2>
+              <div className="space-y-8 max-w-4xl mx-auto">
+                {JOURNEY_TIMELINE.map((item) => (
+                  <div
+                    key={item.year}
+                    className="flex flex-col sm:flex-row gap-3 sm:gap-6 p-5 rounded-2xl border border-white/10 bg-[#032117]/40"
+                  >
+                    <div className="flex-shrink-0 w-24 font-bold uppercase tracking-wide text-[#D4AF37]">
+                      {item.year}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-2">{item.title}</h3>
+                      <p className="text-white/75 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </div>

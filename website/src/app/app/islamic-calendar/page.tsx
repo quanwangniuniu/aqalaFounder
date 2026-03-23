@@ -15,14 +15,6 @@ const PRAYER_ORDER = [
   { key: "isha" as const, label: "Isha", icon: "/app/isha.svg" },
 ];
 
-const EVENTS = [
-  { name: "Eid-Ul-Fitr", date: "Friday, 20 March 2026", hijri: "1 Shawwal 1447" },
-  { name: "Eid-Ul-Adha", date: "Saturday, 6 June 2026", hijri: "10 Dhul Hijjah 1447" },
-  { name: "Islamic New Year", date: "Tuesday, 7 July 2026", hijri: "1 Muharram 1448" },
-  { name: "Ashura", date: "Thursday, 16 July 2026", hijri: "10 Muharram 1448" },
-  { name: "Mawlid al-Nabi", date: "Thursday, 3 September 2026", hijri: "12 Rabi al-Awwal 1448" },
-];
-
 // March 2026 calendar grid
 const MARCH_2026_DAYS = [
   { day: 1, hijri: "12", gregorian: "1" },
@@ -185,29 +177,6 @@ export default function MuslimProIslamicCalendarPage() {
           </div>
           <Link href="/app/prayer-times" className="text-[#D4AF37] font-semibold hover:underline">
             Prayer Times in {locationLabel} →
-          </Link>
-        </div>
-      </section>
-
-      {/* Special Islamic Days */}
-      <section className="py-12 md:py-16 bg-[#06402B]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-white mb-8">Islamic Events</h2>
-          <div className="space-y-4">
-            {EVENTS.map((e) => (
-              <div key={e.name} className="mp-card-hover p-6 rounded-2xl border border-white/10 bg-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-white">{e.name}</h3>
-                  <p className="text-white/70 text-sm">{e.date} | {e.hijri}</p>
-                </div>
-                <Link href="/app/prayer-times" className="text-[#D4AF37] font-semibold hover:underline text-sm shrink-0">
-                  View Prayer Times →
-                </Link>
-              </div>
-            ))}
-          </div>
-          <Link href="/app/islamic-calendar/special-events" className="inline-block mt-4 text-[#D4AF37] font-semibold hover:underline">
-            Show more Special Islamic Days →
           </Link>
         </div>
       </section>

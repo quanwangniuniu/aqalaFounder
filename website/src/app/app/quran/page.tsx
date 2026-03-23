@@ -3,7 +3,6 @@
 import Link from "next/link";
 import MuslimProQuranSection from "@/components/muslimpro-replica/MuslimProQuranSection";
 import MuslimProAiDeenSection from "@/components/muslimpro-replica/MuslimProAiDeenSection";
-import MuslimProQalboxSection from "@/components/muslimpro-replica/MuslimProQalboxSection";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
 
 export default function MuslimProQuranPage() {
@@ -25,7 +24,6 @@ export default function MuslimProQuranPage() {
       </section>
       <MuslimProQuranSection />
       <MuslimProAiDeenSection />
-      <MuslimProQalboxSection />
     </>
   );
 }

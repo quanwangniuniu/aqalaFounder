@@ -10,7 +10,7 @@ import MuslimProFeaturesTranslationSection from "@/components/muslimpro-replica/
 
 const TESTIMONIALS = [
   { quote: "Finally I can follow khutbahs in my language. The real-time translation is a game-changer — I used to zone out when the imam spoke Arabic. Now I understand every word. JazakAllahu Khairan to the Aqala team.", author: "Yusuf K." },
-  { quote: "I listen to Quran recitation with Urdu translation side by side. My kids and I use the shared listening room during family time. Aqala has brought us closer to the Book. MashaAllah.", author: "Amina R." },
+  { quote: "I listen to Quran recitation with Urdu translation side by side. Aqala has brought my family closer to the Book. MashaAllah.", author: "Amina R." },
   { quote: "As a revert, I struggled with Arabic lectures. Aqala's live translation lets me learn at my own pace. The AI enhancement makes complex terms clearer. May Allah bless this project.", author: "James M." },
 ];
 
@@ -31,14 +31,6 @@ const FEATURE_BLOCKS = [
     imageAlt: "Quran detection — Aqala",
     textFirst: false,
     href: "/listen",
-  },
-  {
-    title: "Shared Listening & Rooms",
-    desc: "Join rooms with others to listen and translate together. Perfect for mosques, study circles, or connecting with Muslims across languages.",
-    image: "/aqala-shared-listening.png",
-    imageAlt: "Shared listening — Aqala",
-    textFirst: false,
-    href: "/rooms",
   },
 ];
 
@@ -140,36 +132,6 @@ export default function MuslimProFeaturesPage() {
             </div>
           ))}
           <MuslimProFeaturesTranslationSection />
-          {FEATURE_BLOCKS.slice(2).map((block) => (
-            <div
-              key={block.title}
-              className={`flex flex-col ${block.textFirst ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-8 md:gap-12`}
-            >
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
-                  {block.title}
-                </h2>
-                <p className="text-white/70 mb-4">{block.desc}</p>
-                <Link
-                  href={block.href}
-                  className="text-[#D4AF37] font-semibold hover:underline"
-                >
-                  Learn more →
-                </Link>
-              </div>
-              <div className="flex-1 flex justify-center max-w-[320px] md:max-w-[400px]">
-                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
-                  <Image
-                    src={block.image}
-                    alt={block.imageAlt}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 320px, 400px"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 

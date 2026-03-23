@@ -33,16 +33,15 @@ const features = [
     ),
   },
   {
-    href: "/rooms",
-    labelKey: "landing.mosquesRooms",
-    sublabelKey: "landing.sharedListening",
-    ariaLabelKey: "landing.joinRooms",
+    href: "/quran",
+    labelKey: "landing.quran",
+    sublabelKey: "landing.quranReflect",
+    ariaLabelKey: "landing.openQuran",
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" aria-hidden>
-        <path d="M3 21h18" strokeLinecap="round" />
-        <path d="M5 21V7l7-4 7 4v14" />
-        <path d="M9 21v-6h6v6" />
-        <circle cx="12" cy="10" r="2" />
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" strokeLinecap="round" />
+        <path d="M8 7h8M8 11h6" strokeLinecap="round" />
       </svg>
     ),
   },

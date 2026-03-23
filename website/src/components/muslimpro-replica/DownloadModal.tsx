@@ -55,17 +55,8 @@ export default function DownloadModal({ isOpen, onClose }: DownloadModalProps) {
         <h3 className="text-center text-xl font-bold text-gray-900 mb-1 pt-2">Listen. Understand.</h3>
         <p className="text-center text-sm text-gray-600 mb-5">Scan to open Aqala — real-time translation for Islamic content.</p>
 
-        {/* QR code - links to Aqala web app */}
-        <div className="flex justify-center mb-5">
-          <div className="w-44 h-44 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-200 p-1">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                (process.env.NEXT_PUBLIC_SITE_URL || "https://aqala.org") + "/listen"
-              )}`}
-              alt="QR code to open Aqala"
-              className="w-full h-full object-contain rounded-lg"
-            />
-          </div>
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 text-center mb-5">
+          <p className="text-sm font-semibold text-gray-900">Aqala app coming soon to App Store &amp; Google Play.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5">
@@ -77,17 +68,7 @@ export default function DownloadModal({ isOpen, onClose }: DownloadModalProps) {
               <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
               <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
             </svg>
-            <span>Open in Browser</span>
-          </a>
-          <a
-            href={AQALA_APP_URL}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#D4AF37] text-[#032117] text-sm font-semibold hover:bg-[#b8944d] transition-colors"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Z" />
-              <path d="M5 11a1 1 0 1 1 2 0 5 5 0 1 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-3.07A7 7 0 0 1 5 11Z" />
-            </svg>
-            <span>Get Aqala app</span>
+            <span>Try Beta Now</span>
           </a>
         </div>
 

@@ -19,7 +19,7 @@ const links: { href: string; label: string; description: string }[] = [
   { href: "/qibla", label: "Qibla", description: "Find the direction of the Qibla." },
   { href: "/prayers", label: "Prayers", description: "Prayer times and settings." },
   { href: "/translate", label: "Translate", description: "Real-time translation tools." },
-  { href: "/rooms", label: "Rooms", description: "Join or create live sessions." },
+  { href: "/quran", label: "Quran", description: "Read and reflect with Arabic and translation." },
   { href: "/subscription", label: "Subscription", description: "Get Premium and manage your plan." },
   { href: "/auth/login", label: "Log in", description: "Sign in to your account." },
   { href: "/auth/register", label: "Register", description: "Create an account." },

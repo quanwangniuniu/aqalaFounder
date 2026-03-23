@@ -30,7 +30,6 @@ const NAV_LINKS = [
       { label: "Deen", href: "/app/category/deen" },
       { label: "Lifestyle", href: "/app/category/lifestyle" },
       { label: "Quran", href: "/app/category/quran" },
-      { label: "Shared Listening", href: "/app/qalbox" },
     ],
   },
   {
