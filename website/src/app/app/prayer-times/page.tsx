@@ -436,11 +436,11 @@ export default function MuslimProPrayerTimesPage() {
                   <tr key={row.date} className="border-b border-white/10">
                     <td className="py-3 text-white/80">{row.date}</td>
                     <td className="py-3 text-white/80">{row.hijri}</td>
-                    <td className="py-3 text-center">{row.fajr}</td>
-                    <td className="py-3 text-center">{row.zuhr}</td>
-                    <td className="py-3 text-center">{row.asr}</td>
-                    <td className="py-3 text-center">{row.maghrib}</td>
-                    <td className="py-3 text-center">{row.isha}</td>
+                    <td className="py-3 text-center text-white/80">{row.fajr}</td>
+                    <td className="py-3 text-center text-white/80">{row.zuhr}</td>
+                    <td className="py-3 text-center text-white/80">{row.asr}</td>
+                    <td className="py-3 text-center text-white/80">{row.maghrib}</td>
+                    <td className="py-3 text-center text-white/80">{row.isha}</td>
                   </tr>
                 ))}
               </tbody>

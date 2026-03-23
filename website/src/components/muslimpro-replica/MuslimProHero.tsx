@@ -27,7 +27,7 @@ export default function MuslimProHero() {
           Never Miss the Meaning Again.
         </h1>
         <p className="text-xl sm:text-2xl text-white/95 mb-8 md:mb-10">
-          Live translation for khutbahs, lectures, and Quran — in 20+ languages.
+          Live translation tool for khutbahs, Islamic content, Quran and more in 20+ languages!
         </p>
 
         {/* Aqala: Open in Browser (no store badges until mobile apps exist) */}

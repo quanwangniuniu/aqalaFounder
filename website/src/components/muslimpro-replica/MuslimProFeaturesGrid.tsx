@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 
-// Aqala features with inline SVG icons
+// Aqala features — each links to a middle page that describes the feature, then CTA to actual tool
 const FEATURES = [
-  { title: "Real-time Translation", href: "/listen", Icon: IconTranslate },
-  { title: "Quran Detection", href: "/listen", Icon: IconQuran },
-  { title: "Prayer Times", href: "/app/prayer-times", Icon: IconPrayer },
-  { title: "Islamic Calendar", href: "/app/islamic-calendar", Icon: IconCalendar },
-  { title: "Blog & Articles", href: "/app/blog", Icon: IconBlog },
-  { title: "Quran Explorer", href: "/app/quran", Icon: IconQuran },
+  { title: "Real-time Translation", href: "/app/features/translation", Icon: IconTranslate },
+  { title: "Prayer Times", href: "/app/features/prayer-times", Icon: IconPrayer },
+  { title: "Qibla Finder", href: "/app/features/qibla", Icon: IconQibla },
   { title: "Support Us", href: "/donate", Icon: IconDonate },
 ];
 
@@ -34,10 +31,11 @@ function IconPrayer({ className }: { className?: string }) {
     </svg>
   );
 }
-function IconCalendar({ className }: { className?: string }) {
+function IconQibla({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      <circle cx="12" cy="12" r="10" strokeWidth={2} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
     </svg>
   );
 }

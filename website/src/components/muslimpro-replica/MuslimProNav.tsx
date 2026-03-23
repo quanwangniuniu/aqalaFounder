@@ -15,10 +15,9 @@ const NAV_LINKS = [
     label: "Features",
     href: "/app/features",
     dropdown: [
-      { label: "All features", href: "/app/features" },
-      { label: "Translation", href: "/listen" },
-      { label: "Qibla Finder", href: "/qibla" },
-      { label: "Prayer Times & Calendar", href: "/app/prayer-times" },
+      { label: "Translation", href: "/app/features/translation" },
+      { label: "Qibla Finder", href: "/app/features/qibla" },
+      { label: "Prayer Times & Calendar", href: "/app/features/prayer-times" },
     ],
   },
   {
