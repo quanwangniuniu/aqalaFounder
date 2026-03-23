@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 
-// Aqala features with inline SVG icons
+// Aqala features — each links to a middle page that describes the feature, then CTA to actual tool
 const FEATURES = [
-  { title: "Real-time Translation", href: "/listen", Icon: IconTranslate },
-  { title: "Quran Detection", href: "/listen", Icon: IconQuran },
-  { title: "Prayer Times", href: "/app/prayer-times", Icon: IconPrayer },
-  { title: "Islamic Calendar", href: "/app/islamic-calendar", Icon: IconCalendar },
-  { title: "Blog & Articles", href: "/app/blog", Icon: IconBlog },
-  { title: "Quran Explorer", href: "/app/quran", Icon: IconQuran },
+  { title: "Real-time Translation", href: "/app/features/translation", Icon: IconTranslate },
+  { title: "Quran Detection", href: "/app/features/quran-detection", Icon: IconQuran },
+  { title: "Prayer Times", href: "/app/features/prayer-times", Icon: IconPrayer },
+  { title: "Islamic Calendar", href: "/app/features/islamic-calendar", Icon: IconCalendar },
+  { title: "Blog & Articles", href: "/app/features/blog", Icon: IconBlog },
+  { title: "Quran Explorer", href: "/app/features/quran", Icon: IconQuran },
   { title: "Support Us", href: "/donate", Icon: IconDonate },
 ];
 

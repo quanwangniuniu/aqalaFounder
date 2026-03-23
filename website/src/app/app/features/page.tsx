@@ -2,16 +2,13 @@
 
 import { useState } from "react";
 import MuslimProAppBar from "@/components/muslimpro-replica/MuslimProAppBar";
-import Link from "next/link";
 import Image from "next/image";
 import MuslimProPremiumBanner from "@/components/muslimpro-replica/MuslimProPremiumBanner";
 import MuslimProFeaturesGrid from "@/components/muslimpro-replica/MuslimProFeaturesGrid";
-import MuslimProFeaturesTranslationSection from "@/components/muslimpro-replica/MuslimProFeaturesTranslationSection";
 import {
   mpAqalaAboutImageProps,
   mpPhoneShotFrameClass,
   mpPhoneShotInnerRoundedClass,
-  mpPhoneShotImgFeatureClass,
   mpPhoneShotImgGridClass,
 } from "@/components/muslimpro-replica/marketingImageClasses";
 
@@ -19,26 +16,6 @@ const TESTIMONIALS = [
   { quote: "Finally I can follow khutbahs in my language. The real-time translation is a game-changer — I used to zone out when the imam spoke Arabic. Now I understand every word. JazakAllahu Khairan to the Aqala team.", author: "Yusuf K." },
   { quote: "I listen to Quran recitation with Urdu translation side by side. Aqala has brought my family closer to the Book. MashaAllah.", author: "Amina R." },
   { quote: "As a revert, I struggled with Arabic lectures. Aqala's live translation lets me learn at my own pace. The AI enhancement makes complex terms clearer. May Allah bless this project.", author: "James M." },
-];
-
-// Aqala feature blocks — unique premium AI-generated images
-const FEATURE_BLOCKS = [
-  {
-    title: "Qibla Finder: Precision for Every Prayer",
-    desc: "Wherever you are, we guarantee you're aligned. No matter where you are in the world faith doesn't stop when you travel. Whether you're on a business trip, hiking in the mountains, or in a new city, finding your direction shouldn't be a moment of doubt. Aqala's Qibla Finder isn't just a digital needle, it's a high-precision tool engineered to give you peace of mind before you say Allahu Akbar.",
-    image: "/aqala-about/journey-2025-prayer-qibla.jpg",
-    imageAlt: "Aqala prayer times and Qibla finder",
-    textFirst: true,
-    href: "/app/prayer-times",
-  },
-  {
-    title: "Automatic Quran detection",
-    desc: "When you hear Quranic verses, Aqala automatically detects them and shows the surah, verse reference, and translation. Tap any verse to explore details and verify on Quran.com. Explore what you hear with links to Quran.com.",
-    image: "/aqala-about/journey-present-quran-detection.jpg",
-    imageAlt: "Automatic Quran detection while you listen",
-    textFirst: false,
-    href: "/listen",
-  },
 ];
 
 export default function MuslimProFeaturesPage() {
@@ -105,44 +82,13 @@ export default function MuslimProFeaturesPage() {
         </div>
       </section>
 
-      {/* Feature blocks */}
-      <section className="py-12 md:py-20 bg-[#032117]">
+      {/* Feature grid — each card links to a middle page that describes the feature and links to the actual tool */}
+      <section className="py-12 md:py-16 bg-[#032117]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {FEATURE_BLOCKS.slice(0, 2).map((block) => (
-            <div
-              key={block.title}
-              className={`flex flex-col ${block.textFirst ? "md:flex-row" : "md:flex-row-reverse"} md:items-start gap-8 md:gap-12 lg:gap-14 mb-16 md:mb-24`}
-            >
-              <div className="flex-1 min-w-0 max-w-3xl">
-                <h2 className="text-2xl md:text-3xl lg:text-[2rem] font-bold text-white mb-4 leading-tight">
-                  {block.title}
-                </h2>
-                <p className="text-white/75 text-base md:text-lg lg:text-xl mb-5 leading-relaxed">{block.desc}</p>
-                <Link
-                  href={block.href}
-                  className="inline-flex text-[#D4AF37] text-base md:text-lg font-semibold hover:underline"
-                >
-                  Learn more →
-                </Link>
-              </div>
-              <div className="shrink-0 flex justify-center w-full md:w-auto md:pt-1">
-                <div className={mpPhoneShotFrameClass}>
-                  <div className={mpPhoneShotInnerRoundedClass}>
-                    <Image
-                      {...mpAqalaAboutImageProps}
-                      src={block.image}
-                      alt={block.imageAlt}
-                      width={473}
-                      height={1024}
-                      className={mpPhoneShotImgFeatureClass}
-                      sizes="(max-width: 768px) 280px, 300px"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          <MuslimProFeaturesTranslationSection />
+          <p className="text-white/65 text-center max-w-2xl mx-auto mb-10">
+            Click any feature to learn more, then use the button to open it.
+          </p>
+          <MuslimProFeaturesGrid />
         </div>
       </section>
 
@@ -217,8 +163,6 @@ export default function MuslimProFeaturesPage() {
           </div>
         </div>
       </section>
-
-      <MuslimProFeaturesGrid />
     </>
   );
 }

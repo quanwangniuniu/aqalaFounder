@@ -127,13 +127,6 @@ export default function MuslimProIslamicCalendarPage() {
                 </div>
               ))}
             </div>
-            <p className="text-sm text-white/60 mt-4">See the full calendar in the app</p>
-            <Link
-              href="/listen"
-              className="inline-flex mt-4 px-6 py-3 rounded-full bg-[#D4AF37] text-[#032117] font-semibold hover:bg-[#E8D5A3] transition-colors"
-            >
-              Open in Browser
-            </Link>
           </div>
         </div>
       </section>
@@ -309,9 +302,6 @@ export default function MuslimProIslamicCalendarPage() {
           <p className="text-white/80 mb-6">
             Key Islamic holidays and major events, such as Eid al-Fitr, Hajj, and Eid al-Adha, are determined by the dates of the Hijri calendar. The Aqala app and website provides these dates, which allow you to easily convert dates between the Hijri and Gregorian systems. Many of these resources let you view both calendars side-by-side for convenience. This makes it simple to plan for Islamic holidays and events.
           </p>
-          <Link href="/listen" className="inline-flex px-8 py-4 rounded-lg bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors">
-            Open in Browser
-          </Link>
         </div>
       </section>
 
@@ -322,9 +312,6 @@ export default function MuslimProIslamicCalendarPage() {
           <p className="text-white/80 mb-6 max-w-2xl mx-auto">
             Let Aqala guide your day with accurate prayer times, real-time Quran translation, and meaningful Islamic reminders. Get real-time Adhan alerts, understand khutbahs and lectures in your language, and stay inspired every step of the way.
           </p>
-          <Link href="/listen" className="inline-flex px-8 py-4 rounded-lg bg-[#D4AF37] text-[#032117] font-bold hover:bg-[#E8D5A3] transition-colors">
-            Open in Browser
-          </Link>
         </div>
       </section>
     </>

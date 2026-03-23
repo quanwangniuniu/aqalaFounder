@@ -130,11 +130,11 @@ export default function MuslimProHomeCarousel() {
           </svg>
         </button>
 
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-start px-3 sm:px-6 lg:px-8 text-center text-white overflow-y-auto py-6 md:py-8">
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 max-w-4xl shrink-0">{s.title}</h3>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-3 sm:px-6 lg:px-8 text-center text-white overflow-y-hidden py-3 md:py-4">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 md:mb-3 max-w-4xl shrink-0">{s.title}</h3>
 
           {s.kind === "reviews" ? (
-            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6 text-left">
+            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-2 md:mb-4 text-left">
               {s.reviews.map((r, i) => (
                 <blockquote
                   key={i}
@@ -149,7 +149,7 @@ export default function MuslimProHomeCarousel() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col gap-4 md:gap-5 mb-4 md:mb-6 max-w-2xl text-sm sm:text-base md:text-lg text-white/95 leading-relaxed">
+            <div className="flex flex-col gap-2 md:gap-3 mb-2 md:mb-4 max-w-2xl text-sm sm:text-base md:text-lg text-white/95 leading-relaxed">
               {s.paragraphs.map((para, i) => (
                 <p key={i}>{para}</p>
               ))}
