@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  mpAqalaAboutImageProps,
   mpPhoneShotFrameClass,
   mpPhoneShotInnerRoundedClass,
   mpPhoneShotImgFeatureClass,
@@ -71,6 +72,7 @@ export default function MuslimProFeaturesTranslationSection() {
           <div className={mpPhoneShotFrameClass}>
             <div className={mpPhoneShotInnerRoundedClass}>
               <Image
+                {...mpAqalaAboutImageProps}
                 src="/aqala-about/journey-2025-translation.jpg"
                 alt="Real-time translation — Aqala"
                 width={473}

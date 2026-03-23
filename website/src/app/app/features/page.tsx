@@ -8,6 +8,7 @@ import MuslimProPremiumBanner from "@/components/muslimpro-replica/MuslimProPrem
 import MuslimProFeaturesGrid from "@/components/muslimpro-replica/MuslimProFeaturesGrid";
 import MuslimProFeaturesTranslationSection from "@/components/muslimpro-replica/MuslimProFeaturesTranslationSection";
 import {
+  mpAqalaAboutImageProps,
   mpPhoneShotFrameClass,
   mpPhoneShotInnerRoundedClass,
   mpPhoneShotImgFeatureClass,
@@ -128,6 +129,7 @@ export default function MuslimProFeaturesPage() {
                 <div className={mpPhoneShotFrameClass}>
                   <div className={mpPhoneShotInnerRoundedClass}>
                     <Image
+                      {...mpAqalaAboutImageProps}
                       src={block.image}
                       alt={block.imageAlt}
                       width={473}
@@ -197,6 +199,7 @@ export default function MuslimProFeaturesPage() {
                 <div className={mpPhoneShotFrameClass}>
                   <div className={mpPhoneShotInnerRoundedClass}>
                     <Image
+                      {...mpAqalaAboutImageProps}
                       src={item.src}
                       alt={item.alt}
                       width={473}

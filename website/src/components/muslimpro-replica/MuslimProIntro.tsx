@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  mpAqalaAboutImageProps,
   mpPhoneShotFrameClass,
   mpPhoneShotInnerRoundedClass,
   mpPhoneShotImgFeatureClass,
@@ -33,6 +34,7 @@ export default function MuslimProIntro() {
             <div className={`${mpPhoneShotFrameClass} lg:mx-0 shadow-xl shadow-black/30`}>
               <div className={mpPhoneShotInnerRoundedClass}>
                 <Image
+                  {...mpAqalaAboutImageProps}
                   src="/aqala-about/mission-listen-home.jpg"
                   alt="Aqala home — Don\u2019t just listen. Understand."
                   width={473}

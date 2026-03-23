@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
+  mpAqalaAboutImageProps,
   mpPhoneShotFrameClass,
   mpPhoneShotInnerRoundedClass,
   mpPhoneShotImgFeatureClass,
@@ -73,12 +74,14 @@ export default function MuslimProHomeSections() {
                 <div className={`${mpPhoneShotFrameClass} shadow-2xl shadow-black/40 mp-img-hover`}>
                   <div className={mpPhoneShotInnerRoundedClass}>
                     <Image
+                      {...mpAqalaAboutImageProps}
                       src={s.image}
                       alt={s.imageAlt}
                       width={473}
                       height={1024}
                       className={mpPhoneShotImgFeatureClass}
                       sizes="(max-width: 1024px) 90vw, 300px"
+                      priority={i === 0}
                     />
                   </div>
                 </div>

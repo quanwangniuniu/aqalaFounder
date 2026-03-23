@@ -97,6 +97,7 @@ export default function MuslimProHomeCarousel() {
           className="object-cover"
           sizes="100vw"
           priority={index === 0}
+          unoptimized={s.image.startsWith("/aqala-about/")}
         />
         <div className="absolute inset-0 bg-[#032117]/80" />
 
