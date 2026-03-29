@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { setNativeAnalyticsCollectionEnabled } from "@/lib/firebase/nativeAnalytics";
 
 const CONSENT_KEY = "aqala_privacy_consent";
 
@@ -30,6 +30,16 @@ export function usePrivacyConsent() {
 export function PrivacyConsentProvider({ children }: { children: ReactNode }) {
   const [consent, setConsent] = useState<ConsentState | null>(null);
   const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    setNativeAnalyticsCollectionEnabled(false);
+  }, []);
+
+  useEffect(() => {
+    if (consent !== null) {
+      setNativeAnalyticsCollectionEnabled(consent.analytics);
+    }
+  }, [consent]);
 
   useEffect(() => {
     (async () => {

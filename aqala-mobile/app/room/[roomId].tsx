@@ -33,6 +33,13 @@ import WallpaperBackground from "@/components/WallpaperBackground";
 import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import { auth } from "@/lib/firebase/config";
+import {
+  trackRoomEnter,
+  trackRoomExit,
+  trackListeningStart,
+  trackListeningEnd,
+} from "@/lib/analytics/track";
+import { roomTypeForAnalytics } from "@/lib/analytics/roomTypeForAnalytics";
 
 const WEB_URL =
   Constants.expoConfig?.extra?.EXPO_PUBLIC_WEB_URL ||
@@ -40,7 +47,13 @@ const WEB_URL =
   "";
 
 export default function RoomDetailScreen() {
-  const { roomId } = useLocalSearchParams<{ roomId: string }>();
+  const { roomId, entry_source } = useLocalSearchParams<{
+    roomId: string;
+    entry_source?: string | string[];
+  }>();
+  const rawEntry = Array.isArray(entry_source) ? entry_source[0] : entry_source;
+  const entrySource =
+    typeof rawEntry === "string" && rawEntry.length > 0 ? rawEntry : "direct";
   const router = useRouter();
   const { user, partnerInfo } = useAuth();
   const { getAccentColor } = usePreferences();
@@ -246,7 +259,9 @@ export default function RoomDetailScreen() {
     const text = chatInput.trim();
     setChatInput("");
     try {
-      await sendChatMessage(roomId, user.uid, user.displayName || "Anonymous", text, user.photoURL || undefined);
+      await sendChatMessage(roomId, user.uid, user.displayName || "Anonymous", text, {
+        userPhoto: user.photoURL || undefined,
+      });
     } catch (err) {
       console.error("Failed to send chat:", err);
       setChatInput(text);
@@ -254,6 +269,41 @@ export default function RoomDetailScreen() {
       setChatSending(false);
     }
   }, [roomId, user, chatInput, chatSending]);
+
+  // Analytics: room session + live listening (listener WebView only)
+  useEffect(() => {
+    if (!joined || !room || !user || !roomId) return;
+    const payload = {
+      room_id: roomId,
+      entry_source: entrySource,
+      room_type: roomTypeForAnalytics(room),
+    };
+    void trackRoomEnter(payload);
+    return () => {
+      void trackRoomExit(payload);
+    };
+  }, [joined, roomId, room, user, entrySource]);
+
+  useEffect(() => {
+    if (!isLive || canTranslate || !joined || !roomId) return;
+    const source = entrySource;
+    const contentId = "room_live";
+    const start = Date.now();
+    void trackListeningStart({
+      room_id: roomId,
+      content_id: contentId,
+      source,
+    });
+    return () => {
+      const duration_sec = Math.max(0, Math.round((Date.now() - start) / 1000));
+      void trackListeningEnd({
+        room_id: roomId,
+        content_id: contentId,
+        source,
+        duration_sec,
+      });
+    };
+  }, [isLive, canTranslate, joined, roomId, entrySource]);
 
   // --- Loading ---
   if (roomLoading || (!room && !roomFromContext)) {

@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { isUsernameAvailable } from "@/lib/firebase/users";
 import { Ionicons } from "@expo/vector-icons";
+import { trackSignUp } from "@/lib/analytics/track";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -108,8 +109,10 @@ export default function RegisterScreen() {
 
     try {
       await signUp(email, password, username);
+      void trackSignUp("email", true);
       router.replace("/(tabs)");
     } catch (err: any) {
+      void trackSignUp("email", false);
       const errorCode = err?.code || "";
       const errorMessage = errorCode
         ? errorCode.replace("auth/", "").replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())
@@ -125,8 +128,10 @@ export default function RegisterScreen() {
       setLocalError(null);
       setIsLoading(true);
       await signInWithGoogle();
+      void trackSignUp("google", true);
       router.replace("/(tabs)");
     } catch (err: any) {
+      void trackSignUp("google", false);
       setLocalError(err?.message || "Google sign in failed");
     } finally {
       setIsLoading(false);
@@ -138,9 +143,11 @@ export default function RegisterScreen() {
       setLocalError(null);
       setIsLoading(true);
       await signInWithApple();
+      void trackSignUp("apple", true);
       router.replace("/(tabs)");
     } catch (err: any) {
       if (err?.code !== "ERR_REQUEST_CANCELED") {
+        void trackSignUp("apple", false);
         setLocalError(err?.message || "Apple sign in failed");
       }
     } finally {

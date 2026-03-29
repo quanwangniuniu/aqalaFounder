@@ -15,6 +15,7 @@ import Constants from "expo-constants";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { Ionicons } from "@expo/vector-icons";
+import { trackLogin } from "@/lib/analytics/track";
 
 const isExpoGo = Constants.appOwnership === "expo";
 
@@ -54,8 +55,10 @@ export default function LoginScreen() {
 
     try {
       await signIn(email, password);
+      void trackLogin("email", true);
       router.replace("/(tabs)");
     } catch (err: any) {
+      void trackLogin("email", false);
       const errorCode = err?.code || "";
       const errorMessage = errorCode
         ? errorCode.replace("auth/", "").replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())
@@ -71,8 +74,10 @@ export default function LoginScreen() {
       setLocalError(null);
       setIsLoading(true);
       await signInWithGoogle();
+      void trackLogin("google", true);
       router.replace("/(tabs)");
     } catch (err: any) {
+      void trackLogin("google", false);
       setLocalError(err?.message || "Google sign in failed");
     } finally {
       setIsLoading(false);
@@ -84,9 +89,11 @@ export default function LoginScreen() {
       setLocalError(null);
       setIsLoading(true);
       await signInWithApple();
+      void trackLogin("apple", true);
       router.replace("/(tabs)");
     } catch (err: any) {
       if (err?.code !== "ERR_REQUEST_CANCELED") {
+        void trackLogin("apple", false);
         setLocalError(err?.message || "Apple sign in failed");
       }
     } finally {

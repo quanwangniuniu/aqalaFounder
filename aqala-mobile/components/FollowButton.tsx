@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { followUser, unfollowUser, subscribeToFollowStatus } from "@/lib/firebase/follows";
 import { getUserProfile } from "@/lib/firebase/users";
+import { trackFollowUser } from "@/lib/analytics/track";
 
 interface FollowButtonProps {
   targetUserId: string;
@@ -15,6 +16,8 @@ interface FollowButtonProps {
 export default function FollowButton({ targetUserId, size = "md", fillHeight = false }: FollowButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const segments = useSegments();
+  const screenName = segments.filter(Boolean).join("/") || "app";
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -45,6 +48,11 @@ export default function FollowButton({ targetUserId, size = "md", fillHeight = f
     try {
       if (isFollowingUser) {
         await unfollowUser(user.uid, targetUserId);
+        void trackFollowUser({
+          screen_name: screenName,
+          target_id: targetUserId,
+          action: "unfollow",
+        });
       } else {
         const [currentProfile, targetProfile] = await Promise.all([
           getUserProfile(user.uid),
@@ -65,13 +73,18 @@ export default function FollowButton({ targetUserId, size = "md", fillHeight = f
             photoURL: targetProfile?.photoURL || null,
           }
         );
+        void trackFollowUser({
+          screen_name: screenName,
+          target_id: targetUserId,
+          action: "follow",
+        });
       }
     } catch (error) {
       console.error("Follow action failed:", error);
     } finally {
       setActionLoading(false);
     }
-  }, [user, targetUserId, isFollowingUser, actionLoading, router]);
+  }, [user, targetUserId, isFollowingUser, actionLoading, router, screenName]);
 
   const sizeStyles = {
     sm: { paddingHorizontal: 12, paddingVertical: 4, fontSize: 12 },

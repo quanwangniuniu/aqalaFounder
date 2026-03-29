@@ -1,12 +1,27 @@
+import { useCallback } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { trackDonate, trackButtonClick } from "@/lib/analytics/track";
 
 export default function DonateScreen() {
   const { getAccentColor } = usePreferences();
   const accent = getAccentColor();
   const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      void trackDonate({
+        amount: 0,
+        currency: "USD",
+        product_id: "",
+        payment_method: "none",
+        action: "view_screen",
+      });
+    }, [])
+  );
 
   return (
     <WallpaperBackground edges={["top"]}>
@@ -20,7 +35,20 @@ export default function DonateScreen() {
           Go ad-free with a one-time purchase.
         </Text>
         <TouchableOpacity
-          onPress={() => router.replace("/subscription")}
+          onPress={() => {
+            void trackButtonClick({
+              element_name: "donate_go_ad_free",
+              screen_name: "donate",
+            });
+            void trackDonate({
+              amount: 0,
+              currency: "USD",
+              product_id: "com.aqala.premium",
+              payment_method: "none",
+              action: "cta_subscription",
+            });
+            router.replace("/subscription");
+          }}
           className="px-6 py-3 rounded-xl mb-4"
           style={{ backgroundColor: accent.base }}
         >

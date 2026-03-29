@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, Platform, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import WallpaperBackground from "@/components/WallpaperBackground";
@@ -13,6 +13,8 @@ import {
   requestRecordingPermissionsAsync,
 } from "expo-audio";
 import { useKeepAwake } from "expo-keep-awake";
+import { useFocusEffect } from "@react-navigation/native";
+import { trackListeningStart, trackListeningEnd } from "@/lib/analytics/track";
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
 
@@ -33,6 +35,25 @@ export default function ListenScreen() {
   const [micReady, setMicReady] = useState(false);
 
   const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const room_id = "standalone_translate";
+      const content_id = "listen_webview";
+      const source = "translate_flow";
+      const start = Date.now();
+      void trackListeningStart({ room_id, content_id, source });
+      return () => {
+        const duration_sec = Math.max(0, Math.round((Date.now() - start) / 1000));
+        void trackListeningEnd({
+          room_id,
+          content_id,
+          source,
+          duration_sec,
+        });
+      };
+    }, [])
+  );
 
   useEffect(() => {
     (async () => {
@@ -303,16 +324,16 @@ export default function ListenScreen() {
           mediaPlaybackRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
           mediaCapturePermissionGrantType="grant"
-          // Android: grant permission requests for mic/camera
-          onPermissionRequest={(event) => {
-            event.nativeEvent?.grant?.();
-          }}
           startInLoadingState={false}
           originWhitelist={["*"]}
           allowsBackForwardNavigationGestures={true}
-          // Android hardware acceleration for media
           {...(Platform.OS === "android"
-            ? { androidLayerType: "hardware" as const }
+            ? {
+                androidLayerType: "hardware" as const,
+                onPermissionRequest: (e: { nativeEvent?: { grant?: () => void } }) => {
+                  e.nativeEvent?.grant?.();
+                },
+              }
             : {})}
           onMessage={(event) => {
             try {

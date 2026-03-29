@@ -12,6 +12,7 @@ import { RoomsProvider } from "@/contexts/RoomsContext";
 import { InterstitialAdProvider } from "@/contexts/InterstitialAdContext";
 import { IAPProvider } from "@/contexts/IAPContext";
 import { PrivacyConsentProvider } from "@/contexts/PrivacyConsentContext";
+import { AnalyticsUserSync } from "@/components/AnalyticsUserSync";
 import ConsentBanner from "@/components/ConsentBanner";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
@@ -170,6 +171,7 @@ export default function RootLayout() {
               <InterstitialAdProvider>
                 <PreferencesProvider>
                   <PrivacyConsentProvider>
+                    <AnalyticsUserSync />
                     <LanguageProvider>
                       <PrayerProvider>
                         <RoomsProvider>

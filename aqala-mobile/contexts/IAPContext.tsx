@@ -4,12 +4,15 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { Platform, Alert } from "react-native";
 import { useAuth } from "./AuthContext";
 import { useSubscription } from "./SubscriptionContext";
 import { createOrUpdateSubscription } from "@/lib/firebase/subscriptions";
+import { trackPurchaseSuccess } from "@/lib/analytics/track";
+import { amountFromIapProduct, currencyFromIapProduct } from "@/lib/analytics/iapProduct";
 
 const PREMIUM_PRODUCT_ID = "com.aqala.premium";
 
@@ -50,6 +53,7 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const productsRef = useRef<any[]>([]);
 
   const handlePurchaseSuccess = useCallback(
     async (purchase: any) => {
@@ -57,6 +61,11 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
 
       try {
         const isApple = Platform.OS === "ios";
+        const payment_method = isApple ? "apple" : "google";
+        const prod = productsRef.current.find(
+          (p: any) =>
+            p.productId === purchase.productId || p.id === purchase.productId
+        );
         await createOrUpdateSubscription(user.uid, {
           email: user.email || null,
           displayName: user.displayName || null,
@@ -72,6 +81,14 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
         });
 
         await refreshSubscription();
+
+        void trackPurchaseSuccess({
+          amount: amountFromIapProduct(prod ?? purchase),
+          currency: currencyFromIapProduct(prod ?? purchase),
+          product_id: purchase.productId || PREMIUM_PRODUCT_ID,
+          payment_method,
+          restored: false,
+        });
 
         // Finish transaction after granting entitlement
         await finishTransaction({ purchase, isConsumable: false });
@@ -102,6 +119,24 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const {
+    connected,
+    products,
+    fetchProducts,
+    requestPurchase,
+    finishTransaction,
+    getAvailablePurchases,
+    availablePurchases,
+  } = useIAP({
+    onPurchaseSuccess: handlePurchaseSuccess,
+    onPurchaseError: handlePurchaseError,
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "An error occurred";
+      setFetchError(msg);
+      console.warn("IAP onError:", err);
+    },
+  });
+
   const retryFetchProducts = useCallback(async () => {
     setFetchError(null);
     try {
@@ -116,22 +151,9 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
     }
   }, [fetchProducts]);
 
-  const {
-    connected,
-    products,
-    fetchProducts,
-    requestPurchase,
-    finishTransaction,
-    getAvailablePurchases,
-    availablePurchases,
-  } = useIAP({
-    onPurchaseSuccess: handlePurchaseSuccess,
-    onPurchaseError: handlePurchaseError,
-    onError: (err) => {
-      setFetchError(err?.message ?? "An error occurred");
-      console.warn("IAP onError:", err);
-    },
-  });
+  useEffect(() => {
+    productsRef.current = products;
+  }, [products]);
 
   useEffect(() => {
     if (connected) {
@@ -194,6 +216,15 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
 
     if (hasPremium) {
       const isApple = Platform.OS === "ios";
+      const payment_method = isApple ? "apple" : "google";
+      const restoredPurchase = availablePurchases?.find(
+        (p: any) =>
+          p.productId === PREMIUM_PRODUCT_ID || p.id === PREMIUM_PRODUCT_ID
+      );
+      const prod = productsRef.current.find(
+        (p: any) =>
+          p.productId === PREMIUM_PRODUCT_ID || p.id === PREMIUM_PRODUCT_ID
+      );
       createOrUpdateSubscription(user.uid, {
         email: user.email || null,
         displayName: user.displayName || null,
@@ -205,6 +236,13 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
       })
         .then(() => refreshSubscription())
         .then(() => {
+          void trackPurchaseSuccess({
+            amount: amountFromIapProduct(prod ?? restoredPurchase),
+            currency: currencyFromIapProduct(prod ?? restoredPurchase),
+            product_id: PREMIUM_PRODUCT_ID,
+            payment_method,
+            restored: true,
+          });
           setIsRestoring(false);
           Alert.alert("Restored!", "Your premium purchase has been restored.");
         })

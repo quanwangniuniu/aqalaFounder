@@ -11,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import { IconPrayerClock, IconQiblaCompass, IconMosque, IconHeart, IconSearch, IconChat } from "@/components/HomeIcons";
+import { trackCardClick, trackButtonClick } from "@/lib/analytics/track";
 
 export default function HomeScreen() {
   const { t, isRTL } = useLanguage();
@@ -163,7 +164,13 @@ export default function HomeScreen() {
 
                   {/* Primary CTA */}
                   <Pressable 
-                    onPress={() => handleAdLink("/live-listen")}
+                    onPress={() => {
+                      void trackButtonClick({
+                        element_name: "start_listening",
+                        screen_name: "home",
+                      });
+                      handleAdLink("/live-listen");
+                    }}
                     style={{
                       alignSelf: 'flex-start',
                       shadowColor: "#D4AF37",
@@ -217,7 +224,17 @@ export default function HomeScreen() {
             {/* Feature Grid */}
             <View className="mt-4 flex-row flex-wrap gap-3">
               {/* Prayer Times Card */}
-              <Pressable onPress={() => handleAdLink("/prayers")} className="flex-1" style={{ minWidth: '47%' }}>
+              <Pressable
+                onPress={() => {
+                  void trackCardClick({
+                    element_name: "prayer_times",
+                    screen_name: "home",
+                  });
+                  handleAdLink("/prayers");
+                }}
+                className="flex-1"
+                style={{ minWidth: '47%' }}
+              >
                 <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
                   <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
                     <IconPrayerClock />
@@ -236,7 +253,14 @@ export default function HomeScreen() {
               </Pressable>
 
               {/* Qibla Card */}
-              <Pressable onPress={() => handleAdLink("/qibla")} className="flex-1" style={{ minWidth: '47%' }}>
+              <Pressable
+                onPress={() => {
+                  void trackCardClick({ element_name: "qibla", screen_name: "home" });
+                  handleAdLink("/qibla");
+                }}
+                className="flex-1"
+                style={{ minWidth: '47%' }}
+              >
                 <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
                   <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
                     <IconQiblaCompass />
@@ -249,7 +273,17 @@ export default function HomeScreen() {
               </Pressable>
 
               {/* Mosques Card */}
-              <Pressable onPress={() => handleAdLink("/rooms")} className="flex-1" style={{ minWidth: '47%' }}>
+              <Pressable
+                onPress={() => {
+                  void trackCardClick({
+                    element_name: "mosques_rooms",
+                    screen_name: "home",
+                  });
+                  handleAdLink("/rooms");
+                }}
+                className="flex-1"
+                style={{ minWidth: '47%' }}
+              >
                 <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
                   <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
                     <IconMosque />
@@ -263,33 +297,49 @@ export default function HomeScreen() {
 
               {/* Support Card */}
               {showAds && user ? (
-                <Link href="/subscription" asChild>
-                  <TouchableOpacity className="flex-1" style={{ minWidth: '47%' }}>
-                    <View className="rounded-2xl bg-[#D4AF37]/5 border border-[#D4AF37]/20 p-4">
-                      <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 items-center justify-center mb-3">
-                        <Ionicons name="star" size={20} color="#D4AF37" />
-                      </View>
-                      
-                      <Text className="text-xs text-[#D4AF37]/70 mb-0.5">Go Premium</Text>
-                      <Text className="text-sm font-medium text-white">Remove Ads</Text>
-                      <Text className="text-xs text-[#D4AF37]">One-time</Text>
+                <TouchableOpacity
+                  className="flex-1"
+                  style={{ minWidth: "47%" }}
+                  onPress={() => {
+                    void trackCardClick({
+                      element_name: "go_premium",
+                      screen_name: "home",
+                    });
+                    router.push("/subscription");
+                  }}
+                >
+                  <View className="rounded-2xl bg-[#D4AF37]/5 border border-[#D4AF37]/20 p-4">
+                    <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 items-center justify-center mb-3">
+                      <Ionicons name="star" size={20} color="#D4AF37" />
                     </View>
-                  </TouchableOpacity>
-                </Link>
+
+                    <Text className="text-xs text-[#D4AF37]/70 mb-0.5">Go Premium</Text>
+                    <Text className="text-sm font-medium text-white">Remove Ads</Text>
+                    <Text className="text-xs text-[#D4AF37]">One-time</Text>
+                  </View>
+                </TouchableOpacity>
               ) : (
-                <Link href="/donate" asChild>
-                  <TouchableOpacity className="flex-1" style={{ minWidth: '47%' }}>
-                    <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                      <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
-                        <IconHeart />
-                      </View>
-                      
-                      <Text className="text-xs text-white/50 mb-0.5">Support</Text>
-                      <Text className="text-sm font-medium text-white">Donate</Text>
-                      <Text className="text-xs text-white/40">{t("home.helpKeepFree")}</Text>
+                <TouchableOpacity
+                  className="flex-1"
+                  style={{ minWidth: "47%" }}
+                  onPress={() => {
+                    void trackCardClick({
+                      element_name: "donate",
+                      screen_name: "home",
+                    });
+                    router.push("/donate");
+                  }}
+                >
+                  <View className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <View className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 items-center justify-center mb-3">
+                      <IconHeart />
                     </View>
-                  </TouchableOpacity>
-                </Link>
+
+                    <Text className="text-xs text-white/50 mb-0.5">Support</Text>
+                    <Text className="text-sm font-medium text-white">Donate</Text>
+                    <Text className="text-xs text-white/40">{t("home.helpKeepFree")}</Text>
+                  </View>
+                </TouchableOpacity>
               )}
             </View>
 
