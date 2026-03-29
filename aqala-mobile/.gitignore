@@ -8,6 +8,13 @@ expo-env.d.ts
 ios/
 android/
 
+# Accidental nested Xcode project / duplicate repo (never commit)
+AQALA/
+
+# Firebase native config (download from Firebase Console; see ENV.md)
+GoogleService-Info.plist
+google-services.json
+
 # Env files
 .env
 .env.local

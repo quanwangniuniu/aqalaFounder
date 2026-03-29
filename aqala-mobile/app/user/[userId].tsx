@@ -10,6 +10,7 @@ import FollowButton from "@/components/FollowButton";
 import ReportModal from "@/components/ReportModal";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { trackShareClick } from "@/lib/analytics/track";
 
 type TabType = "history" | "followers" | "following" | "discover";
 
@@ -87,6 +88,11 @@ export default function UserProfileScreen() {
 
   const handleShare = async () => {
     try {
+      void trackShareClick({
+        element_name: "profile_share",
+        screen_name: "user_profile",
+        target_id: userId,
+      });
       await Share.share({
         message: `${displayName} on Aqala: ${profileShareUrl}`,
         url: profileShareUrl,

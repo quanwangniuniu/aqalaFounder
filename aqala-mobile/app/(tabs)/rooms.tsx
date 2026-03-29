@@ -213,7 +213,7 @@ function RoomCard({ room }: { room: any }) {
   const router = useRouter();
   
   return (
-    <Pressable onPress={() => router.push(`/room/${room.id}` as any)}>
+    <Pressable onPress={() => router.push(`/room/${room.id}?entry_source=rooms_tab` as any)}>
       <View className="rounded-2xl p-4 border border-red-500/20 bg-red-500/10">
         <View className="flex-row items-start gap-4">
           {/* Icon */}
@@ -259,7 +259,7 @@ function CommunityRoomCard({ room }: { room: any }) {
   const router = useRouter();
   
   return (
-    <Pressable onPress={() => router.push(`/room/${room.id}` as any)}>
+    <Pressable onPress={() => router.push(`/room/${room.id}?entry_source=rooms_tab` as any)}>
       <View className="flex-row items-center justify-between rounded-xl p-3.5 border border-emerald-500/20 bg-emerald-500/5">
         <View className="flex-row items-center gap-3 flex-1 min-w-0">
           <View className="w-10 h-10 rounded-lg items-center justify-center bg-emerald-500/20">

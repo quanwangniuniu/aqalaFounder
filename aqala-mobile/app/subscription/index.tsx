@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Platform,
 } from "react-native";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import { useRouter } from "expo-router";
@@ -14,6 +15,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useIAPContext } from "@/contexts/IAPContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { trackSubscribePremium } from "@/lib/analytics/track";
+import { amountFromIapProduct, currencyFromIapProduct } from "@/lib/analytics/iapProduct";
+
+const PREMIUM_SKU = "com.aqala.premium";
 
 const FEATURES = [
   {
@@ -172,7 +177,20 @@ export default function SubscriptionScreen() {
         {/* Price + CTA */}
         <View className="px-5" style={{ maxWidth: 400, alignSelf: "center", width: "100%" }}>
           <TouchableOpacity
-            onPress={purchasePremium}
+            onPress={() => {
+              const pid =
+                (premiumProduct as { id?: string; productId?: string } | null)?.productId ||
+                (premiumProduct as { id?: string; productId?: string } | null)?.id ||
+                PREMIUM_SKU;
+              void trackSubscribePremium({
+                amount: amountFromIapProduct(premiumProduct),
+                currency: currencyFromIapProduct(premiumProduct),
+                product_id: pid,
+                payment_method: Platform.OS === "ios" ? "apple" : "google",
+                screen_name: "subscription",
+              });
+              purchasePremium();
+            }}
             disabled={isPurchasing || !productReady}
             activeOpacity={0.9}
           >

@@ -1,5 +1,11 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
+import fs from "fs";
 import path from "path";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const withIosNonModularIncludesFix = require("./plugins/withIosNonModularIncludesFix") as (
+    config: ExpoConfig
+) => ExpoConfig;
 
 // Local dev (npx expo start): prefer .env.development (aqala-dev) so we don't touch production
 if (process.env.NODE_ENV === "development") {
@@ -9,8 +15,9 @@ if (process.env.NODE_ENV === "development") {
   require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 }
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
-    ...config,
+export default (ctx: ConfigContext): ExpoConfig =>
+    withIosNonModularIncludesFix({
+    ...ctx.config,
     name: "Aqala",
     slug: "aqala",
     scheme: "aqala",
@@ -28,6 +35,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         supportsTablet: false,
         deploymentTarget: "15.1",
         bundleIdentifier: "com.aqala.app",
+        // Fixes "No code signing certificates" for `expo run:ios`. Set in .env: EXPO_IOS_TEAM_ID=XXXXXXXXXX (Xcode → Settings → Accounts → Team ID)
+        ...(process.env.EXPO_IOS_TEAM_ID
+            ? { developmentTeam: process.env.EXPO_IOS_TEAM_ID }
+            : {}),
         googleServicesFile: "./GoogleService-Info.plist",
         infoPlist: {
             ITSAppUsesNonExemptEncryption: false,
@@ -46,7 +57,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             CFBundleURLTypes: [
                 {
                     CFBundleTypeRole: "Editor",
-                    CFBundleURLSchemes: ["com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih"],
+                    CFBundleURLSchemes: [
+                        // Must match REVERSED_CLIENT_ID in GoogleService-Info.plist (aqala-dev iOS app)
+                        "com.googleusercontent.apps.618640350621-8s1tqpdpgqoccovavos6j7e7ntjnun68",
+                    ],
                 },
             ],
         },
@@ -57,7 +71,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             backgroundColor: "#021a12",
         },
         package: "com.aqala.app",
-        // googleServicesFile: "./google-services.json", // TODO: Add google-services.json for Firebase
+        ...(fs.existsSync(path.join(__dirname, "google-services.json"))
+            ? { googleServicesFile: "./google-services.json" as const }
+            : {}),
         permissions: [
             "ACCESS_FINE_LOCATION",
             "ACCESS_COARSE_LOCATION",
@@ -66,10 +82,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
     },
     plugins: [
+        "@react-native-firebase/app",
+        [
+            "expo-build-properties",
+            {
+                ios: {
+                    useFrameworks: "static",
+                },
+            },
+        ],
         [
             "@react-native-google-signin/google-signin",
             {
-                iosUrlScheme: "com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih",
+                iosUrlScheme:
+                    "com.googleusercontent.apps.618640350621-8s1tqpdpgqoccovavos6j7e7ntjnun68",
             },
         ],
         "expo-router",

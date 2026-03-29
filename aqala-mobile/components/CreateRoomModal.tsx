@@ -59,7 +59,7 @@ export default function CreateRoomModal({ visible, onClose }: CreateRoomModalPro
 
       const room = await createRoom(options);
       handleClose();
-      router.push(`/room/${room.id}` as any);
+      router.push(`/room/${room.id}?entry_source=create_room` as any);
     } catch (err: any) {
       console.error("Failed to create room:", err);
       setError(err.message || "Failed to create room");
