@@ -14,6 +14,8 @@ AQALA/
 # Firebase native config (download from Firebase Console; see ENV.md)
 GoogleService-Info.plist
 google-services.json
+# Local snapshot before swapping to dev plist for testing (do not commit)
+GoogleService-Info.plist.prod-backup
 
 # Env files
 .env
@@ -35,3 +37,6 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Local-only docs (keep out of commits)
+lib/analytics/EVENTS.md

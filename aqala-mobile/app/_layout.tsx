@@ -22,6 +22,8 @@ import { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } from "ex
 import { useFonts } from "expo-font";
 import { Platform, View, Text } from "react-native";
 import "../global.css";
+import { logRuntimeEnvironment } from "@/lib/env/logRuntimeEnvironment";
+import { scheduleFirebaseAnalyticsDiagnostics } from "@/lib/env/logFirebaseAnalyticsDiagnostics";
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -91,6 +93,11 @@ export default function RootLayout() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    logRuntimeEnvironment();
+    scheduleFirebaseAnalyticsDiagnostics();
+  }, []);
 
   // TODO: Add font files to assets/fonts/ directory
   // For now, using system fonts to allow app to run

@@ -82,6 +82,36 @@ export async function trackListeningEnd(params: {
   });
 }
 
+/** Prayer times tab / screen session (time on screen). */
+export async function trackPrayerTimesStart(params: { source: string }): Promise<void> {
+  await safeLog("prayer_times_start", { source: params.source });
+}
+
+export async function trackPrayerTimesEnd(params: {
+  source: string;
+  duration_sec: number;
+}): Promise<void> {
+  await safeLog("prayer_times_end", {
+    source: params.source,
+    duration_sec: params.duration_sec,
+  });
+}
+
+/** Qibla finder screen session. */
+export async function trackQiblaStart(params: { source: string }): Promise<void> {
+  await safeLog("qibla_start", { source: params.source });
+}
+
+export async function trackQiblaEnd(params: {
+  source: string;
+  duration_sec: number;
+}): Promise<void> {
+  await safeLog("qibla_end", {
+    source: params.source,
+    duration_sec: params.duration_sec,
+  });
+}
+
 export async function trackDonate(params: {
   amount: number;
   currency: string;
@@ -202,22 +232,21 @@ export async function syncAnalyticsUser(params: {
 }): Promise<void> {
   try {
     await setNativeAnalyticsUserId(params.firebaseUid);
+    // setUserId is the supported way to set Analytics user id; `user_id` as a user property is reserved and ignored.
     if (!params.firebaseUid) {
       await setNativeAnalyticsUserProperties({
-        user_id: null,
-        is_premium: null,
-        signup_date: null,
-        country: null,
-        app_version: null,
+        is_premium: "",
+        signup_date: "",
+        country: "",
+        app_version: "",
       });
       return;
     }
     await setNativeAnalyticsUserProperties({
-      user_id: params.firebaseUid,
       is_premium: String(params.isPremium),
-      signup_date: params.signupDateIso,
-      country: params.country,
-      app_version: params.appVersion,
+      ...(params.signupDateIso ? { signup_date: params.signupDateIso } : {}),
+      ...(params.country ? { country: params.country } : {}),
+      ...(params.appVersion ? { app_version: params.appVersion } : {}),
     });
   } catch (e) {
     if (__DEV__) {

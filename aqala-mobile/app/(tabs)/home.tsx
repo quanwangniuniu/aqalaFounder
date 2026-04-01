@@ -230,7 +230,7 @@ export default function HomeScreen() {
                     element_name: "prayer_times",
                     screen_name: "home",
                   });
-                  handleAdLink("/prayers");
+                  handleAdLink("/(tabs)/prayer?entry_source=homepage");
                 }}
                 className="flex-1"
                 style={{ minWidth: '47%' }}
@@ -256,7 +256,7 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => {
                   void trackCardClick({ element_name: "qibla", screen_name: "home" });
-                  handleAdLink("/qibla");
+                  handleAdLink("/(tabs)/qibla?entry_source=homepage");
                 }}
                 className="flex-1"
                 style={{ minWidth: '47%' }}

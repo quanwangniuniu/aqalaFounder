@@ -1,22 +1,32 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
-import fs from "fs";
 import path from "path";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const withIosNonModularIncludesFix = require("./plugins/withIosNonModularIncludesFix") as (
     config: ExpoConfig
 ) => ExpoConfig;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const withFirebaseDebugScheme = require("./plugins/withFirebaseDebugScheme") as (
+    config: ExpoConfig
+) => ExpoConfig;
 
-// Local dev (npx expo start): prefer .env.development (aqala-dev) so we don't touch production
+// Local dev: load .env then .env.development with override so the latter wins (dotenv default does not override).
 if (process.env.NODE_ENV === "development") {
   require("dotenv").config({ path: path.resolve(__dirname, ".env") });
-  require("dotenv").config({ path: path.resolve(__dirname, ".env.development") });
+  require("dotenv").config({
+    path: path.resolve(__dirname, ".env.development"),
+    override: true,
+  });
 } else {
   require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 }
 
+/** Must match REVERSED_CLIENT_ID in ./GoogleService-Info.plist (iOS Google Sign-In redirect). */
+const IOS_GOOGLE_URL_SCHEME =
+  "com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih";
+
 export default (ctx: ConfigContext): ExpoConfig =>
-    withIosNonModularIncludesFix({
+    withFirebaseDebugScheme(withIosNonModularIncludesFix({
     ...ctx.config,
     name: "Aqala",
     slug: "aqala",
@@ -57,10 +67,7 @@ export default (ctx: ConfigContext): ExpoConfig =>
             CFBundleURLTypes: [
                 {
                     CFBundleTypeRole: "Editor",
-                    CFBundleURLSchemes: [
-                        // Must match REVERSED_CLIENT_ID in GoogleService-Info.plist (aqala-dev iOS app)
-                        "com.googleusercontent.apps.618640350621-8s1tqpdpgqoccovavos6j7e7ntjnun68",
-                    ],
+                    CFBundleURLSchemes: [IOS_GOOGLE_URL_SCHEME],
                 },
             ],
         },
@@ -71,9 +78,8 @@ export default (ctx: ConfigContext): ExpoConfig =>
             backgroundColor: "#021a12",
         },
         package: "com.aqala.app",
-        ...(fs.existsSync(path.join(__dirname, "google-services.json"))
-            ? { googleServicesFile: "./google-services.json" as const }
-            : {}),
+        // Required by @react-native-firebase/app prebuild (copy step). File is gitignored; see google-services.json.example / Firebase Console.
+        googleServicesFile: "./google-services.json",
         permissions: [
             "ACCESS_FINE_LOCATION",
             "ACCESS_COARSE_LOCATION",
@@ -94,8 +100,7 @@ export default (ctx: ConfigContext): ExpoConfig =>
         [
             "@react-native-google-signin/google-signin",
             {
-                iosUrlScheme:
-                    "com.googleusercontent.apps.618640350621-8s1tqpdpgqoccovavos6j7e7ntjnun68",
+                iosUrlScheme: IOS_GOOGLE_URL_SCHEME,
             },
         ],
         "expo-router",
@@ -145,9 +150,13 @@ export default (ctx: ConfigContext): ExpoConfig =>
     experiments: {
         typedRoutes: true,
     },
-    "extra": {
-      "eas": {
-        "projectId": "79f93fd7-00d8-4803-81e4-e4661d5342fd"
-      }
-    }
-});
+    extra: {
+      eas: {
+        projectId: "79f93fd7-00d8-4803-81e4-e4661d5342fd",
+      },
+      /** Set in eas.json per profile, or in .env / .env.development for local runs. */
+      appEnv:
+        process.env.APP_ENV ??
+        (process.env.NODE_ENV === "development" ? "local" : "production"),
+    },
+}));

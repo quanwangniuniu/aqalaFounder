@@ -47,6 +47,14 @@ export const useIAPContext = () => {
   return ctx;
 };
 
+function isUserCancelledPurchase(err: unknown): boolean {
+  if (err === null || typeof err !== "object") return false;
+  const e = err as { code?: string; message?: string; cause?: { code?: string; message?: string } };
+  if (e.code === ErrorCode?.UserCancelled || e.cause?.code === ErrorCode?.UserCancelled) return true;
+  const msg = `${e.message ?? ""} ${e.cause?.message ?? ""}`.toLowerCase();
+  return msg.includes("cancel") && msg.includes("purchase");
+}
+
 function IAPProviderInner({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { refreshSubscription } = useSubscription();
@@ -110,13 +118,16 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
     [user, refreshSubscription],
   );
 
-  const handlePurchaseError = useCallback((error: any) => {
+  const handlePurchaseError = useCallback((error: unknown) => {
     setIsPurchasing(false);
-    if (error?.code === ErrorCode?.UserCancelled) return;
-    Alert.alert(
-      "Purchase Failed",
-      error?.message || "Something went wrong. Please try again.",
-    );
+    if (isUserCancelledPurchase(error)) return;
+    const msg =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error && "message" in error
+          ? String((error as { message: string }).message)
+          : "Something went wrong. Please try again.";
+    Alert.alert("Purchase Failed", msg);
   }, []);
 
   const {
@@ -178,14 +189,22 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
       return;
     }
     setIsPurchasing(true);
-    requestPurchase({
+    void requestPurchase({
       request: {
         apple: { sku: PREMIUM_PRODUCT_ID },
         google: { skus: [PREMIUM_PRODUCT_ID] },
       },
       type: "in-app",
+    }).catch((err: unknown) => {
+      if (isUserCancelledPurchase(err)) {
+        setIsPurchasing(false);
+        return;
+      }
+      setIsPurchasing(false);
+      console.warn("requestPurchase:", err);
+      handlePurchaseError(err);
     });
-  }, [premiumProduct, requestPurchase]);
+  }, [premiumProduct, requestPurchase, handlePurchaseError]);
 
   const restorePurchases = useCallback(async () => {
     if (!user?.uid) {
