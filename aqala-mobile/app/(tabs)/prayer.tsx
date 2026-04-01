@@ -1,6 +1,9 @@
+import { useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Pressable } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { usePrayer } from "@/contexts/PrayerContext";
+import { trackPrayerTimesStart, trackPrayerTimesEnd } from "@/lib/analytics/track";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { formatPrayerTime, getMethodName } from "@/lib/prayer/calculations";
@@ -11,6 +14,13 @@ import WallpaperBackground from "@/components/WallpaperBackground";
 const GOLD = "#D4AF37";
 
 export default function PrayerScreen() {
+  const { entry_source } = useLocalSearchParams<{
+    entry_source?: string | string[];
+  }>();
+  const rawEntry = Array.isArray(entry_source) ? entry_source[0] : entry_source;
+  const prayerEntrySource =
+    typeof rawEntry === "string" && rawEntry.length > 0 ? rawEntry : "tab";
+
   const { isRTL, t } = useLanguage();
   const { getAccentColor } = usePreferences();
   const accent = getAccentColor();
@@ -26,6 +36,18 @@ export default function PrayerScreen() {
     refreshLocation,
     refreshPrayerTimes,
   } = usePrayer();
+
+  useFocusEffect(
+    useCallback(() => {
+      const source = prayerEntrySource;
+      const start = Date.now();
+      void trackPrayerTimesStart({ source });
+      return () => {
+        const duration_sec = Math.max(0, Math.round((Date.now() - start) / 1000));
+        void trackPrayerTimesEnd({ source, duration_sec });
+      };
+    }, [prayerEntrySource])
+  );
 
   const prayers = prayerTimes
     ? [
@@ -53,7 +75,7 @@ export default function PrayerScreen() {
               <Text className="text-xl font-semibold text-white">{t("prayer.title")}</Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <Link href="/qibla" asChild>
+              <Link href="/qibla?entry_source=prayer" asChild>
                 <TouchableOpacity className="flex-row items-center gap-2 px-3 py-1.5 rounded-full border border-white/20" style={{ backgroundColor: `${accent.base}20`, borderColor: `${accent.base}50` }}>
                   <Ionicons name="compass" size={16} color={accent.base} />
                   <Text className="text-xs font-medium" style={{ color: accent.base }}>{t("prayer.qibla")}</Text>

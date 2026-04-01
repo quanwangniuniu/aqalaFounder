@@ -30,6 +30,7 @@ import {
   subscribePastTranslations,
   PastTranslation,
 } from "@/lib/firebase/userPastTranslations";
+import { trackButtonClick, trackLikeContent } from "@/lib/analytics/track";
 
 export default function ListenHomeScreen() {
   const { t, language } = useLanguage();
@@ -618,11 +619,19 @@ export default function ListenHomeScreen() {
                 ) : (
                   <View className="mt-2 gap-2">
                     {pastTranslations.slice(0, 3).map((pt) => (
-                      <Link key={pt.id} href={`/past-translation/${pt.id}` as never} asChild>
-                        <TouchableOpacity
-                          className="flex-row items-start gap-2.5 py-2"
-                          activeOpacity={0.7}
-                        >
+                      <TouchableOpacity
+                        key={pt.id}
+                        className="flex-row items-start gap-2.5 py-2"
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          void trackLikeContent({
+                            element_name: "open_past_translation",
+                            screen_name: "listen_tab",
+                            target_id: pt.id,
+                          });
+                          router.push(`/past-translation/${pt.id}` as never);
+                        }}
+                      >
                         <View className="w-6 h-6 rounded-full bg-[#D4AF37]/10 items-center justify-center mt-0.5">
                           <Ionicons name="language" size={10} color="#D4AF37" />
                         </View>
@@ -648,8 +657,7 @@ export default function ListenHomeScreen() {
                           size={16}
                           color="rgba(255,255,255,0.5)"
                         />
-                        </TouchableOpacity>
-                      </Link>
+                      </TouchableOpacity>
                     ))}
                     {pastTranslations.length > 3 ? (
                       <View className="py-2 flex-row items-center justify-center">
@@ -681,21 +689,35 @@ export default function ListenHomeScreen() {
                 </View>
 
                 {showAds && user ? (
-                  <Link href="/subscription" asChild>
-                    <TouchableOpacity className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40">
-                      <Text className="text-xs font-medium text-[#D4AF37]">
-                        {t("listen.goAdFree")}
-                      </Text>
-                    </TouchableOpacity>
-                  </Link>
+                  <TouchableOpacity
+                    className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40"
+                    onPress={() => {
+                      void trackButtonClick({
+                        element_name: "go_ad_free",
+                        screen_name: "listen_tab",
+                      });
+                      router.push("/subscription");
+                    }}
+                  >
+                    <Text className="text-xs font-medium text-[#D4AF37]">
+                      {t("listen.goAdFree")}
+                    </Text>
+                  </TouchableOpacity>
                 ) : (
-                  <Link href="/donate" asChild>
-                    <TouchableOpacity className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40">
-                      <Text className="text-xs font-medium text-[#D4AF37]">
-                        {t("listen.donateToAqala")}
-                      </Text>
-                    </TouchableOpacity>
-                  </Link>
+                  <TouchableOpacity
+                    className="px-4 py-2.5 rounded-full border border-[#D4AF37]/40"
+                    onPress={() => {
+                      void trackButtonClick({
+                        element_name: "donate",
+                        screen_name: "listen_tab",
+                      });
+                      router.push("/donate");
+                    }}
+                  >
+                    <Text className="text-xs font-medium text-[#D4AF37]">
+                      {t("listen.donateToAqala")}
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </View>
             </View>

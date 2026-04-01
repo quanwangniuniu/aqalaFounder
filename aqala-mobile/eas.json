@@ -82,7 +82,7 @@
       "autoIncrement": true,
       "env": {
         "APP_ENV": "production",
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAQfHzG9mthNp_nK1dQVkCEjnoBulB2V9A",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAzge6SlSjF9OLaAszNxuZxzIEihRsNr18",
         "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "aqala-de71b.firebaseapp.com",
         "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "aqala-de71b",
         "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aqala-de71b.firebasestorage.app",

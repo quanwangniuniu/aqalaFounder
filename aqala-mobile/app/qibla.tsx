@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,9 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { trackQiblaStart, trackQiblaEnd } from "@/lib/analytics/track";
 import * as Location from "expo-location";
 import Svg, { Circle, Line, Path, Text as SvgText, G } from "react-native-svg";
 import WallpaperBackground from "@/components/WallpaperBackground";
@@ -26,6 +28,12 @@ type LocationCoords = { lat: number; lng: number };
 
 export default function QiblaScreen() {
   const router = useRouter();
+  const { entry_source } = useLocalSearchParams<{
+    entry_source?: string | string[];
+  }>();
+  const rawEntry = Array.isArray(entry_source) ? entry_source[0] : entry_source;
+  const qiblaEntrySource =
+    typeof rawEntry === "string" && rawEntry.length > 0 ? rawEntry : "tab";
 
   const [location, setLocation] = useState<LocationCoords | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -39,6 +47,18 @@ export default function QiblaScreen() {
 
   const smoothHeading = useRef(new Animated.Value(0)).current;
   const prevHeading = useRef(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      const source = qiblaEntrySource;
+      const start = Date.now();
+      void trackQiblaStart({ source });
+      return () => {
+        const duration_sec = Math.max(0, Math.round((Date.now() - start) / 1000));
+        void trackQiblaEnd({ source, duration_sec });
+      };
+    }, [qiblaEntrySource])
+  );
 
   // ── Location ──────────────────────────────────────────────
   useEffect(() => {

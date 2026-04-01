@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "424137325708",
+    "project_id": "aqala-de71b",
+    "storage_bucket": "aqala-de71b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:424137325708:android:REPLACE_AFTER_DOWNLOAD_FROM_FIREBASE",
+        "android_client_info": {
+          "package_name": "com.aqala.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzge6SlSjF9OLaAszNxuZxzIEihRsNr18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

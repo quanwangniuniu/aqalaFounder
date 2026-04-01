@@ -1,16 +1,33 @@
 import { ExpoConfig, ConfigContext } from "expo/config";
 import path from "path";
 
-// Local dev (npx expo start): prefer .env.development (aqala-dev) so we don't touch production
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const withIosNonModularIncludesFix = require("./plugins/withIosNonModularIncludesFix") as (
+    config: ExpoConfig
+) => ExpoConfig;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const withFirebaseDebugScheme = require("./plugins/withFirebaseDebugScheme") as (
+    config: ExpoConfig
+) => ExpoConfig;
+
+// Local dev: load .env then .env.development with override so the latter wins (dotenv default does not override).
 if (process.env.NODE_ENV === "development") {
   require("dotenv").config({ path: path.resolve(__dirname, ".env") });
-  require("dotenv").config({ path: path.resolve(__dirname, ".env.development") });
+  require("dotenv").config({
+    path: path.resolve(__dirname, ".env.development"),
+    override: true,
+  });
 } else {
   require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 }
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
-    ...config,
+/** Must match REVERSED_CLIENT_ID in ./GoogleService-Info.plist (iOS Google Sign-In redirect). */
+const IOS_GOOGLE_URL_SCHEME =
+  "com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih";
+
+export default (ctx: ConfigContext): ExpoConfig =>
+    withFirebaseDebugScheme(withIosNonModularIncludesFix({
+    ...ctx.config,
     name: "Aqala",
     slug: "aqala",
     scheme: "aqala",
@@ -28,6 +45,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         supportsTablet: false,
         deploymentTarget: "15.1",
         bundleIdentifier: "com.aqala.app",
+        // Fixes "No code signing certificates" for `expo run:ios`. Set in .env: EXPO_IOS_TEAM_ID=XXXXXXXXXX (Xcode → Settings → Accounts → Team ID)
+        ...(process.env.EXPO_IOS_TEAM_ID
+            ? { developmentTeam: process.env.EXPO_IOS_TEAM_ID }
+            : {}),
         googleServicesFile: "./GoogleService-Info.plist",
         infoPlist: {
             ITSAppUsesNonExemptEncryption: false,
@@ -46,7 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             CFBundleURLTypes: [
                 {
                     CFBundleTypeRole: "Editor",
-                    CFBundleURLSchemes: ["com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih"],
+                    CFBundleURLSchemes: [IOS_GOOGLE_URL_SCHEME],
                 },
             ],
         },
@@ -57,7 +78,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             backgroundColor: "#021a12",
         },
         package: "com.aqala.app",
-        // googleServicesFile: "./google-services.json", // TODO: Add google-services.json for Firebase
+        // Required by @react-native-firebase/app prebuild (copy step). File is gitignored; see google-services.json.example / Firebase Console.
+        googleServicesFile: "./google-services.json",
         permissions: [
             "ACCESS_FINE_LOCATION",
             "ACCESS_COARSE_LOCATION",
@@ -66,10 +88,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
     },
     plugins: [
+        "@react-native-firebase/app",
+        [
+            "expo-build-properties",
+            {
+                ios: {
+                    useFrameworks: "static",
+                },
+            },
+        ],
         [
             "@react-native-google-signin/google-signin",
             {
-                iosUrlScheme: "com.googleusercontent.apps.424137325708-7hdn2eqi2qnv6fm9im1i7392mv0tgvih",
+                iosUrlScheme: IOS_GOOGLE_URL_SCHEME,
             },
         ],
         "expo-router",
@@ -119,9 +150,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     experiments: {
         typedRoutes: true,
     },
-    "extra": {
-      "eas": {
-        "projectId": "79f93fd7-00d8-4803-81e4-e4661d5342fd"
-      }
-    }
-});
+    extra: {
+      eas: {
+        projectId: "79f93fd7-00d8-4803-81e4-e4661d5342fd",
+      },
+      /** Set in eas.json per profile, or in .env / .env.development for local runs. */
+      appEnv:
+        process.env.APP_ENV ??
+        (process.env.NODE_ENV === "development" ? "local" : "production"),
+    },
+}));
