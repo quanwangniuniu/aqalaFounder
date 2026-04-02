@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { PLAN_CONFIGS, SubscriptionPlan } from "@/types/subscription";
+import { trackSubscribePremium, trackButtonClick } from "@/lib/analytics/track";
 
 const REF_STORAGE_KEY = "aqala_invite_ref";
 
@@ -71,6 +72,14 @@ function SubscriptionPageContent() {
     setIsSubscribing(planId);
 
     try {
+      void trackButtonClick({ element_name: "subscribe_start", screen_name: "subscription", target_id: planId });
+      void trackSubscribePremium({
+        amount: planConfig.price,
+        currency: planConfig.currency,
+        product_id: planConfig.priceId || planId,
+        payment_method: "stripe",
+        screen_name: "subscription",
+      });
       const response = await fetch("/api/subscriptions/checkout", {
         method: "POST",
         headers: {

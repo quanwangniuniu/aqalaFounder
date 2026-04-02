@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { trackDonate } from "@/lib/analytics/track";
 
 type PaymentMethod = "apple" | "card";
 
@@ -248,6 +249,13 @@ export default function CharityModal({
                                 return;
                             }
 
+                            void trackDonate({
+                                amount: tipAmount,
+                                currency: "AUD",
+                                product_id: "stripe_donate",
+                                payment_method: method === "apple" ? "apple_pay" : "card",
+                                action: "checkout",
+                            });
                             setIsLoading(true);
                             try {
                                 const response = await fetch("/api/checkout", {

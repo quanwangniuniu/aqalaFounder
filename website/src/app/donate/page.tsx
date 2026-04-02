@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import CharityModal from "../charity-modal";
+import { trackButtonClick, trackDonate } from "@/lib/analytics/track";
 
 function ShareButton() {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
+    void trackButtonClick({ element_name: "donate_share", screen_name: "donate" });
     const url = window.location.origin;
     const shareData = {
       title: "Aqala",
@@ -156,7 +158,17 @@ export default function DonatePage() {
           {/* Donate Button */}
           <div className="pt-2">
             <button
-              onClick={() => setDonateOpen(true)}
+              onClick={() => {
+                void trackButtonClick({ element_name: "donate_open_modal", screen_name: "donate" });
+                void trackDonate({
+                  amount: 0,
+                  currency: "AUD",
+                  product_id: "stripe_donate",
+                  payment_method: "stripe",
+                  action: "open_modal",
+                });
+                setDonateOpen(true);
+              }}
               className="w-full py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#b8944d] text-black/90 font-bold text-lg shadow-lg shadow-[#D4AF37]/20 hover:shadow-[#D4AF37]/30 transition-all active:scale-[0.98]"
             >
               Donate to Aqala

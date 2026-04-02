@@ -5,12 +5,15 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { PLAN_CONFIGS } from "@/types/subscription";
+import { trackPurchaseSuccess } from "@/lib/analytics/track";
 
 function SubscriptionSuccessContent() {
   const searchParams = useSearchParams();
   const { refreshSubscription, isPremium } = useSubscription();
   const { user } = useAuth();
   const hasVerified = useRef(false);
+  const hasTrackedSuccess = useRef(false);
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(false);
 
@@ -59,6 +62,17 @@ function SubscriptionSuccessContent() {
 
     verifyAndRefresh();
   }, [user?.uid, isPremium]);
+
+  useEffect(() => {
+    if (!verified || hasTrackedSuccess.current) return;
+    hasTrackedSuccess.current = true;
+    void trackPurchaseSuccess({
+      amount: PLAN_CONFIGS.premium.price,
+      currency: PLAN_CONFIGS.premium.currency,
+      product_id: PLAN_CONFIGS.premium.priceId || "premium",
+      payment_method: "stripe",
+    });
+  }, [verified]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-68px)] px-4 py-8">
