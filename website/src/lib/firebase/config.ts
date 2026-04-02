@@ -9,6 +9,8 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  // Optional for most SDKs, but required for Analytics (GA4) to initialize reliably on web.
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 let app: FirebaseApp | null = null;
@@ -34,4 +36,5 @@ if (typeof window !== "undefined") {
 }
 
 export { auth, db };
+export const firebaseApp = app;
 

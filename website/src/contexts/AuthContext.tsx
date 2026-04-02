@@ -6,6 +6,7 @@ import { auth } from "@/lib/firebase/config";
 import { signUpWithEmail, signInWithEmail, signInWithGoogle, signInWithApple, signOut, sendPasswordResetEmailToUser, resetPasswordWithCode } from "@/lib/firebase/auth";
 import { createOrUpdateUserProfile, getPartnerDetails, getUserProfile, updateUserProfileFields } from "@/lib/firebase/users";
 import { AuthContextType, User, PartnerInfo, mapFirebaseUser } from "@/types/auth";
+import { trackLogin, trackSignUp } from "@/lib/analytics/track";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -135,8 +136,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       }
       pendingUsernameRef.current = null;
+      void trackSignUp("email", true);
     } catch (err: any) {
       pendingUsernameRef.current = null;
+      void trackSignUp("email", false);
       const errorMessage = err.message || "Failed to create account";
       setError(errorMessage);
       throw err;
@@ -147,7 +150,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       await signInWithEmail(email, password);
+      void trackLogin("email", true);
     } catch (err: any) {
+      void trackLogin("email", false);
       const errorMessage = err.message || "Failed to sign in";
       setError(errorMessage);
       throw err;
@@ -158,7 +163,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       await signInWithGoogle();
+      void trackLogin("google", true);
     } catch (err: any) {
+      void trackLogin("google", false);
       const errorMessage = err.message || "Failed to sign in with Google";
       setError(errorMessage);
       throw err;
@@ -169,7 +176,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       await signInWithApple();
+      void trackLogin("apple", true);
     } catch (err: any) {
+      void trackLogin("apple", false);
       const errorMessage = err.message || "Failed to sign in with Apple";
       setError(errorMessage);
       throw err;

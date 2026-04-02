@@ -9,6 +9,8 @@ import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { InterstitialAdProvider } from "@/contexts/InterstitialAdContext";
 import { PrivacyConsentProvider } from "@/contexts/PrivacyConsentContext";
 import { OpenReplayProvider } from "./openreplay-provider";
+import { FirebaseAnalyticsClient } from "@/components/FirebaseAnalyticsClient";
+import { WebFeatureSessionTracker } from "@/components/WebFeatureSessionTracker";
 import LanguageSelectionModal from "@/components/LanguageSelectionModal";
 import InterstitialAd from "@/components/InterstitialAd";
 import ConsentBanner from "@/components/ConsentBanner";
@@ -24,6 +26,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
               <LanguageProvider>
                 <PrayerProvider>
                   <OpenReplayProvider>
+                    <FirebaseAnalyticsClient />
+                    <WebFeatureSessionTracker />
                     <RoomsProvider>
                       {children}
                       <LanguageSelectionModal />
