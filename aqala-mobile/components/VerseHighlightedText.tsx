@@ -265,9 +265,11 @@ export default function VerseHighlightedText({
 
   if (!segments) {
     return (
-      <Text style={[BODY, textDirStyle]}>
-        {visibleWords.length > 0 ? visibleWords.join(" ") : ""}
-      </Text>
+      <View style={styles.column}>
+        <Text style={[BODY, textDirStyle]}>
+          {visibleWords.length > 0 ? visibleWords.join(" ") : ""}
+        </Text>
+      </View>
     );
   }
 
@@ -354,7 +356,7 @@ export default function VerseHighlightedText({
                     {seg.label}
                   </Text>
                   <Text style={[styles.tapHint, textDirStyle]}>
-                    · tap for Arabic
+                    · tap to open full surah
                   </Text>
                 </View>
               </View>
@@ -370,6 +372,8 @@ const styles = StyleSheet.create({
   column: {
     flexDirection: "column",
     alignItems: "stretch",
+    flexShrink: 1,
+    width: "100%",
   },
   afterBlock: {
     marginTop: 10,
@@ -380,6 +384,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.045)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.08)",
+    width: "100%",
   },
   verseDivider: {
     marginTop: 14,
@@ -390,6 +395,7 @@ const styles = StyleSheet.create({
   verseRow: {
     flexDirection: "row",
     alignItems: "stretch",
+    width: "100%",
   },
   verseRowRtl: {
     flexDirection: "row-reverse",

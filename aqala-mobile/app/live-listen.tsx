@@ -306,6 +306,27 @@ export default function NativeLiveListenScreen() {
           );
           if (wordsAfterVerse < MIN_ARABIC_WORDS_AFTER_SURAH) {
             console.log("[LiveListen] DEFERRED — verse still in progress");
+
+            // Start silence timer: if no new STT words arrive within
+            // SILENCE_COMMIT_MS, force-commit (speaker went quiet after verse)
+            const sttLenAtDeferral = result.sttWordCount;
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = setTimeout(() => {
+              const currentSrc = savedSourceTextRef.current?.trim() ?? "";
+              const currentLen = currentSrc
+                .split(/\s+/)
+                .filter(Boolean).length;
+              if (currentLen <= sttLenAtDeferral + 3) {
+                console.log(
+                  "[LiveListen] Silence timeout — force-committing deferred verse",
+                );
+                const tw = savedTranslationTextRef.current
+                  .split(/\s+/)
+                  .filter(Boolean);
+                runVerseDetection(currentSrc, tw.length, true);
+              }
+            }, SILENCE_COMMIT_MS);
+
             detectingRef.current = false;
             return;
           }
@@ -322,7 +343,12 @@ export default function NativeLiveListenScreen() {
         let endVerse = parsed.endVerse;
 
         const kept = lastSpanByChapterRef.current[chStr];
-        if (kept) {
+        const VERSE_MERGE_GAP = 5;
+        if (
+          kept &&
+          startVerse <= kept.endVerse + VERSE_MERGE_GAP &&
+          endVerse >= kept.startVerse - VERSE_MERGE_GAP
+        ) {
           startVerse = Math.min(kept.startVerse, startVerse);
           endVerse = Math.max(kept.endVerse, endVerse);
         }
@@ -355,6 +381,12 @@ export default function NativeLiveListenScreen() {
 
         // Ensure minimum span
         if (endWord <= startWord) endWord = Math.min(wordEnd, startWord + 4);
+
+        // Clear silence timer — verse is being committed
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = null;
+        }
 
         console.log(
           `[LiveListen] COMMITTED: ${reference} words=[${startWord},${endWord}) ratio=${ratio.toFixed(2)}`,
@@ -469,6 +501,10 @@ export default function NativeLiveListenScreen() {
     lastDetectedKeyRef.current = null;
     lastHighlightWordEndRef.current = 0;
     lastSpanByChapterRef.current = {};
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
     try {
       recording.start();
     } catch (e: any) {

@@ -98,21 +98,27 @@ function getChapterWords(
 }
 
 /**
- * Trigram index: "w1|w2|w3" → Set<chapter>.
- * Built once at module load from the full corpus.
+ * Trigram index: "w1|w2|w3" → Map<chapter, wordPositions[]>.
+ * Stores the word offset of the first word of each trigram so we can
+ * pinpoint the region of a long chapter without a full reverse bestMatch.
  */
-const trigramIndex = new Map<string, Set<number>>();
+const trigramIndex = new Map<string, Map<number, number[]>>();
 (function buildTrigramIndex() {
   for (let ch = 1; ch <= 114; ch++) {
     const words = getChapterWords(ch);
     for (let i = 0; i + 2 < words.length; i++) {
       const key = `${words[i]}|${words[i + 1]}|${words[i + 2]}`;
-      let set = trigramIndex.get(key);
-      if (!set) {
-        set = new Set();
-        trigramIndex.set(key, set);
+      let chMap = trigramIndex.get(key);
+      if (!chMap) {
+        chMap = new Map();
+        trigramIndex.set(key, chMap);
       }
-      set.add(ch);
+      let positions = chMap.get(ch);
+      if (!positions) {
+        positions = [];
+        chMap.set(ch, positions);
+      }
+      positions.push(i);
     }
   }
 })();
@@ -407,15 +413,59 @@ function findCandidateChapters(sttWords: string[]): Map<number, number> {
 
   for (let i = 0; i + 2 < window.length; i++) {
     const key = `${window[i]}|${window[i + 1]}|${window[i + 2]}`;
-    const chapters = trigramIndex.get(key);
-    if (chapters) {
-      for (const ch of chapters) {
+    const chMap = trigramIndex.get(key);
+    if (chMap) {
+      for (const ch of chMap.keys()) {
         hits.set(ch, (hits.get(ch) || 0) + 1);
       }
     }
   }
 
   return hits;
+}
+
+/**
+ * For a long chapter, use trigram word-position data to locate the exact
+ * region being recited — O(sttWindow) instead of O(chapterLen) bestMatch.
+ */
+function findChapterRegion(
+  chapter: number,
+  sttWindow: string[],
+  chapterLen: number,
+): { start: number; end: number } | null {
+  const positions: number[] = [];
+  for (let i = 0; i + 2 < sttWindow.length; i++) {
+    const key = `${sttWindow[i]}|${sttWindow[i + 1]}|${sttWindow[i + 2]}`;
+    const chMap = trigramIndex.get(key);
+    if (chMap) {
+      const posArray = chMap.get(chapter);
+      if (posArray) positions.push(...posArray);
+    }
+  }
+
+  if (positions.length < 2) return null;
+
+  positions.sort((a, b) => a - b);
+
+  const REGION = 80;
+  let bestStart = 0;
+  let bestEnd = 0;
+  let bestCount = 0;
+
+  for (let i = 0; i < positions.length; i++) {
+    let j = i;
+    while (j < positions.length && positions[j] - positions[i] <= REGION) j++;
+    if (j - i > bestCount) {
+      bestCount = j - i;
+      bestStart = positions[i];
+      bestEnd = positions[j - 1] + 3;
+    }
+  }
+
+  return {
+    start: Math.max(0, bestStart),
+    end: Math.min(chapterLen, bestEnd + 10),
+  };
 }
 
 // ── Core detection ───────────────────────────────────────────────────
@@ -462,32 +512,62 @@ export async function findVerseReference(
     ratio: number;
     firstHi: number;
     lastHi: number;
+    chapterWordStart: number;
+    chapterWordEnd: number;
   } | null = null;
 
+  const LONG_CHAPTER_THRESHOLD = 80;
+
   for (const [chapter] of top) {
-    const needle = getChapterWords(chapter);
-    if (needle.length < 3) continue;
+    const chapterWords = getChapterWords(chapter);
+    if (chapterWords.length < 3) continue;
 
-    const m = bestMatch(sttWords, needle, searchStart);
-    const ratio = m.matched / needle.length;
+    let m: { matched: number; firstHi: number; lastHi: number };
+    let effectiveNeedleLen: number;
+    let chWordStart = 0;
+    let chWordEnd = chapterWords.length;
 
-    if (m.matched > 0 && m.matched < needle.length) {
-      // Show which needle words matched and which didn't
+    if (chapterWords.length <= LONG_CHAPTER_THRESHOLD) {
+      m = bestMatch(sttWords, chapterWords, searchStart);
+      effectiveNeedleLen = chapterWords.length;
+    } else {
+      const sttWindow = sttWords.slice(searchStart);
+      const region = findChapterRegion(chapter, sttWindow, chapterWords.length);
+
+      if (!region || region.end - region.start < 4) {
+        m = { matched: 0, firstHi: searchStart, lastHi: searchStart };
+        effectiveNeedleLen = chapterWords.length;
+      } else {
+        chWordStart = region.start;
+        chWordEnd = region.end;
+        const chunkNeedle = chapterWords.slice(region.start, region.end);
+        m = bestMatch(sttWords, chunkNeedle, searchStart);
+        effectiveNeedleLen = chunkNeedle.length;
+      }
+    }
+
+    const ratio = m.matched / effectiveNeedleLen;
+
+    if (m.matched > 0 && m.matched < effectiveNeedleLen) {
       const sttSlice = sttWords.slice(
         Math.max(0, m.firstHi - 2),
         Math.min(sttWords.length, m.lastHi + 3),
       );
       console.log(
-        `[VerseDetect:debug] ch=${chapter} stt=[${sttSlice.join(" ")}] needle=[${needle.join(" ")}]`,
+        `[VerseDetect:debug] ch=${chapter} stt=[${sttSlice.join(" ")}] needle=${effectiveNeedleLen}w (of ${chapterWords.length} total)`,
       );
     }
 
     console.log(
-      `[VerseDetect:verify] ch=${chapter} (${CHAPTER_NAMES[chapter] || "?"}) matched=${m.matched}/${needle.length} ratio=${(ratio * 100).toFixed(0)}%`,
+      `[VerseDetect:verify] ch=${chapter} (${CHAPTER_NAMES[chapter] || "?"}) matched=${m.matched}/${effectiveNeedleLen} ratio=${(ratio * 100).toFixed(0)}%`,
     );
 
-    const minMatched = needle.length <= 15 ? 3 : 4;
-    const minRatio = needle.length <= 15 ? 0.25 : 0.15;
+    const minMatched =
+      effectiveNeedleLen <= 15 ? 3 :
+      effectiveNeedleLen <= 30 ? 5 : 8;
+    const minRatio =
+      effectiveNeedleLen <= 15 ? 0.25 :
+      effectiveNeedleLen <= 30 ? 0.28 : 0.30;
 
     if (
       m.matched >= minMatched &&
@@ -499,10 +579,12 @@ export async function findVerseReference(
       best = {
         chapter,
         matched: m.matched,
-        needleLen: needle.length,
+        needleLen: effectiveNeedleLen,
         ratio,
         firstHi: m.firstHi,
         lastHi: m.lastHi,
+        chapterWordStart: chWordStart,
+        chapterWordEnd: chWordEnd,
       };
     }
   }
@@ -520,25 +602,22 @@ export async function findVerseReference(
   const fullMax = EXPAND_TO_FULL_SURAH[best.chapter];
   if (fullMax != null) {
     endVerse = fullMax;
-  } else if (endVerse > 40) {
-    const chapterWords = getChapterWords(best.chapter);
-    const matchedNeedleStart = chapterWords.indexOf(
-      sttWords[best.firstHi] || "",
-    );
-    const matchedNeedleEnd = chapterWords.lastIndexOf(
-      sttWords[best.lastHi] || "",
-    );
+  } else {
+    // Map the matched chapter word region → verse numbers
+    const regionStart = best.chapterWordStart;
+    const regionEnd = best.chapterWordEnd;
+    const totalVerses = chapterVerseCounts.get(best.chapter) || 1;
     let wordsSoFar = 0;
-    startVerse = 1;
-    endVerse = chapterVerseCounts.get(best.chapter) || 1;
-    for (let v = 1; v <= endVerse; v++) {
+    let foundStart = false;
+    for (let v = 1; v <= totalVerses; v++) {
       const vText = corpusMap.get(`${best.chapter}:${v}`);
       const vWords = vText ? normalize(vText).length : 0;
-      if (wordsSoFar + vWords > matchedNeedleStart && startVerse === 1) {
+      if (!foundStart && wordsSoFar + vWords > regionStart) {
         startVerse = v;
+        foundStart = true;
       }
       wordsSoFar += vWords;
-      if (wordsSoFar >= matchedNeedleEnd && matchedNeedleEnd >= 0) {
+      if (foundStart && wordsSoFar >= regionEnd) {
         endVerse = v;
         break;
       }
