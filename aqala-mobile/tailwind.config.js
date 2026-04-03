@@ -16,10 +16,6 @@ module.exports = {
           "gold-hover": "#d4b85c",
         },
       },
-      fontFamily: {
-        amiri: ["Amiri"],
-        cormorant: ["CormorantGaramond"],
-      },
     },
   },
   plugins: [],

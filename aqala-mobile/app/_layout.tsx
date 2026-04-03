@@ -25,7 +25,6 @@ import {
   getTrackingPermissionsAsync,
   requestTrackingPermissionsAsync,
 } from "expo-tracking-transparency";
-import { useFonts } from "expo-font";
 import { Platform, View, Text } from "react-native";
 import "../global.css";
 
@@ -126,15 +125,6 @@ export default function RootLayout() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const router = useRouter();
-
-  // TODO: Add font files to assets/fonts/ directory
-  // For now, using system fonts to allow app to run
-  const [fontsLoaded] = useFonts({
-    // "Amiri-Regular": require("../assets/fonts/Amiri-Regular.ttf"),
-    // "Amiri-Bold": require("../assets/fonts/Amiri-Bold.ttf"),
-    // "CormorantGaramond-Regular": require("../assets/fonts/CormorantGaramond-Regular.ttf"),
-    // "CormorantGaramond-Bold": require("../assets/fonts/CormorantGaramond-Bold.ttf"),
-  });
 
   // Check if onboarding is complete — also skip if permissions are already granted
   useEffect(() => {
