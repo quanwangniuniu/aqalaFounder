@@ -57,12 +57,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             backgroundColor: "#021a12",
         },
         package: "com.aqala.app",
-        // googleServicesFile: "./google-services.json", // TODO: Add google-services.json for Firebase
+        // EAS injects a path via file env `GOOGLE_SERVICES_JSON`; local dev uses repo-root file (gitignored).
+        googleServicesFile:
+            process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
         permissions: [
             "ACCESS_FINE_LOCATION",
             "ACCESS_COARSE_LOCATION",
             "RECORD_AUDIO",
             "CAMERA",
+            "POST_NOTIFICATIONS",
         ],
     },
     plugins: [

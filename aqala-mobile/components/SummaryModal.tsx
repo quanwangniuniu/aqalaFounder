@@ -31,13 +31,19 @@ function renderInline(text: string, baseColor: string, accentColor: string) {
     }
     if (match[1]) {
       parts.push(
-        <Text key={match.index} style={{ fontWeight: "700", color: "rgba(255,255,255,0.95)" }}>
+        <Text
+          key={match.index}
+          style={{ fontWeight: "700", color: "rgba(255,255,255,0.95)" }}
+        >
           {match[1]}
         </Text>,
       );
     } else if (match[2] && match[3]) {
       parts.push(
-        <Text key={match.index} style={{ fontWeight: "600", color: accentColor }}>
+        <Text
+          key={match.index}
+          style={{ fontWeight: "600", color: accentColor }}
+        >
           {match[2]} {match[3]}
         </Text>,
       );
@@ -96,11 +102,24 @@ function MarkdownText({
     const listMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
     if (listMatch) {
       elements.push(
-        <View key={`li-${i}`} style={{ flexDirection: "row", marginBottom: 8, paddingLeft: 4 }}>
-          <Text style={{ fontSize: 15, lineHeight: 24, color: accentColor, fontWeight: "600", width: 24 }}>
+        <View
+          key={`li-${i}`}
+          style={{ flexDirection: "row", marginBottom: 8, paddingLeft: 4 }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              lineHeight: 24,
+              color: accentColor,
+              fontWeight: "600",
+              width: 24,
+            }}
+          >
             {listMatch[1]}.
           </Text>
-          <Text style={{ flex: 1, fontSize: 15, lineHeight: 24, color: baseColor }}>
+          <Text
+            style={{ flex: 1, fontSize: 15, lineHeight: 24, color: baseColor }}
+          >
             {renderInline(listMatch[2], baseColor, accentColor)}
           </Text>
         </View>,
@@ -112,9 +131,23 @@ function MarkdownText({
     const bulletMatch = trimmed.match(/^[-*]\s+(.+)$/);
     if (bulletMatch) {
       elements.push(
-        <View key={`bl-${i}`} style={{ flexDirection: "row", marginBottom: 8, paddingLeft: 4 }}>
-          <Text style={{ fontSize: 15, lineHeight: 24, color: accentColor, width: 20 }}>•</Text>
-          <Text style={{ flex: 1, fontSize: 15, lineHeight: 24, color: baseColor }}>
+        <View
+          key={`bl-${i}`}
+          style={{ flexDirection: "row", marginBottom: 8, paddingLeft: 4 }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              lineHeight: 24,
+              color: accentColor,
+              width: 20,
+            }}
+          >
+            •
+          </Text>
+          <Text
+            style={{ flex: 1, fontSize: 15, lineHeight: 24, color: baseColor }}
+          >
             {renderInline(bulletMatch[1], baseColor, accentColor)}
           </Text>
         </View>,
@@ -124,7 +157,15 @@ function MarkdownText({
 
     // Regular paragraph
     elements.push(
-      <Text key={`p-${i}`} style={{ fontSize: 15, lineHeight: 24, color: baseColor, marginBottom: 4 }}>
+      <Text
+        key={`p-${i}`}
+        style={{
+          fontSize: 15,
+          lineHeight: 24,
+          color: baseColor,
+          marginBottom: 4,
+        }}
+      >
         {renderInline(trimmed, baseColor, accentColor)}
       </Text>,
     );
@@ -168,65 +209,87 @@ export default function SummaryModal({
   const gradientColors = getGradientColors() as [string, string, ...string[]];
   const accent = getAccentColor();
 
-  const fetchSummary = useCallback(async (signal: AbortSignal) => {
-    const url = `${WEB_URL}/api/summarize`;
-    console.log("[SummaryModal] fetchSummary called");
-    console.log("[SummaryModal] URL:", url);
-    console.log("[SummaryModal] refinedText length:", refinedText.length);
-    console.log("[SummaryModal] refinedText preview:", refinedText.slice(0, 200));
-    console.log("[SummaryModal] sourceText length:", sourceText.length);
-    console.log("[SummaryModal] targetLang:", targetLang);
+  const fetchSummary = useCallback(
+    async (signal: AbortSignal) => {
+      const url = `${WEB_URL}/api/summarize`;
+      console.log("[SummaryModal] fetchSummary called");
+      console.log("[SummaryModal] URL:", url);
+      console.log("[SummaryModal] refinedText length:", refinedText.length);
+      console.log(
+        "[SummaryModal] refinedText preview:",
+        refinedText.slice(0, 200),
+      );
+      console.log("[SummaryModal] sourceText length:", sourceText.length);
+      console.log("[SummaryModal] targetLang:", targetLang);
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const body = JSON.stringify({
-        text: refinedText,
-        sourceText,
-        targetLang,
-      });
-      console.log("[SummaryModal] Sending POST, body length:", body.length);
+      try {
+        const body = JSON.stringify({
+          text: refinedText,
+          sourceText,
+          targetLang,
+        });
+        console.log("[SummaryModal] Sending POST, body length:", body.length);
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        signal,
-      });
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          signal,
+        });
 
-      console.log("[SummaryModal] Response status:", res.status);
-      console.log("[SummaryModal] Response ok:", res.ok);
+        console.log("[SummaryModal] Response status:", res.status);
+        console.log("[SummaryModal] Response ok:", res.ok);
 
-      if (!res.ok) {
-        const respBody = await res.text().catch(() => "");
-        console.log("[SummaryModal] Error response body:", respBody);
-        throw new Error(`Server error ${res.status}${respBody ? `: ${respBody}` : ""}`);
+        if (!res.ok) {
+          const respBody = await res.text().catch(() => "");
+          console.log("[SummaryModal] Error response body:", respBody);
+          throw new Error(
+            `Server error ${res.status}${respBody ? `: ${respBody}` : ""}`,
+          );
+        }
+        const data = await res.json();
+        console.log("[SummaryModal] Response data keys:", Object.keys(data));
+        console.log(
+          "[SummaryModal] Summary length:",
+          data.summary?.length ?? 0,
+        );
+        if (!signal.aborted)
+          setSummary(data.summary || "No summary available.");
+      } catch (e: any) {
+        console.log("[SummaryModal] Fetch error:", e?.name, e?.message);
+        if (signal.aborted) {
+          console.log("[SummaryModal] Request was aborted, ignoring");
+          return;
+        }
+        if (e?.name === "AbortError") {
+          setError("Request timed out. Tap to retry.");
+        } else {
+          setError(e?.message ?? "Failed to generate summary");
+        }
+      } finally {
+        if (!signal.aborted) setLoading(false);
+        console.log(
+          "[SummaryModal] fetchSummary done, aborted:",
+          signal.aborted,
+        );
       }
-      const data = await res.json();
-      console.log("[SummaryModal] Response data keys:", Object.keys(data));
-      console.log("[SummaryModal] Summary length:", data.summary?.length ?? 0);
-      if (!signal.aborted) setSummary(data.summary || "No summary available.");
-    } catch (e: any) {
-      console.log("[SummaryModal] Fetch error:", e?.name, e?.message);
-      if (signal.aborted) {
-        console.log("[SummaryModal] Request was aborted, ignoring");
-        return;
-      }
-      if (e?.name === "AbortError") {
-        setError("Request timed out. Tap to retry.");
-      } else {
-        setError(e?.message ?? "Failed to generate summary");
-      }
-    } finally {
-      if (!signal.aborted) setLoading(false);
-      console.log("[SummaryModal] fetchSummary done, aborted:", signal.aborted);
-    }
-  }, [refinedText, sourceText, targetLang]);
+    },
+    [refinedText, sourceText, targetLang],
+  );
 
   // Fetch summary when modal opens
   useEffect(() => {
-    console.log("[SummaryModal] Effect fired — visible:", visible, "summary:", !!summary, "refinedText length:", refinedText.length);
+    console.log(
+      "[SummaryModal] Effect fired — visible:",
+      visible,
+      "summary:",
+      !!summary,
+      "refinedText length:",
+      refinedText.length,
+    );
 
     if (!visible) return;
     if (summary) {
@@ -389,9 +452,7 @@ export default function SummaryModal({
               <Ionicons name="sparkles" size={20} color={accent.base} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text
-                style={{ fontSize: 18, fontWeight: "600", color: "white" }}
-              >
+              <Text style={{ fontSize: 18, fontWeight: "600", color: "white" }}>
                 Summary & Q&A
               </Text>
               <Text
@@ -433,18 +494,18 @@ export default function SummaryModal({
                 justifyContent: "center",
               }}
             >
-              <Ionicons
-                name="close"
-                size={18}
-                color="rgba(255,255,255,0.5)"
-              />
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.5)" />
             </TouchableOpacity>
           </View>
 
           {/* Body */}
           {loading ? (
             <View
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
             >
               <ActivityIndicator size="large" color={accent.base} />
               <Text
@@ -458,7 +519,13 @@ export default function SummaryModal({
               </Text>
             </View>
           ) : error ? (
-            <View style={{ paddingHorizontal: 20, paddingVertical: 24, alignItems: "center" }}>
+            <View
+              style={{
+                paddingHorizontal: 20,
+                paddingVertical: 24,
+                alignItems: "center",
+              }}
+            >
               <View
                 style={{
                   backgroundColor: "rgba(248,113,113,0.1)",
@@ -479,7 +546,9 @@ export default function SummaryModal({
                   borderRadius: 20,
                 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#000" }}>
+                <Text
+                  style={{ fontSize: 14, fontWeight: "600", color: "#000" }}
+                >
                   Retry
                 </Text>
               </TouchableOpacity>
@@ -526,7 +595,10 @@ export default function SummaryModal({
                       }}
                     >
                       {msg.role === "assistant" ? (
-                        <MarkdownText content={msg.content} accentColor={accent.base} />
+                        <MarkdownText
+                          content={msg.content}
+                          accentColor={accent.base}
+                        />
                       ) : (
                         <Text
                           style={{

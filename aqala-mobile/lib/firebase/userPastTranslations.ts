@@ -17,6 +17,8 @@ export interface VerseHighlightData {
   endWord: number;
   verseKey: string;
   verseReference: string;
+  canonicalTranslation?: string;
+  useLiveTranscript?: boolean;
 }
 
 export interface PastTranslation {

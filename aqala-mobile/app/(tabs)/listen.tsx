@@ -16,6 +16,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useInterstitialAd } from "@/contexts/InterstitialAdContext";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNetworkState } from "expo-network";
 import { Ionicons } from "@expo/vector-icons";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import TafsirModal from "@/components/TafsirModal";
@@ -60,6 +61,13 @@ export default function ListenHomeScreen() {
   const [pastTranslationsLoading, setPastTranslationsLoading] = useState(false);
   const [pastTranslationsCollapsed, setPastTranslationsCollapsed] =
     useState(true);
+  const [pastTranslationsError, setPastTranslationsError] = useState<
+    string | null
+  >(null);
+  const networkState = useNetworkState();
+  const isNetworkBlocked =
+    networkState.isConnected === false ||
+    networkState.isInternetReachable === false;
   const [tafsirModalVisible, setTafsirModalVisible] = useState(false);
   const [tafsirLoading, setTafsirLoading] = useState(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
@@ -125,19 +133,28 @@ export default function ListenHomeScreen() {
       return;
     }
     setPastTranslationsLoading(true);
+    setPastTranslationsError(null);
     const unsub = subscribePastTranslations(
       user.uid,
       (items) => {
         setPastTranslations(items);
         setPastTranslationsLoading(false);
+        setPastTranslationsError(null);
       },
-      () => setPastTranslationsLoading(false),
+      () => {
+        setPastTranslationsLoading(false);
+        setPastTranslationsError(t("listen.pastTranslationsSyncIssue"));
+      },
       10,
     );
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, t]);
 
   const handleBeginListening = () => {
+    if (isNetworkBlocked) {
+      Alert.alert(t("listen.offlineTitle"), t("listen.needInternetForLive"));
+      return;
+    }
     showAdBeforeNavigation("/live-listen");
   };
 
@@ -630,6 +647,14 @@ export default function ListenHomeScreen() {
                     color="rgba(255,255,255,0.6)"
                   />
                 </TouchableOpacity>
+
+                {(pastTranslationsError || isNetworkBlocked) && (
+                  <View className="mt-2 px-2 py-2 rounded-lg bg-amber-900/25 border border-amber-500/20">
+                    <Text className="text-[11px] text-amber-100/95 leading-4">
+                      {pastTranslationsError ?? t("listen.offlineDetail")}
+                    </Text>
+                  </View>
+                )}
 
                 {!pastTranslationsCollapsed &&
                   (pastTranslationsLoading ? (

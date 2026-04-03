@@ -38,11 +38,8 @@ import {
   findVerseReference,
   formatVerseKeyAndReference,
   parseVerseRangeFromKey,
+  normalize as normalizeArabic,
 } from "@/lib/quran/findVerse";
-import {
-  alignVerseBoundsFromArabic,
-  arabicHaystackWords,
-} from "@/lib/quran/alignHighlightToTranslation";
 import { fetchCanonicalTranslationForKey } from "@/lib/quran/canonicalVerseTranslation";
 import type { VerseHighlight } from "@/components/VerseHighlightedText";
 
@@ -260,12 +257,9 @@ export default function NativeLiveListenScreen() {
   const detectingRef = useRef(false);
   const lastDetectedKeyRef = useRef<string | null>(null);
   const lastHighlightWordEndRef = useRef(0);
-  const verseWordStartRef = useRef(0);
-  /** Widen verse span per surah across debounced re-detects — API ranges must not shrink. */
   const lastSpanByChapterRef = useRef<
     Record<string, { startVerse: number; endVerse: number }>
   >({});
-  const arabicStartedRef = useRef(false);
   const savedTranslationTextRef = useRef(savedTranslationText);
   savedTranslationTextRef.current = savedTranslationText;
   const savedSourceTextRef = useRef(savedSourceText);
@@ -273,51 +267,56 @@ export default function NativeLiveListenScreen() {
   const targetLangRef = useRef(targetLang);
   targetLangRef.current = targetLang;
 
-  const VERSE_DETECT_DEBOUNCE_MS = 2000;
-  const MIN_ARABIC_WORDS_AFTER_SURAH = 6;
-  const VERSE_DETECT_INTERVAL_MS = 4000;
+  const VERSE_DETECT_DEBOUNCE_MS = 3500;
+  const MIN_ARABIC_WORDS_AFTER_SURAH = 12;
+  const VERSE_DETECT_INTERVAL_MS = 5000;
+  const SILENCE_COMMIT_MS = 3000;
   const throttleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSttLengthRef = useRef(0);
 
   const runVerseDetection = useCallback(
     async (fullArabic: string, wordEnd: number, forceCommit = false) => {
-      if (detectingRef.current) {
-        console.log("[LiveListen] Detection already running, skipping");
-        return;
-      }
+      if (detectingRef.current) return;
       if (fullArabic.trim().length < 10) return;
       detectingRef.current = true;
 
       try {
-        const arabicWordCount = fullArabic
-          .split(/\s+/)
-          .filter((w) => /[\u0600-\u06FF]/.test(w)).length;
         console.log(
-          `[LiveListen] ── Detection (arabicWords=${arabicWordCount}, transEnd=${wordEnd}, force=${forceCommit}) ──`,
-        );
-        console.log(
-          `[LiveListen] Arabic tail: ...${fullArabic.trim().slice(-80)}`,
+          `[LiveListen] ── Detection (transEnd=${wordEnd}, force=${forceCommit}) ──`,
         );
 
         const result = await findVerseReference(fullArabic.trim());
 
         if (!result) {
-          console.log("[LiveListen] No verse matched");
           detectingRef.current = false;
           return;
         }
 
         console.log(
-          `[LiveListen] Detected: ${result.reference} (${(result.confidence * 100).toFixed(0)}%)`,
+          `[LiveListen] Detected: ${result.reference} (${(result.confidence * 100).toFixed(0)}%) span=[${result.matchStartIdx},${result.matchEndIdx})/${result.sttWordCount}`,
         );
+
+        // Deferral: wait until enough Arabic words exist AFTER the verse
+        if (!forceCommit) {
+          const wordsAfterVerse =
+            result.sttWordCount - result.matchEndIdx;
+          console.log(
+            `[LiveListen] Deferral: ${wordsAfterVerse} words after verse (need ${MIN_ARABIC_WORDS_AFTER_SURAH})`,
+          );
+          if (wordsAfterVerse < MIN_ARABIC_WORDS_AFTER_SURAH) {
+            console.log("[LiveListen] DEFERRED — verse still in progress");
+            detectingRef.current = false;
+            return;
+          }
+        }
 
         const parsed = parseVerseRangeFromKey(result.verseKey);
         if (!parsed) {
-          console.log("[LiveListen] Bad verseKey:", result.verseKey);
           detectingRef.current = false;
           return;
         }
 
-        const prevChapter = lastDetectedKeyRef.current?.split(":")[0];
         const chStr = String(parsed.chapter);
         let startVerse = parsed.startVerse;
         let endVerse = parsed.endVerse;
@@ -327,7 +326,6 @@ export default function NativeLiveListenScreen() {
           startVerse = Math.min(kept.startVerse, startVerse);
           endVerse = Math.max(kept.endVerse, endVerse);
         }
-
         lastSpanByChapterRef.current[chStr] = { startVerse, endVerse };
 
         const { verseKey, reference } = formatVerseKeyAndReference(
@@ -338,60 +336,33 @@ export default function NativeLiveListenScreen() {
 
         const sameKey = verseKey === lastDetectedKeyRef.current;
         const endGrew = wordEnd > lastHighlightWordEndRef.current;
-
         if (sameKey && !endGrew) {
-          console.log("[LiveListen] Same verse, no word growth — skip");
           detectingRef.current = false;
           return;
-        }
-
-        if (prevChapter != null && prevChapter !== chStr) {
-          verseWordStartRef.current = lastHighlightWordEndRef.current;
-        }
-
-        const hintStart = chStr === "1" ? 0 : verseWordStartRef.current;
-
-        const bounds = alignVerseBoundsFromArabic(
-          fullArabic,
-          wordEnd,
-          verseKey,
-          hintStart,
-          wordEnd,
-        );
-
-        console.log(
-          `[LiveListen] Alignment: start=${bounds.startWord} end=${bounds.endWord} arabicEnd=${bounds.arabicMatchEnd ?? "none"}`,
-        );
-
-        if (!forceCommit && bounds.arabicMatchEnd != null) {
-          const arabicW = arabicHaystackWords(fullArabic);
-          const wordsAfterSurah = arabicW.length - bounds.arabicMatchEnd;
-          console.log(
-            `[LiveListen] Deferral: ${wordsAfterSurah} words after verse (need ${MIN_ARABIC_WORDS_AFTER_SURAH})`,
-          );
-          if (wordsAfterSurah < MIN_ARABIC_WORDS_AFTER_SURAH) {
-            console.log("[LiveListen] DEFERRED — verse still in progress");
-            detectingRef.current = false;
-            return;
-          }
         }
 
         lastDetectedKeyRef.current = verseKey;
         lastHighlightWordEndRef.current = wordEnd;
 
-        const startWord = Math.max(0, Math.min(bounds.startWord, wordEnd - 1));
-        const endWord = Math.max(
-          startWord + 1,
-          Math.min(bounds.endWord, wordEnd),
+        // Map Arabic match positions → English word positions via simple ratio
+        const ratio = wordEnd / Math.max(1, result.sttWordCount);
+        let startWord = Math.floor(result.matchStartIdx * ratio);
+        let endWord = Math.ceil(result.matchEndIdx * ratio);
+
+        // Small padding (±2 words) to absorb STT timing drift
+        startWord = Math.max(0, startWord - 2);
+        endWord = Math.min(wordEnd, endWord + 2);
+
+        // Ensure minimum span
+        if (endWord <= startWord) endWord = Math.min(wordEnd, startWord + 4);
+
+        console.log(
+          `[LiveListen] COMMITTED: ${reference} words=[${startWord},${endWord}) ratio=${ratio.toFixed(2)}`,
         );
 
         const canonicalTranslation = await fetchCanonicalTranslationForKey(
           verseKey,
           targetLangRef.current,
-        );
-
-        console.log(
-          `[LiveListen] COMMITTED: ${reference} words=[${startWord},${endWord}) canonical=${!!canonicalTranslation}`,
         );
 
         setVerseHighlights((prev) => {
@@ -421,41 +392,14 @@ export default function NativeLiveListenScreen() {
   useEffect(() => {
     const wasListening = prevListeningRef.current;
     prevListeningRef.current = isListening;
-    if (!wasListening && isListening) {
-      arabicStartedRef.current = false;
-      verseWordStartRef.current = 0;
-    }
     if (wasListening && !isListening && throttleTimerRef.current) {
       clearInterval(throttleTimerRef.current);
       throttleTimerRef.current = null;
     }
   }, [isListening]);
 
-  // Debounce on Arabic only — including savedTranslationText resets the timer
-  // on every word, so detection almost never runs. Use ref for word count at fire time.
   useEffect(() => {
     if (!savedSourceText) return;
-
-    if (!arabicStartedRef.current) {
-      arabicStartedRef.current = true;
-      const snapTransWordCount = () =>
-        savedTranslationTextRef.current.split(/\s+/).filter(Boolean).length;
-      verseWordStartRef.current = snapTransWordCount();
-      // Translation often commits a frame after Arabic STT; without this, hintStart
-      // stays 0 and the verse card can pin to the top of the English stream.
-      requestAnimationFrame(() => {
-        verseWordStartRef.current = Math.max(
-          verseWordStartRef.current,
-          snapTransWordCount(),
-        );
-      });
-      setTimeout(() => {
-        verseWordStartRef.current = Math.max(
-          verseWordStartRef.current,
-          snapTransWordCount(),
-        );
-      }, 48);
-    }
 
     if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
 
@@ -525,8 +469,6 @@ export default function NativeLiveListenScreen() {
     lastDetectedKeyRef.current = null;
     lastHighlightWordEndRef.current = 0;
     lastSpanByChapterRef.current = {};
-    arabicStartedRef.current = false;
-    verseWordStartRef.current = 0;
     try {
       recording.start();
     } catch (e: any) {

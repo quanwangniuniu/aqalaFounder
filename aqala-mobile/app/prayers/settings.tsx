@@ -18,6 +18,8 @@ import {
 } from "@/lib/prayer/calculations";
 import WallpaperBackground from "@/components/WallpaperBackground";
 
+const GOLD = "#D4AF37";
+
 const SCHOOL_OPTIONS: { value: School; label: string; desc: string }[] = [
   { value: 0, label: "Standard", desc: "Shafi'i, Maliki, Hanbali" },
   { value: 1, label: "Hanafi", desc: "Later Asr time" },
@@ -80,7 +82,7 @@ export default function PrayerSettingsScreen() {
         >
           {/* ── Calculation Section ── */}
           <View>
-            <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: accent.base }}>
+            <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: GOLD }}>
               Calculation
             </Text>
 
@@ -122,7 +124,7 @@ export default function PrayerSettingsScreen() {
                       >
                         <Text
                           className={`text-sm ${isSelected ? "font-medium" : ""}`}
-                          style={{ color: isSelected ? accent.base : "white" }}
+                          style={{ color: isSelected ? GOLD : "white" }}
                         >
                           {method.name}
                         </Text>
@@ -130,7 +132,7 @@ export default function PrayerSettingsScreen() {
                           <Ionicons
                             name="checkmark"
                             size={20}
-                            color={accent.base}
+                            color={GOLD}
                           />
                         )}
                       </TouchableOpacity>
@@ -159,7 +161,7 @@ export default function PrayerSettingsScreen() {
                       >
                         <Text
                           className={`font-medium text-sm ${!isSelected ? "text-white" : ""}`}
-                          style={isSelected ? { color: accent.base } : undefined}
+                          style={isSelected ? { color: GOLD } : undefined}
                         >
                           {option.label}
                         </Text>
@@ -250,7 +252,7 @@ export default function PrayerSettingsScreen() {
 
           {/* ── Location Section ── */}
           <View>
-            <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: accent.base }}>
+            <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: GOLD }}>
               Location
             </Text>
 
@@ -289,19 +291,19 @@ export default function PrayerSettingsScreen() {
               <Ionicons
                 name="information-circle-outline"
                 size={20}
-                color={accent.base}
+                color={GOLD}
                 style={{ marginTop: 2, flexShrink: 0 }}
               />
               <View className="flex-1">
                 <Text className="text-sm text-white/60 mb-2">
-                  <Text className="font-semibold" style={{ color: accent.base }}>
+                  <Text className="font-semibold text-white">
                     Calculation Methods
                   </Text>{" "}
                   differ based on the angle of the sun used to determine Fajr
                   and Isha times. Choose the method used in your region.
                 </Text>
                 <Text className="text-sm text-white/60">
-                  <Text className="font-semibold" style={{ color: accent.base }}>
+                  <Text className="font-semibold text-white">
                     School
                   </Text>{" "}
                   affects Asr timing: Standard (Shafi&apos;i) calculates when

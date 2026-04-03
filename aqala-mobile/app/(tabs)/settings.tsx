@@ -152,7 +152,7 @@ export default function SettingsScreen() {
                     }`}
                   >
                     <Text className="text-white text-base">
-                      {lang.flag} {lang.label} ({lang.nativeLabel})
+                      {lang.label} ({lang.nativeLabel})
                     </Text>
                     {language === lang.code && (
                       <Ionicons name="checkmark" size={20} color="#D4AF37" />

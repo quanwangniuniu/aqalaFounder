@@ -98,7 +98,7 @@ export default function PrayerScreen() {
               />
               <View className="flex-row items-center justify-between">
                 <View>
-                  <Text className="text-xs text-white/50 uppercase tracking-wider mb-1">{t("prayer.nextPrayer")}</Text>
+                  <Text className="text-xs uppercase tracking-wider mb-1" style={{ color: GOLD }}>{t("prayer.nextPrayer")}</Text>
                   <Text className="text-3xl font-bold" style={{ color: GOLD }}>{t(`prayer.${nextPrayer.name.toLowerCase()}` as const)}</Text>
                   <Text className="text-sm text-white/60 mt-1">
                     {(nextPrayer as any).isTomorrow ? t("prayer.tomorrow") : `${t("prayer.inTime")} ${timeUntilNext}`}
@@ -157,7 +157,7 @@ export default function PrayerScreen() {
           {/* Prayer Times List */}
           {!loading && !error && prayerTimes && (
             <View>
-              <Text className="text-sm font-medium mb-4 uppercase tracking-wider" style={{ color: accent.base }}>
+              <Text className="text-sm font-medium mb-4 uppercase tracking-wider" style={{ color: GOLD }}>
                 {t("prayer.todaysPrayers")}
               </Text>
               <View className="gap-2">
@@ -237,7 +237,7 @@ export default function PrayerScreen() {
           {/* Calculation Method Info */}
           {!loading && !error && prayerTimes && (
             <View className="bg-white/5 rounded-2xl p-5 border border-white/5">
-              <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: accent.base }}>
+              <Text className="text-sm font-medium mb-3 uppercase tracking-wider" style={{ color: GOLD }}>
                 {t("prayer.calculationMethod")}
               </Text>
               <View className="flex-row items-center justify-between">
@@ -252,7 +252,7 @@ export default function PrayerScreen() {
                 </View>
                 <Link href="/prayers/settings" asChild>
                   <TouchableOpacity>
-                    <Text className="text-xs" style={{ color: accent.base }}>{t("prayer.change")}</Text>
+                    <Text className="text-xs text-white/90">{t("prayer.change")}</Text>
                   </TouchableOpacity>
                 </Link>
               </View>

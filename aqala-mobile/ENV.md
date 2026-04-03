@@ -70,44 +70,56 @@ You should now have:
 
 There are two places: **EAS builds** (cloud) and **local run** (your machine).
 
-### Option 1 – EAS builds (when you run `eas build`)
+### Option 1 – EAS builds (`eas build`)
 
-1. Open **`aqala-mobile/eas.json`** in your editor.
-2. Find the **`development`** profile (first block under `"build"`).
-3. Inside that block, find **`"env"`**. Replace these placeholders with the values from Part B:
+Sensitive values are **not** stored in `eas.json`. Profiles use EAS **environments** so variables come from [Expo — Environment variables](https://docs.expo.dev/eas/environment-variables/) (dashboard or `eas env:create`).
 
-   - `REPLACE_WITH_AQALA_DEV_API_KEY` → **apiKey** from Step 2
-   - `REPLACE_WITH_AQALA_DEV_SENDER_ID` → **messagingSenderId** from Step 2
-   - `REPLACE_WITH_AQALA_DEV_APP_ID` → **appId** from Step 2
-   - `REPLACE_WITH_AQALA_DEV_WEB_CLIENT_ID` → **Web client ID** from Step 3
-   - `REPLACE_WITH_AQALA_DEV_IOS_CLIENT_ID` → **iOS client ID** from Step 3
+| Build profile | EAS `environment` | Firebase project |
+|---------------|-------------------|------------------|
+| `development`, `development-device`, `preview` | `development` | **aqala-dev** |
+| `production` | `production` | **aqala-de71b** |
 
-4. Do the **same five replacements** in:
-   - **`development-device`** profile
-   - **`preview`** profile  
+For the **`development`** EAS environment, create **plain text or sensitive** variables (names must match exactly):
 
-   (Same keys, same values – just search for `REPLACE_WITH_AQALA_DEV` in the file and replace all.)
+- `EXPO_PUBLIC_FIREBASE_API_KEY` — Firebase Web **apiKey** (Part B)
+- `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` — **messagingSenderId**
+- `EXPO_PUBLIC_FIREBASE_APP_ID` — **appId**
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` — Google OAuth Web client ID (Part B Step 3)
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` — Google OAuth iOS client ID
+- `EXPO_PUBLIC_SONIOX_API_KEY` — Soniox client key used by the app
 
-5. Save the file.
+For the **`production`** EAS environment, set the **same six variable names** with **aqala-de71b** / production Google / production Soniox values.
 
-Now:
-- `eas build --profile development`  
-- `eas build --profile preview`  
-will use **aqala-dev**.
+Non-secret routing (project id, auth domain, AdMob unit IDs, Stripe price IDs, etc.) stays in `eas.json` under each profile’s `env` block.
 
-- `eas build --profile production`  
-will keep using **aqala-de71b** (no changes needed).
+**CI:** If you run `eas build` from GitHub Actions (or any CI), use an `EXPO_TOKEN` with access to this project. EAS injects dashboard variables during the remote build; you do not need to duplicate `EXPO_PUBLIC_*` secrets in GitHub unless you intentionally bypass EAS env (not recommended).
+
+**CLI examples** (run from `aqala-mobile/`):
+
+```bash
+# List variables for an environment
+eas env:list development
+
+# Create/update one variable (repeat per name; use --force to overwrite)
+eas env:create development \
+  --name EXPO_PUBLIC_FIREBASE_API_KEY \
+  --value "<from Firebase>" \
+  --visibility secret \
+  --non-interactive
+```
+
+After the first production build with this setup, confirm all six variables exist for **production** on expo.dev; missing vars fail the build at bundle time.
 
 ### Option 2 – Local run (Expo Go / iOS simulator with `npx expo start`)
 
-**By default, local dev now uses aqala-dev** so you don’t touch production.
+**By default, local dev uses aqala-dev** so you don’t touch production.
 
 1. In the **`aqala-mobile`** folder, copy the example file:
    ```bash
    cp .env.development.example .env.development
    ```
-2. Open **`.env.development`** and fill in the aqala-dev values from Part B (apiKey, messagingSenderId, appId, Google client IDs). Same keys as in the example; use your real aqala-dev values.
-3. Keep **`.env`** with production (aqala-de71b) for production builds. When you run `npx expo start`, the app loads `.env` then **`.env.development`**; the latter overrides, so you get **aqala-dev**.
+2. Open **`.env.development`** and fill in the aqala-dev values from Part B (apiKey, messagingSenderId, appId, Google client IDs, Soniox, LiveKit if needed). Keys match `.env.development.example`.
+3. Keep **`.env`** with production (aqala-de71b) for production-oriented local runs. When you run `npx expo start`, the app loads `.env` then **`.env.development`**; the latter overrides, so you get **aqala-dev**.
 4. Restart the dev server: stop it (Ctrl+C), then run `npx expo start` again.
 
 Then when you open the app in Expo Go or the iOS simulator, it will use **aqala-dev**.
@@ -130,14 +142,14 @@ npx expo start
 cd aqala-mobile
 eas build --profile development
 ```
-→ Uses **aqala-dev** (after you complete Part C Option 1).
+→ Uses **aqala-dev** once the **development** EAS environment has the six variables in Part C Option 1.
 
 **Build for App Store / Play Store:**
 ```bash
 cd aqala-mobile
 eas build --profile production
 ```
-→ Uses **aqala-de71b** (production). No extra setup.
+→ Uses **aqala-de71b** once the **production** EAS environment has the same six variable names with prod values.
 
 ---
 
@@ -146,7 +158,7 @@ eas build --profile production
 - [ ] Part B: Got apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId from Firebase (aqala-dev) — from **Web** or **iOS** app.
 - [ ] Part B (iOS): If using native iOS builds, downloaded **GoogleService-Info.plist** from the **iOS** app (Apple apps → Aqala) and placed it in `aqala-mobile/`; use aqala-dev’s plist for dev builds, aqala-de71b’s for production.
 - [ ] Part B: Got Web and iOS OAuth client IDs from Google Cloud (for aqala-dev).
-- [ ] Part C Option 1: Replaced all `REPLACE_WITH_AQALA_DEV_*` in `eas.json` in the development, development-device, and preview profiles.
+- [ ] Part C Option 1: Created the six EAS variables on expo.dev for **development** (aqala-dev) and **production** (aqala-de71b), names listed in Part C Option 1.
 - [ ] Part C Option 2 (if you use Expo Go / simulator): Created `aqala-mobile/.env.development` from `.env.development.example` with aqala-dev values and restarted `npx expo start`.
 
 After this, dev builds and (if you set .env) local run use **aqala-dev**; production builds use **aqala-de71b**.

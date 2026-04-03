@@ -8,6 +8,9 @@ expo-env.d.ts
 ios/
 android/
 
+# Firebase Android (download from Firebase Console; never commit real file)
+google-services.json
+
 # Env files
 .env
 .env.local
