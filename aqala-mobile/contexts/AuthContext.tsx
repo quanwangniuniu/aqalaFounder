@@ -2,7 +2,17 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useCa
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { signUpWithEmail, signInWithEmail, signInWithGoogleCredential, signInWithAppleCredential, signOut, sendPasswordResetEmailToUser, resetPasswordWithCode } from "@/lib/firebase/auth";
-import { createOrUpdateUserProfile, getPartnerDetails, getUserProfile, updateUserProfileFields } from "@/lib/firebase/users";
+import {
+  createOrUpdateUserProfile,
+  getPartnerDetails,
+  getUserProfile,
+  updatePostLoginOnboardingProfile,
+  updateUserProfileFields,
+  type ArabicFluency,
+  type PrimaryHelpFocus,
+  type PrimaryListenContext,
+} from "@/lib/firebase/users";
+import { registerAndSyncExpoPushToken, removeExpoPushTokenForThisDevice } from "@/lib/notifications/pushRegistration";
 import { AuthContextType, User, PartnerInfo, mapFirebaseUser } from "@/types/auth";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
@@ -89,6 +99,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             photoURL: profile?.photoURL || firebaseUser.photoURL,
             username: profile?.username || null,
             admin: profile?.admin || false,
+            postLoginOnboardingComplete:
+              profile?.postLoginOnboardingComplete ?? false,
+            arabicFluency: profile?.arabicFluency ?? null,
+            primaryHelpFocus: profile?.primaryHelpFocus ?? null,
+            primaryListenContext: profile?.primaryListenContext ?? null,
           });
 
           await fetchPartnerInfo(firebaseUser.uid);
@@ -104,6 +119,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return () => unsubscribe();
   }, [fetchPartnerInfo]);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    void registerAndSyncExpoPushToken(user.uid).catch((err) => {
+      console.warn("Push token registration failed:", err);
+    });
+  }, [user?.uid]);
 
   // Store pending username during signup flow
   const pendingUsernameRef = React.useRef<string | null>(null);
@@ -241,6 +263,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleSignOut = async (): Promise<void> => {
     try {
       setError(null);
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        await removeExpoPushTokenForThisDevice(uid).catch((err) => {
+          console.warn("Could not remove push token on sign-out:", err);
+        });
+      }
       await signOut();
     } catch (err: any) {
       const errorMessage = err.message || "Failed to sign out";
@@ -300,6 +328,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const savePostLoginQuestionnaire = async (data: {
+    arabicFluency: ArabicFluency;
+    primaryHelpFocus: PrimaryHelpFocus;
+    primaryListenContext: PrimaryListenContext;
+  }): Promise<void> => {
+    if (!user?.uid) throw new Error("No user logged in");
+    try {
+      setError(null);
+      await updatePostLoginOnboardingProfile(user.uid, {
+        ...data,
+        postLoginOnboardingComplete: true,
+      });
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...data,
+              postLoginOnboardingComplete: true,
+            }
+          : null
+      );
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to save preferences";
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -315,6 +371,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     confirmPasswordReset: handleConfirmPasswordReset,
     refreshPartnerInfo,
     updateUserProfile,
+    savePostLoginQuestionnaire,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
