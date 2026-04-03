@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useNetworkState } from "expo-network";
 
 import WallpaperBackground from "@/components/WallpaperBackground";
 import VerseModal from "@/components/VerseModal";
@@ -35,26 +36,37 @@ export default function PastTranslationScreen() {
 
   const [translation, setTranslation] = useState<PastTranslation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [selectedVerseKey, setSelectedVerseKey] = useState<string | null>(null);
+  const networkState = useNetworkState();
+  const isNetworkBlocked =
+    networkState.isConnected === false ||
+    networkState.isInternetReachable === false;
+
+  const loadTranslation = useCallback(async () => {
+    if (!id) return;
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const pt = await getPastTranslation(user.uid, id);
+      setTranslation(pt);
+    } catch (e) {
+      console.error("Failed to load past translation:", e);
+      setLoadError(true);
+      setTranslation(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.uid, id]);
 
   useEffect(() => {
-    if (!user?.uid || !id) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const pt = await getPastTranslation(user.uid, id);
-        if (!cancelled) setTranslation(pt);
-      } catch (e) {
-        console.error("Failed to load past translation:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.uid, id]);
+    void loadTranslation();
+  }, [loadTranslation]);
 
   
 
@@ -178,21 +190,44 @@ export default function PastTranslationScreen() {
           <Text className="text-white/40 text-sm mt-3">Loading...</Text>
         </View>
       ) : !translation ? (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 24,
+          }}
+        >
           <Ionicons
-            name="document-text-outline"
+            name={
+              loadError || isNetworkBlocked
+                ? "cloud-offline-outline"
+                : "document-text-outline"
+            }
             size={48}
             color="rgba(255,255,255,0.15)"
           />
-          <Text className="text-white/60 text-center mt-4 mb-6">
-            Translation not found or may have been deleted.
+          <Text className="text-white/60 text-center mt-4 mb-2 px-2">
+            {loadError || isNetworkBlocked
+              ? t("listen.firestoreLoadFailed")
+              : "Translation not found or may have been deleted."}
           </Text>
+          {(loadError || isNetworkBlocked) && (
+            <TouchableOpacity
+              onPress={() => void loadTranslation()}
+              className="px-5 py-2.5 rounded-full mb-4"
+              style={{ backgroundColor: accent.base }}
+            >
+              <Text className="text-[#032117] font-semibold">
+                {t("listen.retry")}
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPress={() => router.back()}
-            className="px-5 py-2.5 rounded-full"
-            style={{ backgroundColor: accent.base }}
+            className="px-5 py-2.5 rounded-full bg-white/10"
           >
-            <Text className="text-[#032117] font-semibold">Go back</Text>
+            <Text className="text-white font-semibold">Go back</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -264,9 +299,15 @@ export default function PastTranslationScreen() {
                       endWord: h.endWord,
                       verseKey: h.verseKey,
                       verseReference: h.verseReference,
+                      ...(h.canonicalTranslation
+                        ? { canonicalTranslation: h.canonicalTranslation }
+                        : {}),
                     }))}
                     accentColor={accent.base}
                     onVersePress={setSelectedVerseKey}
+                    writingDirection={
+                      translation.targetLang === "ar" ? "rtl" : "ltr"
+                    }
                   />
                 </View>
               ))

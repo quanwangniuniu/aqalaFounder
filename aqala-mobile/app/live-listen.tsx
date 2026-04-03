@@ -16,11 +16,13 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRecording } from "@soniox/react";
 import { useKeepAwake } from "expo-keep-awake";
+import { useNetworkState } from "expo-network";
 import {
   getRecordingPermissionsAsync,
   requestRecordingPermissionsAsync,
 } from "expo-audio";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import WallpaperBackground from "@/components/WallpaperBackground";
 import VerseModal from "@/components/VerseModal";
@@ -32,7 +34,16 @@ import { useLanguage, LANGUAGE_OPTIONS } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { savePastTranslation } from "@/lib/firebase/userPastTranslations";
 import { SonioxAudioSource } from "@/lib/audio/SonioxAudioSource";
-import { findVerseReference } from "@/lib/quran/findVerse";
+import {
+  findVerseReference,
+  formatVerseKeyAndReference,
+  parseVerseRangeFromKey,
+} from "@/lib/quran/findVerse";
+import {
+  alignVerseBoundsFromArabic,
+  arabicHaystackWords,
+} from "@/lib/quran/alignHighlightToTranslation";
+import { fetchCanonicalTranslationForKey } from "@/lib/quran/canonicalVerseTranslation";
 import type { VerseHighlight } from "@/components/VerseHighlightedText";
 
 // ── Fade-in wrapper for new content ──────────────────────────────────
@@ -111,6 +122,11 @@ export default function NativeLiveListenScreen() {
   const { language, t } = useLanguage();
   const { getGradientColors, getAccentColor } = usePreferences();
   const accent = getAccentColor();
+  const wallpaperGradient = getGradientColors();
+  const networkState = useNetworkState();
+  const isNetworkBlocked =
+    networkState.isConnected === false ||
+    networkState.isInternetReachable === false;
 
   // ── State ──────────────────────────────────────────────────────────
 
@@ -125,6 +141,7 @@ export default function NativeLiveListenScreen() {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [savingPast, setSavingPast] = useState(false);
   const [savedPast, setSavedPast] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedTranslationText, setSavedTranslationText] = useState("");
   const [verseHighlights, setVerseHighlights] = useState<VerseHighlight[]>([]);
 
@@ -168,15 +185,7 @@ export default function NativeLiveListenScreen() {
     onConnected: () => {
       console.log("[LiveListen] Soniox WebSocket connected");
     },
-    onResult: (result) => {
-      const statuses = (result.tokens || []).map(
-        (t: any) => t.translation_status,
-      );
-      const unique = [...new Set(statuses)];
-      console.log(
-        `[LiveListen] tokens: ${result.tokens?.length}, statuses: ${JSON.stringify(unique)}`,
-      );
-    },
+    onResult: () => {},
   });
 
   const isListening = recording.isActive;
@@ -245,103 +254,279 @@ export default function NativeLiveListenScreen() {
 
   // ── Verse detection (debounced on Arabic source text) ───────────────
 
-  const verseDetectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const verseDetectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const detectingRef = useRef(false);
   const lastDetectedKeyRef = useRef<string | null>(null);
-  const revealTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  // Snapshot the translation word count when Arabic text starts arriving —
-  // this marks where the Quran recitation begins in the translation stream
+  const lastHighlightWordEndRef = useRef(0);
   const verseWordStartRef = useRef(0);
+  /** Widen verse span per surah across debounced re-detects — API ranges must not shrink. */
+  const lastSpanByChapterRef = useRef<
+    Record<string, { startVerse: number; endVerse: number }>
+  >({});
   const arabicStartedRef = useRef(false);
+  const savedTranslationTextRef = useRef(savedTranslationText);
+  savedTranslationTextRef.current = savedTranslationText;
+  const savedSourceTextRef = useRef(savedSourceText);
+  savedSourceTextRef.current = savedSourceText;
+  const targetLangRef = useRef(targetLang);
+  targetLangRef.current = targetLang;
 
-  const runVerseDetection = useCallback(async (
-    fullArabic: string,
-    wordEnd: number,
-  ) => {
-    if (detectingRef.current) return;
-    if (fullArabic.trim().length < 10) return;
-    detectingRef.current = true;
+  const VERSE_DETECT_DEBOUNCE_MS = 2000;
+  const MIN_ARABIC_WORDS_AFTER_SURAH = 6;
+  const VERSE_DETECT_INTERVAL_MS = 4000;
+  const throttleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    try {
-      const result = await findVerseReference(fullArabic.trim());
-      if (result) {
-        // Same result as last time — skip
-        if (result.verseKey === lastDetectedKeyRef.current) {
+  const runVerseDetection = useCallback(
+    async (fullArabic: string, wordEnd: number, forceCommit = false) => {
+      if (detectingRef.current) {
+        console.log("[LiveListen] Detection already running, skipping");
+        return;
+      }
+      if (fullArabic.trim().length < 10) return;
+      detectingRef.current = true;
+
+      try {
+        const arabicWordCount = fullArabic
+          .split(/\s+/)
+          .filter((w) => /[\u0600-\u06FF]/.test(w)).length;
+        console.log(
+          `[LiveListen] ── Detection (arabicWords=${arabicWordCount}, transEnd=${wordEnd}, force=${forceCommit}) ──`,
+        );
+        console.log(
+          `[LiveListen] Arabic tail: ...${fullArabic.trim().slice(-80)}`,
+        );
+
+        const result = await findVerseReference(fullArabic.trim());
+
+        if (!result) {
+          console.log("[LiveListen] No verse matched");
           detectingRef.current = false;
           return;
         }
-        lastDetectedKeyRef.current = result.verseKey;
 
-        const wordStart = verseWordStartRef.current;
+        console.log(
+          `[LiveListen] Detected: ${result.reference} (${(result.confidence * 100).toFixed(0)}%)`,
+        );
 
-        // 3s reveal delay — text has been flowing as normal typewriter,
-        // now quietly wrap the verse block around it
-        const timer = setTimeout(() => {
-          setVerseHighlights((prev) => {
-            // Replace any existing highlight from the same chapter
-            const chapter = result.verseKey.split(":")[0];
-            const filtered = prev.filter(
-              (h) => h.verseKey.split(":")[0] !== chapter,
-            );
-            return [
-              ...filtered,
-              {
-                startWord: wordStart,
-                endWord: wordEnd,
-                verseKey: result.verseKey,
-                verseReference: result.reference,
-              },
-            ];
-          });
-        }, 3000);
-        revealTimersRef.current.push(timer);
+        const parsed = parseVerseRangeFromKey(result.verseKey);
+        if (!parsed) {
+          console.log("[LiveListen] Bad verseKey:", result.verseKey);
+          detectingRef.current = false;
+          return;
+        }
+
+        const prevChapter = lastDetectedKeyRef.current?.split(":")[0];
+        const chStr = String(parsed.chapter);
+        let startVerse = parsed.startVerse;
+        let endVerse = parsed.endVerse;
+
+        const kept = lastSpanByChapterRef.current[chStr];
+        if (kept) {
+          startVerse = Math.min(kept.startVerse, startVerse);
+          endVerse = Math.max(kept.endVerse, endVerse);
+        }
+
+        lastSpanByChapterRef.current[chStr] = { startVerse, endVerse };
+
+        const { verseKey, reference } = formatVerseKeyAndReference(
+          parsed.chapter,
+          startVerse,
+          endVerse,
+        );
+
+        const sameKey = verseKey === lastDetectedKeyRef.current;
+        const endGrew = wordEnd > lastHighlightWordEndRef.current;
+
+        if (sameKey && !endGrew) {
+          console.log("[LiveListen] Same verse, no word growth — skip");
+          detectingRef.current = false;
+          return;
+        }
+
+        if (prevChapter != null && prevChapter !== chStr) {
+          verseWordStartRef.current = lastHighlightWordEndRef.current;
+        }
+
+        const hintStart = chStr === "1" ? 0 : verseWordStartRef.current;
+
+        const bounds = alignVerseBoundsFromArabic(
+          fullArabic,
+          wordEnd,
+          verseKey,
+          hintStart,
+          wordEnd,
+        );
+
+        console.log(
+          `[LiveListen] Alignment: start=${bounds.startWord} end=${bounds.endWord} arabicEnd=${bounds.arabicMatchEnd ?? "none"}`,
+        );
+
+        if (!forceCommit && bounds.arabicMatchEnd != null) {
+          const arabicW = arabicHaystackWords(fullArabic);
+          const wordsAfterSurah = arabicW.length - bounds.arabicMatchEnd;
+          console.log(
+            `[LiveListen] Deferral: ${wordsAfterSurah} words after verse (need ${MIN_ARABIC_WORDS_AFTER_SURAH})`,
+          );
+          if (wordsAfterSurah < MIN_ARABIC_WORDS_AFTER_SURAH) {
+            console.log("[LiveListen] DEFERRED — verse still in progress");
+            detectingRef.current = false;
+            return;
+          }
+        }
+
+        lastDetectedKeyRef.current = verseKey;
+        lastHighlightWordEndRef.current = wordEnd;
+
+        const startWord = Math.max(0, Math.min(bounds.startWord, wordEnd - 1));
+        const endWord = Math.max(
+          startWord + 1,
+          Math.min(bounds.endWord, wordEnd),
+        );
+
+        const canonicalTranslation = await fetchCanonicalTranslationForKey(
+          verseKey,
+          targetLangRef.current,
+        );
+
+        console.log(
+          `[LiveListen] COMMITTED: ${reference} words=[${startWord},${endWord}) canonical=${!!canonicalTranslation}`,
+        );
+
+        setVerseHighlights((prev) => {
+          const filtered = prev.filter(
+            (h) => h.verseKey.split(":")[0] !== chStr,
+          );
+          const next: VerseHighlight = {
+            startWord,
+            endWord,
+            verseKey,
+            verseReference: reference,
+          };
+          if (canonicalTranslation) {
+            next.canonicalTranslation = canonicalTranslation;
+          }
+          return [...filtered, next];
+        });
+      } catch (err) {
+        console.warn("[LiveListen] Detection failed:", err);
       }
-    } catch (err) {
-      console.warn("[VerseDetect] Detection failed:", err);
-    }
-    detectingRef.current = false;
-  }, []);
+      detectingRef.current = false;
+    },
+    [],
+  );
 
-  // 5s debounce — only fires after Arabic text has been stable for 5 seconds,
-  // meaning the reciter has clearly moved on from the Quran verse
+  const prevListeningRef = useRef(false);
+  useEffect(() => {
+    const wasListening = prevListeningRef.current;
+    prevListeningRef.current = isListening;
+    if (!wasListening && isListening) {
+      arabicStartedRef.current = false;
+      verseWordStartRef.current = 0;
+    }
+    if (wasListening && !isListening && throttleTimerRef.current) {
+      clearInterval(throttleTimerRef.current);
+      throttleTimerRef.current = null;
+    }
+  }, [isListening]);
+
+  // Debounce on Arabic only — including savedTranslationText resets the timer
+  // on every word, so detection almost never runs. Use ref for word count at fire time.
   useEffect(() => {
     if (!savedSourceText) return;
 
-    // Mark where in the translation the Arabic recitation started
     if (!arabicStartedRef.current) {
       arabicStartedRef.current = true;
-      const currentWords = savedTranslationText.split(/\s+/).filter(Boolean).length;
-      verseWordStartRef.current = currentWords;
+      const snapTransWordCount = () =>
+        savedTranslationTextRef.current.split(/\s+/).filter(Boolean).length;
+      verseWordStartRef.current = snapTransWordCount();
+      // Translation often commits a frame after Arabic STT; without this, hintStart
+      // stays 0 and the verse card can pin to the top of the English stream.
+      requestAnimationFrame(() => {
+        verseWordStartRef.current = Math.max(
+          verseWordStartRef.current,
+          snapTransWordCount(),
+        );
+      });
+      setTimeout(() => {
+        verseWordStartRef.current = Math.max(
+          verseWordStartRef.current,
+          snapTransWordCount(),
+        );
+      }, 48);
     }
 
     if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
 
     verseDetectTimerRef.current = setTimeout(() => {
-      const transWords = savedTranslationText.split(/\s+/).filter(Boolean);
-      // Send FULL accumulated Arabic for correct surah identification
+      const transWords = savedTranslationTextRef.current
+        .split(/\s+/)
+        .filter(Boolean);
+      console.log(
+        `[LiveListen] Debounce fired (${transWords.length} trans words)`,
+      );
       runVerseDetection(savedSourceText, transWords.length);
-      // Reset start marker for next verse
-      arabicStartedRef.current = false;
-    }, 5000);
+    }, VERSE_DETECT_DEBOUNCE_MS);
 
     return () => {
-      if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
+      if (verseDetectTimerRef.current)
+        clearTimeout(verseDetectTimerRef.current);
     };
-  }, [savedSourceText, savedTranslationText, runVerseDetection]);
+  }, [savedSourceText, runVerseDetection]);
 
-  // Cleanup reveal timers on unmount
+  // Periodic detection while listening (catches verses during continuous speech)
   useEffect(() => {
+    if (!isListening) return;
+    const id = setInterval(() => {
+      const src = savedSourceTextRef.current;
+      if (!src || src.trim().length < 10) return;
+      const transWords = savedTranslationTextRef.current
+        .split(/\s+/)
+        .filter(Boolean);
+      console.log(
+        `[LiveListen] Periodic check (${transWords.length} trans words)`,
+      );
+      runVerseDetection(src, transWords.length);
+    }, VERSE_DETECT_INTERVAL_MS);
+    throttleTimerRef.current = id;
     return () => {
-      revealTimersRef.current.forEach(clearTimeout);
+      clearInterval(id);
+      if (throttleTimerRef.current === id) throttleTimerRef.current = null;
     };
-  }, []);
+  }, [isListening, runVerseDetection]);
 
   // ── Handlers ──────────────────────────────────────────────────────
 
+  const recordingStopRef = useRef(recording.stop);
+  recordingStopRef.current = recording.stop;
+
+  useEffect(() => {
+    if (!isListening || !isNetworkBlocked) return;
+    void (async () => {
+      try {
+        await recordingStopRef.current();
+      } catch {}
+      setHasStopped(true);
+      setError(t("listen.connectionLost"));
+    })();
+  }, [isListening, isNetworkBlocked, t]);
+
   const handleStart = useCallback(() => {
+    if (isNetworkBlocked) {
+      setError(t("listen.needInternetForLive"));
+      return;
+    }
     setError(null);
+    setSaveError(null);
     setHasStopped(false);
     setSavedPast(false);
+    setVerseHighlights([]);
+    lastDetectedKeyRef.current = null;
+    lastHighlightWordEndRef.current = 0;
+    lastSpanByChapterRef.current = {};
+    arabicStartedRef.current = false;
+    verseWordStartRef.current = 0;
     try {
       recording.start();
     } catch (e: any) {
@@ -354,7 +539,7 @@ export default function NativeLiveListenScreen() {
         setError(msg);
       }
     }
-  }, [recording]);
+  }, [recording, isNetworkBlocked, t]);
 
   const handleStop = useCallback(async () => {
     try {
@@ -366,7 +551,7 @@ export default function NativeLiveListenScreen() {
     if (verseDetectTimerRef.current) clearTimeout(verseDetectTimerRef.current);
     if (savedSourceText.trim().length >= 10) {
       const transWords = savedTranslationText.split(/\s+/).filter(Boolean);
-      runVerseDetection(savedSourceText, transWords.length);
+      runVerseDetection(savedSourceText, transWords.length, true);
     }
   }, [recording, savedSourceText, savedTranslationText, runVerseDetection]);
 
@@ -403,10 +588,9 @@ export default function NativeLiveListenScreen() {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
-    const safeSource = escape(sourceText || "(No source text recorded)").replace(
-      /\n/g,
-      "<br>",
-    );
+    const safeSource = escape(
+      sourceText || "(No source text recorded)",
+    ).replace(/\n/g, "<br>");
     const safeTranslation = escape(
       translatedText || "(No translation recorded)",
     ).replace(/\n/g, "<br>");
@@ -474,21 +658,27 @@ https://aqala.org
   const handleSave = useCallback(async () => {
     if (!user?.uid || savingPast || savedPast) return;
     if (!savedTranslationText.trim()) return;
+    if (isNetworkBlocked) {
+      setSaveError(t("listen.saveFailedOffline"));
+      return;
+    }
     setSavingPast(true);
+    setSaveError(null);
     try {
       await savePastTranslation(user.uid, {
         sourceText: savedSourceText,
         translatedParagraphs: [savedTranslationText.trim()],
-        verseReferences: verseHighlights.length > 0
-          ? [verseHighlights[0].verseReference]
-          : [],
+        verseReferences:
+          verseHighlights.length > 0 ? [verseHighlights[0].verseReference] : [],
         sourceLang: "ar",
         targetLang,
-        verseHighlights: verseHighlights.length > 0 ? verseHighlights : undefined,
+        verseHighlights:
+          verseHighlights.length > 0 ? verseHighlights : undefined,
       });
       setSavedPast(true);
     } catch (e) {
       console.error("Failed to save translation:", e);
+      setSaveError(t("listen.saveFailedOffline"));
     } finally {
       setSavingPast(false);
     }
@@ -500,6 +690,8 @@ https://aqala.org
     savedTranslationText,
     verseHighlights,
     targetLang,
+    isNetworkBlocked,
+    t,
   ]);
 
   // ── Derived ───────────────────────────────────────────────────────
@@ -620,21 +812,28 @@ https://aqala.org
           <Text
             style={{
               fontSize: 13,
-              color: "rgba(255,255,255,0.9)",
+              color: "rgba(255,255,255,0.95)",
               fontWeight: "600",
             }}
           >
-            {selectedLangOption?.flag} {selectedLangOption?.label}
+            {selectedLangOption?.label}
           </Text>
-          <Ionicons
-            name="chevron-down"
-            size={14}
-            color="rgba(255,255,255,0.5)"
-          />
+          <Ionicons name="chevron-down" size={14} color="#fff" />
         </TouchableOpacity>
       </View>
 
       {/* Mic permission denied */}
+      {isNetworkBlocked && (
+        <View className="px-4 py-2.5 bg-amber-900/35 border-b border-amber-500/25">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="cloud-offline-outline" size={18} color="#fcd34d" />
+            <Text className="text-amber-100 text-xs flex-1">
+              {t("listen.offlineDetail")}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {!micReady && (
         <View className="px-4 py-3 bg-red-900/30 border-b border-red-500/30">
           <Text className="text-red-300 text-xs mb-2">
@@ -676,7 +875,7 @@ https://aqala.org
       {/* Source (reference) panel — fixed 2-line height */}
       <View className="border-b border-white/5" style={{ height: 80 }}>
         <View className="px-4 pt-2 pb-1">
-          <Text className="text-white/40 text-xs font-medium uppercase tracking-wider">
+          <Text className="text-white/70 text-xs font-medium uppercase tracking-wider">
             Source / Reference
           </Text>
         </View>
@@ -705,11 +904,11 @@ https://aqala.org
               ) : null}
             </Text>
           ) : isListening ? (
-            <Text className="text-white/25 text-xs italic">
+            <Text className="text-white/50 text-xs italic">
               Listening for audio...
             </Text>
           ) : (
-            <Text className="text-white/25 text-xs italic">
+            <Text className="text-white/50 text-xs italic">
               Waiting for audio
             </Text>
           )}
@@ -745,6 +944,7 @@ https://aqala.org
             accentColor={accent.base}
             onVersePress={setSelectedVerseKey}
             maxWord={revealedWordCount}
+            writingDirection={targetLang === "ar" ? "rtl" : "ltr"}
           />
         ) : null}
 
@@ -769,7 +969,7 @@ https://aqala.org
                 style={{ opacity: 0.5 }}
               >
                 <ActivityIndicator size="small" color={accent.base} />
-                <Text className="text-white/30 text-sm">Listening...</Text>
+                <Text className="text-white/60 text-sm">Listening...</Text>
               </View>
             ) : null}
           </View>
@@ -780,11 +980,11 @@ https://aqala.org
           <View className="items-center pt-20">
             <View
               className="w-20 h-20 rounded-full items-center justify-center mb-4"
-              style={{ backgroundColor: `${accent.base}1A` }}
+              style={{ backgroundColor: `${accent.base}45` }}
             >
-              <Ionicons name="mic-outline" size={36} color={accent.base} />
+              <Ionicons name="mic-outline" size={36} color="#fff" />
             </View>
-            <Text className="text-white/50 text-base text-center">
+            <Text className="text-white/80 text-base text-center">
               Tap the microphone to begin{"\n"}live translation
             </Text>
           </View>
@@ -792,6 +992,12 @@ https://aqala.org
       </ScrollView>
 
       {/* Post-session actions */}
+      {showPostActions && saveError ? (
+        <View className="px-4 py-2 bg-amber-900/30 border-t border-amber-500/20">
+          <Text className="text-amber-100 text-xs text-center">{saveError}</Text>
+        </View>
+      ) : null}
+
       {showPostActions && (
         <View
           className="flex-row px-4 py-3 border-t border-white/10 gap-2"
@@ -812,12 +1018,8 @@ https://aqala.org
             onPress={handleCopy}
             className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/6"
           >
-            <Ionicons
-              name="share-outline"
-              size={16}
-              color="rgba(255,255,255,0.7)"
-            />
-            <Text className="text-white/70 text-sm font-medium">Share</Text>
+            <Ionicons name="share-outline" size={16} color="#fff" />
+            <Text className="text-white/90 text-sm font-medium">Share</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -832,14 +1034,14 @@ https://aqala.org
                 <Ionicons
                   name={savedPast ? "checkmark-circle" : "bookmark-outline"}
                   size={16}
-                  color={savedPast ? accent.base : "rgba(255,255,255,0.7)"}
+                  color={savedPast ? accent.base : "#fff"}
                 />
                 <Text
                   style={savedPast ? { color: accent.base } : undefined}
                   className={
                     savedPast
                       ? "text-sm font-medium"
-                      : "text-white/70 text-sm font-medium"
+                      : "text-white/90 text-sm font-medium"
                   }
                 >
                   {savedPast ? "Saved" : "Save"}
@@ -852,12 +1054,8 @@ https://aqala.org
             onPress={() => setShowEmailModal(true)}
             className="flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/6"
           >
-            <Ionicons
-              name="mail-outline"
-              size={16}
-              color="rgba(255,255,255,0.7)"
-            />
-            <Text className="text-white/70 text-sm font-medium">Email</Text>
+            <Ionicons name="mail-outline" size={16} color="#fff" />
+            <Text className="text-white/90 text-sm font-medium">Email</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -873,11 +1071,16 @@ https://aqala.org
         {micReady ? (
           <TouchableOpacity
             onPress={isListening ? handleStop : handleStart}
+            disabled={!isListening && isNetworkBlocked}
             style={{
               width: 72,
               height: 72,
               borderRadius: 36,
-              backgroundColor: isListening ? "#ef4444" : accent.base,
+              backgroundColor: isListening
+                ? "#ef4444"
+                : isNetworkBlocked
+                  ? "rgba(255,255,255,0.25)"
+                  : accent.base,
               alignItems: "center",
               justifyContent: "center",
               shadowColor: isListening ? "#ef4444" : accent.base,
@@ -890,23 +1093,25 @@ https://aqala.org
             <Ionicons
               name={isListening ? "stop" : "mic"}
               size={32}
-              color={isListening ? "white" : "#000"}
+              color="#fff"
             />
           </TouchableOpacity>
         ) : (
           <View className="items-center gap-2">
             <ActivityIndicator size="large" color={accent.base} />
-            <Text className="text-white/40 text-xs">
+            <Text className="text-white/60 text-xs">
               Requesting microphone...
             </Text>
           </View>
         )}
-        <Text className="text-white/30 text-xs mt-2">
-          {isListening
-            ? "Tap to stop"
-            : hasStopped
-              ? "Tap to start again"
-              : "Tap to begin"}
+        <Text className="text-white/70 text-xs mt-2 text-center px-4">
+          {isNetworkBlocked && !isListening
+            ? t("listen.needInternetForLive")
+            : isListening
+              ? "Tap to stop"
+              : hasStopped
+                ? "Tap to start again"
+                : "Tap to begin"}
         </Text>
       </View>
 
@@ -953,70 +1158,67 @@ https://aqala.org
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View
               style={{
-                backgroundColor: "#0a1f16",
                 borderTopLeftRadius: 20,
                 borderTopRightRadius: 20,
-                paddingBottom: 40,
                 maxHeight: "60%",
+                overflow: "hidden",
               }}
             >
-              <View className="flex-row items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
-                <Text className="text-white font-semibold text-base">
-                  Translate to
-                </Text>
-                <TouchableOpacity onPress={() => setShowLangPicker(false)}>
-                  <Ionicons
-                    name="close"
-                    size={22}
-                    color="rgba(255,255,255,0.5)"
-                  />
-                </TouchableOpacity>
-              </View>
-              <FlatList
-                data={LANG_OPTIONS}
-                keyExtractor={(item) => item.code}
-                renderItem={({ item }) => {
-                  const active = item.code === targetLang;
-                  return (
-                    <TouchableOpacity
-                      onPress={() => {
-                        handleLanguageChange(item.code);
-                        setShowLangPicker(false);
-                      }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 20,
-                        paddingVertical: 14,
-                        backgroundColor: active
-                          ? `${accent.base}15`
-                          : "transparent",
-                      }}
-                    >
-                      <Text style={{ fontSize: 20, marginRight: 12 }}>
-                        {item.flag}
-                      </Text>
-                      <Text
+              <LinearGradient
+                colors={wallpaperGradient as [string, string, ...string[]]}
+                style={{ paddingBottom: 40 }}
+              >
+                <View className="flex-row items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
+                  <Text className="text-white font-semibold text-base">
+                    Translate to
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowLangPicker(false)}>
+                    <Ionicons name="close" size={22} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+                <FlatList
+                  data={LANG_OPTIONS}
+                  keyExtractor={(item) => item.code}
+                  renderItem={({ item }) => {
+                    const active = item.code === targetLang;
+                    return (
+                      <TouchableOpacity
+                        onPress={() => {
+                          handleLanguageChange(item.code);
+                          setShowLangPicker(false);
+                        }}
                         style={{
-                          flex: 1,
-                          fontSize: 15,
-                          fontWeight: active ? "600" : "400",
-                          color: active ? accent.base : "rgba(255,255,255,0.8)",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingHorizontal: 20,
+                          paddingVertical: 14,
+                          backgroundColor: active
+                            ? "rgba(255,255,255,0.12)"
+                            : "transparent",
                         }}
                       >
-                        {item.label}
-                      </Text>
-                      {active && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={20}
-                          color={accent.base}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                }}
-              />
+                        <Text
+                          style={{
+                            flex: 1,
+                            fontSize: 15,
+                            fontWeight: active ? "600" : "400",
+                            color: active ? "#fff" : "rgba(255,255,255,0.85)",
+                          }}
+                        >
+                          {item.label}
+                        </Text>
+                        {active && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color={accent.base}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+              </LinearGradient>
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
