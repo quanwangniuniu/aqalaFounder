@@ -95,6 +95,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "nav.qibla": "Qibla",
     "nav.profile": "Profile",
     "nav.settings": "Settings",
+    "nav.surahFinder": "Find Surah",
     // Prayer
     "prayer.title": "Prayer Times",
     "prayer.qibla": "Qibla",
@@ -168,8 +169,33 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     // Listen / Tadabbur
     "listen.subheadline":
       "Finally understand the Qur'an as you hear it.",
-    "listen.beginLive": "Begin Live Understanding",
-    "listen.tapHint": "Tap during recitation or khutbah",
+    "listen.beginLive": "Listen & Translate",
+    "listen.tapHint": "Listen in one language, read in another — live",
+    "listen.surahFinderEntry": "Surah Detector",
+    "listen.surahFinderTitle": "Find the surah",
+    "listen.surahFinderSubtitle": "Name the surah · Arabic only",
+    "listen.surahFinderHint":
+      "Play recitation or hold your phone near the speaker. We match what we hear to the Qur'an.",
+    "listen.surahFinderMatchLabel": "Identified",
+    "listen.surahFinderConfidence":
+      "About {pct}% of what we heard matched the wording of this passage.",
+    "listen.surahFinderCertaintyStrong": "Strong match",
+    "listen.surahFinderCertaintyLikely": "Likely match",
+    "listen.surahFinderCertaintyTentative": "Best guess",
+    "listen.surahFinderRefining":
+      "Still listening — the score may improve as we hear more.",
+    "listen.surahFinderTapVerse": "Tap to read the verses",
+    "listen.surahFinderIdentifying": "Matching to the Qur'an…",
+    "listen.surahFinderHeard": "Heard (Arabic)",
+    "listen.surahFinderIdle":
+      "Tap the microphone while Qur'an is playing or being recited nearby.",
+    "listen.surahFinderTapStop": "Tap to stop",
+    "listen.surahFinderTapStart": "Tap to listen",
+    "listen.surahFinderFindAnother": "Find another surah",
+    "listen.surahFinderPastDetections": "Past detections",
+    "listen.surahFinderPastEmpty": "None saved yet.",
+    "listen.surahFinderPastSignIn":
+      "Sign in to save surah finder history to your account.",
     "listen.todaysTadabbur": "Daily Reminder",
     "listen.oneMinuteExplanation": "Tafsir",
     "listen.tafsirLoading": "Loading explanation...",
@@ -307,6 +333,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "nav.qibla": "القبلة",
     "nav.profile": "الملف",
     "nav.settings": "الإعدادات",
+    "nav.surahFinder": "تعرّف على السورة",
     "prayer.title": "أوقات الصلاة",
     "prayer.qibla": "القبلة",
     "prayer.nextPrayer": "الصلاة القادمة",
@@ -377,6 +404,30 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
       "فهم القرآن أخيراً كما تسمعه.",
     "listen.beginLive": "ابدأ الفهم المباشر",
     "listen.tapHint": "اضغط أثناء التلاوة أو الخطبة",
+    "listen.surahFinderEntry": "كاشف السورة",
+    "listen.surahFinderTitle": "اعرف السورة",
+    "listen.surahFinderSubtitle": "اسم السورة · عربي فقط",
+    "listen.surahFinderHint":
+      "شغّل التلاوة أو قرّب الهاتف من السماعة. نطابق ما نسمعه مع القرآن.",
+    "listen.surahFinderMatchLabel": "تم التعرّف",
+    "listen.surahFinderConfidence":
+      "حوالي {pct}% من الكلمات المسموعة تطابق هذا المقطع (مقارنة النصّين).",
+    "listen.surahFinderCertaintyStrong": "تطابق قوي",
+    "listen.surahFinderCertaintyLikely": "مرجّح",
+    "listen.surahFinderCertaintyTentative": "تخمين أولي",
+    "listen.surahFinderRefining": "ما زلنا نستمع — قد يتحسّن التقدير.",
+    "listen.surahFinderTapVerse": "اضغط لقراءة الآيات",
+    "listen.surahFinderIdentifying": "جاري المطابقة مع القرآن…",
+    "listen.surahFinderHeard": "المسموع (عربي)",
+    "listen.surahFinderIdle":
+      "اضغط الميكروفون أثناء تشغيل القرآن أو التلاوة بجانبك.",
+    "listen.surahFinderTapStop": "اضغط للإيقاف",
+    "listen.surahFinderTapStart": "اضغط للاستماع",
+    "listen.surahFinderFindAnother": "سورة أخرى",
+    "listen.surahFinderPastDetections": "نتائج سابقة",
+    "listen.surahFinderPastEmpty": "لا توجد نتائج محفوظة بعد.",
+    "listen.surahFinderPastSignIn":
+      "سجّل الدخول لحفظ سجلّ التعرّف على السورات في حسابك.",
     "listen.todaysTadabbur": "تأمل اليوم",
     "listen.oneMinuteExplanation": "التفسير",
     "listen.tafsirLoading": "جاري تحميل الشرح...",

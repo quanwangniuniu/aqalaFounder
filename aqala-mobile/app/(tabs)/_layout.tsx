@@ -43,6 +43,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="surah-finder"
+        options={{
+          title: t("nav.surahFinder"),
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="radio-outline" size={TAB_BAR_ICON_SIZE} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="prayer"
         options={{
           title: t("nav.prayer"),

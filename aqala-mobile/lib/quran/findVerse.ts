@@ -470,9 +470,19 @@ function findChapterRegion(
 
 // ── Core detection ───────────────────────────────────────────────────
 
+/** `surahFinder`: match first ~1–2 verses (prefix needle), looser thresholds, extra logs — faster ID for the standalone tool. */
+export type FindVerseReferenceOptions = {
+  mode?: "default" | "surahFinder";
+};
+
+/** ~1–2 verses worth of words for quick surah confirmation (short chapters only). */
+const SURAH_FINDER_PREFIX_WORDS = 26;
+
 export async function findVerseReference(
   arabicText: string,
+  opts?: FindVerseReferenceOptions,
 ): Promise<VerseDetectionResult | null> {
+  const surahFinder = opts?.mode === "surahFinder";
   const sttWords = normalize(arabicText);
   if (sttWords.length < 4) return null;
 
@@ -498,6 +508,13 @@ export async function findVerseReference(
   console.log(
     `[VerseDetect] Trigram candidates: ${top.map(([ch, n]) => `${ch}:${CHAPTER_NAMES[ch] || "?"}(${n})`).join(", ")}`,
   );
+
+  if (surahFinder) {
+    const tail = sttWords.slice(Math.max(0, sttWords.length - 14));
+    console.log(
+      `[SurahFinder][VerseDetect] STT words=${sttWords.length} tail14=[${tail.join(" ")}]`,
+    );
+  }
 
   // Verify each candidate with greedy sequential match.
   // Only search the recent portion of the STT stream — searching the entire
@@ -528,8 +545,33 @@ export async function findVerseReference(
     let chWordEnd = chapterWords.length;
 
     if (chapterWords.length <= LONG_CHAPTER_THRESHOLD) {
-      m = bestMatch(sttWords, chapterWords, searchStart);
-      effectiveNeedleLen = chapterWords.length;
+      if (surahFinder) {
+        const prefixLen = Math.min(SURAH_FINDER_PREFIX_WORDS, chapterWords.length);
+        const prefixNeedle = chapterWords.slice(0, prefixLen);
+        m = bestMatch(sttWords, prefixNeedle, searchStart);
+        effectiveNeedleLen = prefixLen;
+        console.log(
+          `[SurahFinder][VerseDetect] ch=${chapter} (${CHAPTER_NAMES[chapter] || "?"}) prefixLen=${prefixLen} prefix5=[${prefixNeedle.slice(0, 5).join(" ")}] → matched=${m.matched}/${prefixLen}`,
+        );
+        if (m.matched < 4 && chapterWords.length > prefixLen) {
+          const mFull = bestMatch(sttWords, chapterWords, searchStart);
+          if (mFull.matched > m.matched) {
+            console.log(
+              `[SurahFinder][VerseDetect] ch=${chapter} fallback full chapter matched=${mFull.matched}/${chapterWords.length} (was ${m.matched}/${prefixLen})`,
+            );
+            m = mFull;
+            effectiveNeedleLen = chapterWords.length;
+          }
+        }
+        chWordStart = 0;
+        chWordEnd =
+          effectiveNeedleLen < chapterWords.length
+            ? effectiveNeedleLen
+            : chapterWords.length;
+      } else {
+        m = bestMatch(sttWords, chapterWords, searchStart);
+        effectiveNeedleLen = chapterWords.length;
+      }
     } else {
       const sttWindow = sttWords.slice(searchStart);
       const region = findChapterRegion(chapter, sttWindow, chapterWords.length);
@@ -562,12 +604,30 @@ export async function findVerseReference(
       `[VerseDetect:verify] ch=${chapter} (${CHAPTER_NAMES[chapter] || "?"}) matched=${m.matched}/${effectiveNeedleLen} ratio=${(ratio * 100).toFixed(0)}%`,
     );
 
-    const minMatched =
-      effectiveNeedleLen <= 15 ? 3 :
-      effectiveNeedleLen <= 30 ? 5 : 8;
-    const minRatio =
-      effectiveNeedleLen <= 15 ? 0.25 :
-      effectiveNeedleLen <= 30 ? 0.28 : 0.30;
+    const minMatched = surahFinder
+      ? effectiveNeedleLen <= 12
+        ? 3
+        : effectiveNeedleLen <= 18
+          ? 3
+          : effectiveNeedleLen <= 28
+            ? 4
+            : 6
+      : effectiveNeedleLen <= 15
+        ? 3
+        : effectiveNeedleLen <= 30
+          ? 5
+          : 8;
+    const minRatio = surahFinder
+      ? effectiveNeedleLen <= 15
+        ? 0.18
+        : effectiveNeedleLen <= 26
+          ? 0.2
+          : 0.28
+      : effectiveNeedleLen <= 15
+        ? 0.25
+        : effectiveNeedleLen <= 30
+          ? 0.28
+          : 0.3;
 
     if (
       m.matched >= minMatched &&
