@@ -1,4 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Pressable } from "react-native";
+import { useCallback } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Pressable,
+  Platform,
+  Alert,
+} from "react-native";
 import { Link, useRouter } from "expo-router";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -7,8 +17,27 @@ import { formatPrayerTime, getMethodName } from "@/lib/prayer/calculations";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import WallpaperBackground from "@/components/WallpaperBackground";
+import {
+  PRAYER_DISPLAY_NAME_TO_NOTIF_KEY,
+  requestPrayerNotificationPermission,
+  type PrayerNotifKey,
+} from "@/lib/prayer/prayerNotifications";
 
 const GOLD = "#D4AF37";
+
+/** Prayer row alert buttons: gold fill = on, dark + bright outline icon = off. */
+const ALERT_BTN_ON_STYLE = {
+  backgroundColor: "rgba(212, 175, 55, 0.32)",
+  borderColor: "rgba(212, 175, 55, 0.9)",
+  borderWidth: 1.5,
+} as const;
+const ALERT_BTN_OFF_STYLE = {
+  backgroundColor: "rgba(0, 0, 0, 0.45)",
+  borderColor: "rgba(255, 255, 255, 0.24)",
+  borderWidth: 1,
+} as const;
+const ALERT_ICON_ON = GOLD;
+const ALERT_ICON_OFF = "rgba(255, 255, 255, 0.82)";
 
 export default function PrayerScreen() {
   const { isRTL, t } = useLanguage();
@@ -25,7 +54,49 @@ export default function PrayerScreen() {
     timeUntilNext,
     refreshLocation,
     refreshPrayerTimes,
+    notificationPrefs,
+    updateNotificationPrefs,
   } = usePrayer();
+
+  const onTogglePrayerNotif = useCallback(
+    async (key: PrayerNotifKey) => {
+      if (Platform.OS === "web") return;
+      const next = !notificationPrefs.prayers[key];
+      if (next && !notificationPrefs.enabled) {
+        const ok = await requestPrayerNotificationPermission();
+        if (!ok) {
+          Alert.alert(
+            t("prayer.notifPermissionDenied"),
+            t("prayer.notifPermissionBody"),
+            [{ text: t("share.cancel"), style: "cancel" }],
+          );
+          return;
+        }
+        updateNotificationPrefs({
+          enabled: true,
+          prayers: { ...notificationPrefs.prayers, [key]: true },
+        });
+        return;
+      }
+      updateNotificationPrefs({
+        prayers: { ...notificationPrefs.prayers, [key]: next },
+      });
+    },
+    [notificationPrefs.enabled, notificationPrefs.prayers, t, updateNotificationPrefs],
+  );
+
+  const onTogglePrayerAdhan = useCallback(
+    (key: PrayerNotifKey) => {
+      if (Platform.OS === "web") return;
+      updateNotificationPrefs({
+        prayerAdhan: {
+          ...notificationPrefs.prayerAdhan,
+          [key]: !notificationPrefs.prayerAdhan[key],
+        },
+      });
+    },
+    [notificationPrefs.prayerAdhan, updateNotificationPrefs],
+  );
 
   const prayers = prayerTimes
     ? [
@@ -54,9 +125,12 @@ export default function PrayerScreen() {
             </View>
             <View className="flex-row items-center gap-2">
               <Link href="/qibla" asChild>
-                <TouchableOpacity className="flex-row items-center gap-2 px-3 py-1.5 rounded-full border border-white/20" style={{ backgroundColor: `${accent.base}20`, borderColor: `${accent.base}50` }}>
-                  <Ionicons name="compass" size={16} color={accent.base} />
-                  <Text className="text-xs font-medium" style={{ color: accent.base }}>{t("prayer.qibla")}</Text>
+                <TouchableOpacity
+                  className="flex-row items-center gap-2 px-3 py-1.5 rounded-full border border-white/25 bg-white/12"
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="compass" size={16} color="rgba(255,255,255,0.95)" />
+                  <Text className="text-xs font-semibold text-white">{t("prayer.qibla")}</Text>
                 </TouchableOpacity>
               </Link>
               <Link href="/prayers/settings" asChild>
@@ -160,11 +234,17 @@ export default function PrayerScreen() {
               <Text className="text-sm font-medium mb-4 uppercase tracking-wider" style={{ color: GOLD }}>
                 {t("prayer.todaysPrayers")}
               </Text>
+              {Platform.OS !== "web" ? (
+                <Text className="text-xs text-white/35 mb-3 -mt-2 leading-5">
+                  {t("prayer.notifCardHint")}
+                </Text>
+              ) : null}
               <View className="gap-2">
                 {prayers.map((prayer) => {
                   const isNext = nextPrayer?.name === prayer.name && !(nextPrayer as any).isTomorrow;
                   const isCurrent = currentPrayer === prayer.name;
                   const isPast = new Date() > prayer.time && !isCurrent;
+                  const notifKey = PRAYER_DISPLAY_NAME_TO_NOTIF_KEY[prayer.name];
 
                   return (
                     <View
@@ -177,9 +257,9 @@ export default function PrayerScreen() {
                         borderWidth: isCurrent ? 1.5 : 1,
                       }}
                     >
-                      <View className="flex-row items-center gap-4 flex-1">
+                      <View className="flex-row items-center gap-4 flex-1 min-w-0">
                         <View
-                          className="w-12 h-12 rounded-xl items-center justify-center"
+                          className="w-12 h-12 rounded-xl items-center justify-center flex-shrink-0"
                           style={{
                             backgroundColor: isNext
                               ? "rgba(255,255,255,0.15)"
@@ -216,7 +296,69 @@ export default function PrayerScreen() {
                           </Text>
                         </View>
                       </View>
-                      <View className="items-end ml-2">
+                      {Platform.OS !== "web" && notifKey ? (
+                        <View className="flex-row items-center gap-1.5 mr-1 flex-shrink-0">
+                          <TouchableOpacity
+                            onPress={() => void onTogglePrayerNotif(notifKey)}
+                            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              selected: notificationPrefs.prayers[notifKey],
+                            }}
+                            accessibilityLabel={`${t("prayer.notifBellA11y")}: ${t(`prayer.${notifKey}` as const)}`}
+                            className="w-10 h-10 rounded-full items-center justify-center"
+                            style={
+                              notificationPrefs.prayers[notifKey]
+                                ? ALERT_BTN_ON_STYLE
+                                : ALERT_BTN_OFF_STYLE
+                            }
+                          >
+                            <Ionicons
+                              name={
+                                notificationPrefs.prayers[notifKey]
+                                  ? "notifications"
+                                  : "notifications-outline"
+                              }
+                              size={20}
+                              color={
+                                notificationPrefs.prayers[notifKey]
+                                  ? ALERT_ICON_ON
+                                  : ALERT_ICON_OFF
+                              }
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => onTogglePrayerAdhan(notifKey)}
+                            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              selected: notificationPrefs.prayerAdhan[notifKey],
+                            }}
+                            accessibilityLabel={`${t("prayer.notifSoundA11y")}: ${t(`prayer.${notifKey}` as const)}`}
+                            className="w-10 h-10 rounded-full items-center justify-center"
+                            style={
+                              notificationPrefs.prayerAdhan[notifKey]
+                                ? ALERT_BTN_ON_STYLE
+                                : ALERT_BTN_OFF_STYLE
+                            }
+                          >
+                            <Ionicons
+                              name={
+                                notificationPrefs.prayerAdhan[notifKey]
+                                  ? "volume-high"
+                                  : "volume-mute-outline"
+                              }
+                              size={20}
+                              color={
+                                notificationPrefs.prayerAdhan[notifKey]
+                                  ? ALERT_ICON_ON
+                                  : ALERT_ICON_OFF
+                              }
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ) : null}
+                      <View className="items-end ml-1 flex-shrink-0" style={{ minWidth: 72 }}>
                         <Text
                           className="font-medium text-xl"
                           style={{ color: isCurrent ? GOLD : "rgba(255,255,255,0.85)" }}

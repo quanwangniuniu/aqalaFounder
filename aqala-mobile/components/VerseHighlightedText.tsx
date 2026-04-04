@@ -151,6 +151,8 @@ const BODY = {
   fontSize: 17,
   lineHeight: 28,
   color: "rgba(255,255,255,0.92)",
+  /** Lets long lines wrap inside flex parents instead of overflowing past the screen edge. */
+  flexShrink: 1,
 } as const;
 
 type Segment =
@@ -374,6 +376,9 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     flexShrink: 1,
     width: "100%",
+    maxWidth: "100%",
+    /** Critical: default minWidth:auto blocks wrapping in flex layouts (text clips on the right). */
+    minWidth: 0,
   },
   afterBlock: {
     marginTop: 10,
@@ -385,6 +390,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.08)",
     width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
   },
   verseDivider: {
     marginTop: 14,
@@ -396,6 +403,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "stretch",
     width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
   },
   verseRowRtl: {
     flexDirection: "row-reverse",
@@ -406,6 +415,7 @@ const styles = StyleSheet.create({
   },
   verseBody: {
     flex: 1,
+    minWidth: 0,
     paddingVertical: 12,
     paddingRight: 14,
     paddingLeft: 12,
@@ -438,6 +448,7 @@ const styles = StyleSheet.create({
   verseText: {
     ...BODY,
     color: "rgba(255,255,255,0.94)",
+    flexShrink: 1,
   },
   metaRow: {
     flexDirection: "row",

@@ -111,6 +111,18 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "prayer.tomorrow": "tomorrow",
     "prayer.inTime": "in",
     "prayer.now": "Now",
+    "prayer.notifSection": "Reminders",
+    "prayer.notifMaster": "Prayer notifications",
+    "prayer.notifMasterHint":
+      "Then use the bell and speaker icons next to each prayer on Prayer Times for alerts and adhan. Covers today and tomorrow — open the app after travel or calculation changes.",
+    "prayer.notifPermissionDenied": "Notifications are off",
+    "prayer.notifPermissionBody":
+      "Allow notifications for Aqala in system settings to get prayer time alerts.",
+    "prayer.openSettings": "Open Settings",
+    "prayer.notifCardHint":
+      "Gold = on. Tap the bell or speaker: bell for alerts, speaker for adhan vs default sound.",
+    "prayer.notifBellA11y": "Notification for this prayer",
+    "prayer.notifSoundA11y": "Speaker: adhan or default sound for this prayer",
     // Settings
     "settings.title": "Account Settings",
     "settings.profile": "Profile",
@@ -310,6 +322,18 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "prayer.tomorrow": "غداً",
     "prayer.inTime": "خلال",
     "prayer.now": "الآن",
+    "prayer.notifSection": "التذكيرات",
+    "prayer.notifMaster": "إشعارات الصلاة",
+    "prayer.notifMasterHint":
+      "ثم استخدم أيقونتي الجرس والسماعة بجانب كل صلاة في أوقات الصلاة. يغطي اليوم وغداً — افتح التطبيق بعد السفر أو تغيير طريقة الحساب.",
+    "prayer.notifPermissionDenied": "الإشعارات معطّلة",
+    "prayer.notifPermissionBody":
+      "اسمح بالإشعارات لتطبيق Aqala من إعدادات النظام لتلقي تنبيهات أوقات الصلاة.",
+    "prayer.openSettings": "فتح الإعدادات",
+    "prayer.notifCardHint":
+      "اللون الذهبي = مفعّل. الجرس للتنبيه، السماعة للأذان أو الصوت الافتراضي.",
+    "prayer.notifBellA11y": "إشعار هذه الصلاة",
+    "prayer.notifSoundA11y": "السماعة: أذان أو صوت افتراضي لهذه الصلاة",
     "settings.title": "إعدادات الحساب",
     "settings.profile": "الملف",
     "settings.language": "اللغة",

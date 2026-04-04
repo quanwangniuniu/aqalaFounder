@@ -33,7 +33,7 @@ export default function ManageSubscriptionScreen() {
         <View className="items-center mb-8">
           <View className="w-20 h-20 rounded-full items-center justify-center mb-5" style={{ backgroundColor: `${accent.base}20` }}>
             <Ionicons
-              name={isPremium ? "star" : "star-outline"}
+              name={isPremium ? "diamond" : "diamond-outline"}
               size={36}
               color={accent.base}
             />

@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
+import { Platform } from "react-native";
+import * as Notifications from "expo-notifications";
 import {
   PrayerTimes,
   PrayerSettings,
@@ -12,6 +21,14 @@ import {
   getCurrentPrayer,
   getTimeUntilNextPrayer,
 } from "@/lib/prayer/calculations";
+import {
+  type PrayerNotificationPrefs,
+  DEFAULT_PRAYER_NOTIFICATION_PREFS,
+  mergeStoredPrayerNotificationPrefs,
+  prayerTimesFingerprint,
+  cancelAllPrayerNotifications,
+  syncPrayerNotifications,
+} from "@/lib/prayer/prayerNotifications";
 
 interface UserLocation {
   latitude: number;
@@ -36,12 +53,20 @@ interface PrayerContextType {
   refreshLocation: () => Promise<void>;
   setManualLocation: (lat: number, lng: number) => void;
   refreshPrayerTimes: () => Promise<void>;
+  notificationPrefs: PrayerNotificationPrefs;
+  updateNotificationPrefs: (
+    patch: Partial<PrayerNotificationPrefs> & {
+      prayers?: Partial<PrayerNotificationPrefs["prayers"]>;
+      prayerAdhan?: Partial<PrayerNotificationPrefs["prayerAdhan"]>;
+    },
+  ) => void;
 }
 
 const PrayerContext = createContext<PrayerContextType | undefined>(undefined);
 
 const STORAGE_KEY_SETTINGS = "aqala_prayer_settings";
 const STORAGE_KEY_LOCATION = "aqala_prayer_location";
+const STORAGE_KEY_NOTIF_PREFS = "aqala_prayer_notification_prefs";
 
 export function PrayerProvider({ children }: { children: React.ReactNode }) {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
@@ -49,6 +74,8 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notificationPrefs, setNotificationPrefs] =
+    useState<PrayerNotificationPrefs>(DEFAULT_PRAYER_NOTIFICATION_PREFS);
 
   // Load saved settings from AsyncStorage
   useEffect(() => {
@@ -62,6 +89,13 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
         const savedLocation = await AsyncStorage.getItem(STORAGE_KEY_LOCATION);
         if (savedLocation) {
           setLocation(JSON.parse(savedLocation));
+        }
+
+        const rawNotif = await AsyncStorage.getItem(STORAGE_KEY_NOTIF_PREFS);
+        if (rawNotif) {
+          setNotificationPrefs(
+            mergeStoredPrayerNotificationPrefs(JSON.parse(rawNotif)),
+          );
         }
       } catch (e) {
         console.error("Failed to load prayer settings:", e);
@@ -81,6 +115,20 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     };
     saveSettings();
   }, [settings]);
+
+  useEffect(() => {
+    const saveNotif = async () => {
+      try {
+        await AsyncStorage.setItem(
+          STORAGE_KEY_NOTIF_PREFS,
+          JSON.stringify(notificationPrefs),
+        );
+      } catch (e) {
+        console.error("Failed to save prayer notification prefs:", e);
+      }
+    };
+    saveNotif();
+  }, [notificationPrefs]);
 
   // Save location to AsyncStorage when it changes
   useEffect(() => {
@@ -206,6 +254,73 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const updateNotificationPrefs = useCallback(
+    (
+      patch: Partial<PrayerNotificationPrefs> & {
+        prayers?: Partial<PrayerNotificationPrefs["prayers"]>;
+        prayerAdhan?: Partial<PrayerNotificationPrefs["prayerAdhan"]>;
+      },
+    ) => {
+      const { prayers: pPrayers, prayerAdhan: pAdhan, ...rest } = patch;
+      setNotificationPrefs((prev) => ({
+        ...prev,
+        ...rest,
+        prayers: pPrayers ? { ...prev.prayers, ...pPrayers } : prev.prayers,
+        prayerAdhan: pAdhan
+          ? { ...prev.prayerAdhan, ...pAdhan }
+          : prev.prayerAdhan,
+      }));
+    },
+    [],
+  );
+
+  const timesFingerprint = prayerTimesFingerprint(prayerTimes);
+  const prayerTimesRef = useRef(prayerTimes);
+  prayerTimesRef.current = prayerTimes;
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    let cancelled = false;
+
+    (async () => {
+      const pt = prayerTimesRef.current;
+      if (!notificationPrefs.enabled || !location || !pt) {
+        await cancelAllPrayerNotifications();
+        return;
+      }
+
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== "granted") {
+        await cancelAllPrayerNotifications();
+        return;
+      }
+
+      try {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowTimes = await fetchPrayerTimes(
+          tomorrow,
+          location.latitude,
+          location.longitude,
+          settings,
+        );
+        if (cancelled) return;
+        await syncPrayerNotifications({
+          prefs: notificationPrefs,
+          todayTimes: pt,
+          tomorrowTimes,
+        });
+      } catch (e) {
+        console.warn("[PrayerProvider] prayer notification sync failed:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [notificationPrefs, location, settings, timesFingerprint]);
+
   // Tick every 60s to keep next/current prayer fresh
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -235,6 +350,8 @@ export function PrayerProvider({ children }: { children: React.ReactNode }) {
         refreshLocation,
         setManualLocation,
         refreshPrayerTimes,
+        notificationPrefs,
+        updateNotificationPrefs,
       }}
     >
       {children}

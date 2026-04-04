@@ -96,6 +96,10 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
   const handlePurchaseError = useCallback((error: any) => {
     setIsPurchasing(false);
     if (error?.code === ErrorCode?.UserCancelled) return;
+    const msg = [error?.message, error?.cause?.message]
+      .filter((m): m is string => typeof m === "string")
+      .join(" ");
+    if (/user cancel|cancelled the purchase|purchase flow/i.test(msg)) return;
     Alert.alert(
       "Purchase Failed",
       error?.message || "Something went wrong. Please try again.",
@@ -156,14 +160,14 @@ function IAPProviderInner({ children }: { children: ReactNode }) {
       return;
     }
     setIsPurchasing(true);
-    requestPurchase({
+    void requestPurchase({
       request: {
         apple: { sku: PREMIUM_PRODUCT_ID },
         google: { skus: [PREMIUM_PRODUCT_ID] },
       },
       type: "in-app",
-    });
-  }, [premiumProduct, requestPurchase]);
+    }).catch(handlePurchaseError);
+  }, [premiumProduct, requestPurchase, handlePurchaseError]);
 
   const restorePurchases = useCallback(async () => {
     if (!user?.uid) {

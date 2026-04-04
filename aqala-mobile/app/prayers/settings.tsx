@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Pressable,
+  Switch,
+  Alert,
+  Linking,
+  Platform,
 } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { usePrayer } from "@/contexts/PrayerContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { requestPrayerNotificationPermission } from "@/lib/prayer/prayerNotifications";
 import {
   CALCULATION_METHODS,
   CalculationMethod,
@@ -36,6 +42,7 @@ const ADJUSTMENT_PRAYERS = [
 
 export default function PrayerSettingsScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { getAccentColor } = usePreferences();
   const accent = getAccentColor();
   const {
@@ -45,10 +52,49 @@ export default function PrayerSettingsScreen() {
     setSchool,
     setAdjustment,
     refreshLocation,
+    notificationPrefs,
+    updateNotificationPrefs,
   } = usePrayer();
 
   const [showMethodPicker, setShowMethodPicker] = useState(false);
   const [showAdjustments, setShowAdjustments] = useState(false);
+  const [notifPerm, setNotifPerm] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    Notifications.getPermissionsAsync().then(({ status }) =>
+      setNotifPerm(status),
+    );
+  }, [notificationPrefs.enabled]);
+
+  const openSystemSettings = () => {
+    if (Platform.OS === "ios" || Platform.OS === "android") {
+      Linking.openSettings();
+    }
+  };
+
+  const onMasterNotifChange = async (on: boolean) => {
+    if (Platform.OS === "web") {
+      Alert.alert("Not available", "Prayer notifications are not supported on web.");
+      return;
+    }
+    if (on) {
+      const ok = await requestPrayerNotificationPermission();
+      setNotifPerm(ok ? "granted" : "denied");
+      if (!ok) {
+        Alert.alert(
+          t("prayer.notifPermissionDenied"),
+          t("prayer.notifPermissionBody"),
+          [
+            { text: t("share.cancel"), style: "cancel" },
+            { text: t("prayer.openSettings"), onPress: openSystemSettings },
+          ],
+        );
+        return;
+      }
+    }
+    updateNotificationPrefs({ enabled: on });
+  };
 
   return (
     <WallpaperBackground edges={["top"]}>
@@ -249,6 +295,59 @@ export default function PrayerSettingsScreen() {
               )}
             </View>
           </View>
+
+          {/* ── Notifications (local) ── */}
+          {Platform.OS !== "web" ? (
+            <View>
+              <Text
+                className="text-sm font-medium mb-3 uppercase tracking-wider"
+                style={{ color: GOLD }}
+              >
+                {t("prayer.notifSection")}
+              </Text>
+
+              <View className="bg-white/[0.03] rounded-xl border border-white/5 overflow-hidden">
+                <View className="flex-row items-center justify-between p-4">
+                  <View className="flex-1 mr-3">
+                    <Text className="text-white font-medium">
+                      {t("prayer.notifMaster")}
+                    </Text>
+                    <Text className="text-sm text-white/50 mt-0.5">
+                      {t("prayer.notifMasterHint")}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={notificationPrefs.enabled}
+                    onValueChange={onMasterNotifChange}
+                    trackColor={{
+                      false: "rgba(255,255,255,0.12)",
+                      true: `${accent.base}99`,
+                    }}
+                    thumbColor={
+                      notificationPrefs.enabled ? accent.base : "#888"
+                    }
+                  />
+                </View>
+
+                {notificationPrefs.enabled &&
+                  notifPerm &&
+                  notifPerm !== "granted" && (
+                    <TouchableOpacity
+                      onPress={openSystemSettings}
+                      className="mx-4 mb-3 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30"
+                    >
+                      <Text className="text-amber-200 text-xs">
+                        {t("prayer.notifPermissionBody")}
+                      </Text>
+                      <Text className="text-amber-100 text-xs font-semibold mt-1">
+                        {t("prayer.openSettings")} →
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+              </View>
+            </View>
+          ) : null}
 
           {/* ── Location Section ── */}
           <View>

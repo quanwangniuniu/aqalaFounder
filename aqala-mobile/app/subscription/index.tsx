@@ -78,7 +78,7 @@ export default function SubscriptionScreen() {
               { backgroundColor: `${accent.base}30` },
             ]}
           >
-            <Ionicons name="star" size={44} color={accent.base} />
+            <Ionicons name="diamond" size={44} color={accent.base} />
           </View>
           <Text className="text-white text-3xl font-bold mb-3 text-center">
             You're Premium!
@@ -125,7 +125,7 @@ export default function SubscriptionScreen() {
               { backgroundColor: `${accent.base}25` },
             ]}
           >
-            <Ionicons name="star" size={40} color={accent.base} />
+            <Ionicons name="diamond" size={40} color={accent.base} />
           </View>
           <Text className="text-white text-3xl font-bold mb-2 text-center">
             Go Ad-Free

@@ -239,6 +239,35 @@ export default function NativeLiveListenScreen() {
     }
   }, [sourceFinalText]);
 
+  // Same-language passthrough: build effective translation from finalTokens,
+  // taking translated tokens for cross-language speech and original tokens
+  // when the spoken language matches the target. Preserves interleaved order.
+  const sameLangAwareText = useMemo(() => {
+    const tokens = recording.finalTokens;
+    if (!tokens || tokens.length === 0) return null;
+    let hasSameLangTokens = false;
+    const parts: string[] = [];
+    for (const t of tokens) {
+      if (t.translation_status === "translation") {
+        parts.push(t.text);
+      } else if (t.language === targetLang) {
+        parts.push(t.text);
+        hasSameLangTokens = true;
+      }
+    }
+    if (!hasSameLangTokens) return null;
+    return parts.join("").trim();
+  }, [recording.finalTokens, targetLang]);
+
+  useEffect(() => {
+    if (sameLangAwareText === null) return;
+    const combined = baseTranslationRef.current
+      ? `${baseTranslationRef.current} ${sameLangAwareText}`
+      : sameLangAwareText;
+    setSavedTranslationText(combined);
+    prevSessionTranslationRef.current = combined;
+  }, [sameLangAwareText]);
+
   // ── Auto-scroll (teleprompter: latest text stays at vertical center) ──
 
   const scrollToCenter = useCallback(() => {
@@ -299,8 +328,7 @@ export default function NativeLiveListenScreen() {
 
         // Deferral: wait until enough Arabic words exist AFTER the verse
         if (!forceCommit) {
-          const wordsAfterVerse =
-            result.sttWordCount - result.matchEndIdx;
+          const wordsAfterVerse = result.sttWordCount - result.matchEndIdx;
           console.log(
             `[LiveListen] Deferral: ${wordsAfterVerse} words after verse (need ${MIN_ARABIC_WORDS_AFTER_SURAH})`,
           );
@@ -313,9 +341,7 @@ export default function NativeLiveListenScreen() {
             if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = setTimeout(() => {
               const currentSrc = savedSourceTextRef.current?.trim() ?? "";
-              const currentLen = currentSrc
-                .split(/\s+/)
-                .filter(Boolean).length;
+              const currentLen = currentSrc.split(/\s+/).filter(Boolean).length;
               if (currentLen <= sttLenAtDeferral + 3) {
                 console.log(
                   "[LiveListen] Silence timeout — force-committing deferred verse",
@@ -859,28 +885,37 @@ https://aqala.org
         </View>
         <ScrollView
           ref={sourceScrollRef}
-          className="px-4 pb-2"
+          className="pb-2"
           style={{ flex: 1 }}
+          contentContainerStyle={{
+            width: "100%",
+            maxWidth: "100%",
+            paddingHorizontal: 16,
+          }}
           showsVerticalScrollIndicator={false}
         >
           {savedSourceText || sourcePartial ? (
-            <Text
-              style={{
-                fontSize: 14,
-                lineHeight: 22,
-                color: "rgba(255,255,255,0.7)",
-                textAlign: "right",
-                fontFamily: Platform.OS === "ios" ? "Geeza Pro" : "sans-serif",
-              }}
-            >
-              {savedSourceText}
-              {sourcePartial ? (
-                <Text style={{ color: "rgba(255,255,255,0.3)" }}>
-                  {" "}
-                  {sourcePartial}
-                </Text>
-              ) : null}
-            </Text>
+            <View style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  lineHeight: 22,
+                  color: "rgba(255,255,255,0.7)",
+                  textAlign: "right",
+                  fontFamily: Platform.OS === "ios" ? "Geeza Pro" : "sans-serif",
+                  flexShrink: 1,
+                  maxWidth: "100%",
+                }}
+              >
+                {savedSourceText}
+                {sourcePartial ? (
+                  <Text style={{ color: "rgba(255,255,255,0.3)" }}>
+                    {" "}
+                    {sourcePartial}
+                  </Text>
+                ) : null}
+              </Text>
+            </View>
           ) : isListening ? (
             <Text className="text-white/50 text-xs italic">
               Listening for audio...
@@ -896,9 +931,12 @@ https://aqala.org
       {/* Main translation area — teleprompter scroll keeps latest text centered */}
       <ScrollView
         ref={translationScrollRef}
-        className="flex-1 px-4"
+        className="flex-1"
         onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
         contentContainerStyle={{
+          width: "100%",
+          maxWidth: "100%",
+          paddingHorizontal: 16,
           paddingTop: 12,
           paddingBottom: Math.max(scrollViewHeight * 0.5, 100),
         }}
@@ -916,19 +954,28 @@ https://aqala.org
         }}
       >
         {revealedWordCount > 0 ? (
-          <VerseHighlightedText
-            words={allTranslationWords}
-            highlights={verseHighlights}
-            accentColor={accent.base}
-            onVersePress={setSelectedVerseKey}
-            maxWord={revealedWordCount}
-            writingDirection={targetLang === "ar" ? "rtl" : "ltr"}
-          />
+          <View style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
+            <VerseHighlightedText
+              words={allTranslationWords}
+              highlights={verseHighlights}
+              accentColor={accent.base}
+              onVersePress={setSelectedVerseKey}
+              maxWord={revealedWordCount}
+              writingDirection={targetLang === "ar" ? "rtl" : "ltr"}
+            />
+          </View>
         ) : null}
 
         {/* Live preview: partial translation or incoming cursor */}
         {isListening && (
-          <View style={{ marginTop: hasResults ? 8 : 0 }}>
+          <View
+            style={{
+              marginTop: hasResults ? 8 : 0,
+              width: "100%",
+              minWidth: 0,
+              maxWidth: "100%",
+            }}
+          >
             {translationPartial ? (
               <Text
                 style={{
@@ -936,6 +983,8 @@ https://aqala.org
                   lineHeight: 26,
                   color: "rgba(255,255,255,0.5)",
                   fontStyle: "italic",
+                  flexShrink: 1,
+                  maxWidth: "100%",
                 }}
               >
                 {translationPartial}
@@ -972,7 +1021,9 @@ https://aqala.org
       {/* Post-session actions */}
       {showPostActions && saveError ? (
         <View className="px-4 py-2 bg-amber-900/30 border-t border-amber-500/20">
-          <Text className="text-amber-100 text-xs text-center">{saveError}</Text>
+          <Text className="text-amber-100 text-xs text-center">
+            {saveError}
+          </Text>
         </View>
       ) : null}
 

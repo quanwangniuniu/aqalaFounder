@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     splash: {
         image: "./assets/splash.png",
         resizeMode: "contain",
-        backgroundColor: "#000000",
+        backgroundColor: "#021a12",
     },
     ios: {
         supportsTablet: false,
@@ -108,6 +108,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             {
                 // icon: "./assets/notification-icon.png", // TODO: Add notification icon (96x96 PNG)
                 color: "#0a5c3e",
+                // Bundled for local prayer alerts (iOS + Android). Source: adhaan-short.mp3 → WAV for iOS compatibility.
+                sounds: ["./assets/sounds/adhaan_short.wav"],
             },
         ],
         "expo-iap",

@@ -115,7 +115,7 @@ export default function SettingsScreen() {
                   )}
                   {isPremium && (
                     <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#D4AF37] rounded-full border-2 border-[#032117] items-center justify-center">
-                      <Text className="text-[#032117] text-xs">⭐</Text>
+                      <Ionicons name="diamond" size={11} color="#032117" />
                     </View>
                   )}
                 </View>
@@ -225,7 +225,7 @@ export default function SettingsScreen() {
                 <View className="p-5">
                   <View className="flex-row items-center gap-3 mb-4">
                     <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center">
-                      <Ionicons name="star-outline" size={20} color="rgba(255,255,255,0.5)" />
+                      <Ionicons name="diamond-outline" size={20} color="rgba(255,255,255,0.5)" />
                     </View>
                     <View>
                       <Text className="font-medium text-white">{t("settings.freePlan")}</Text>
