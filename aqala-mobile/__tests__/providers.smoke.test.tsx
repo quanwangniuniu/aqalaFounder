@@ -39,11 +39,6 @@ jest.mock("@/lib/firebase/auth", () => ({
   resetPasswordWithCode: jest.fn(),
 }));
 
-jest.mock("@/lib/notifications/pushRegistration", () => ({
-  registerAndSyncExpoPushToken: jest.fn(),
-  removeExpoPushTokenForThisDevice: jest.fn(),
-}));
-
 jest.mock("@/lib/firebase/subscriptions", () => ({
   subscribeToSubscription: jest.fn(() => jest.fn()),
   getSubscription: jest.fn(async () => null),

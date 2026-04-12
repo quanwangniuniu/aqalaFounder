@@ -167,8 +167,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.premiumMember": "Premium Member",
     "settings.user": "User",
     // Listen / Tadabbur
-    "listen.subheadline":
-      "Finally understand the Qur'an as you hear it.",
+    "listen.subheadline": "Finally understand the Qur'an as you hear it.",
     "listen.beginLive": "Listen & Translate",
     "listen.tapHint": "Listen in one language, read in another — live",
     "listen.surahFinderEntry": "Surah Detector",
@@ -218,7 +217,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "listen.viewMoreCount": "View more ({count} saved)",
     "listen.pastTranslations": "Past Translations",
     "listen.pastTranslationsDesc": "Your saved live translation sessions",
-    "listen.noPastTranslations": "Save translations from a session to see them here",
+    "listen.noPastTranslations":
+      "Save translations from a session to see them here",
     "listen.pastTranslationsCount": "{count} translations saved",
     "listen.offlineTitle": "No connection",
     "listen.offlineDetail":
@@ -400,8 +400,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "المحيط العميق",
     "settings.premiumMember": "عضو مميز",
     "settings.user": "المستخدم",
-    "listen.subheadline":
-      "فهم القرآن أخيراً كما تسمعه.",
+    "listen.subheadline": "فهم القرآن أخيراً كما تسمعه.",
     "listen.beginLive": "ابدأ الفهم المباشر",
     "listen.tapHint": "اضغط أثناء التلاوة أو الخطبة",
     "listen.surahFinderEntry": "كاشف السورة",
@@ -463,8 +462,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "listen.daysAgo": "منذ {count} أيام",
     "postLogin.stepOf": "الخطوة {n} من 3",
     "postLogin.q1Title": "هل تفهم العربية بطلاقة؟",
-    "postLogin.q1Subtitle":
-      "يساعدنا ذلك على تخصيص الترجمة والشرح لك.",
+    "postLogin.q1Subtitle": "يساعدنا ذلك على تخصيص الترجمة والشرح لك.",
     "postLogin.fluencyYes": "نعم",
     "postLogin.fluencyNo": "لا",
     "postLogin.fluencyUnsure": "لست متأكداً",
@@ -601,8 +599,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Derin Okyanus",
     "settings.premiumMember": "Premium Üye",
     "settings.user": "Kullanıcı",
-    "listen.subheadline":
-      "Sonunda Kur'an'ı duyduğunuz gibi anlayın.",
+    "listen.subheadline": "Sonunda Kur'an'ı duyduğunuz gibi anlayın.",
     "listen.beginLive": "Canlı Anlamaya Başla",
     "listen.tapHint": "Tilavet veya hutbe sırasında dokunun",
     "listen.todaysTadabbur": "Bugünün Tedebbürü",
@@ -625,9 +622,11 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "listen.supportAqala": "Aqala'yı Destekle",
     "listen.helpKeepFree": "Anlamanın ücretsiz kalmasına yardım et",
     "listen.goAdFree": "Reklamsız Ol",
-    "listen.thankYouSupportingAqala": "Aqala'yı desteklediğiniz için teşekkürler!",
+    "listen.thankYouSupportingAqala":
+      "Aqala'yı desteklediğiniz için teşekkürler!",
     "listen.thankYou": "Teşekkürler",
-    "listen.thankYouForSupportingAqala": "Aqala'yı desteklediğiniz için teşekkürler",
+    "listen.thankYouForSupportingAqala":
+      "Aqala'yı desteklediğiniz için teşekkürler",
     "listen.mayAllahAcceptFromYou": "Allah kabul etsin",
     "listen.donateToAqala": "Aqala'ya Bağış Yap",
     "listen.footerQuote": "İslam asla arka plan sesi olarak tasarlanmadı.",
@@ -746,8 +745,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "گہرا سمندر",
     "settings.premiumMember": "پریمیم ممبر",
     "settings.user": "صارف",
-    "listen.subheadline":
-      "آخرکار قرآن کو ویسے ہی سمجھیں جیسا آپ سنتے ہیں۔",
+    "listen.subheadline": "آخرکار قرآن کو ویسے ہی سمجھیں جیسا آپ سنتے ہیں۔",
     "listen.beginLive": "لائیو سمجھنا شروع کریں",
     "listen.tapHint": "تلاوت یا خطبے کے دوران ٹیپ کریں",
     "listen.todaysTadabbur": "آج کا تدبر",
@@ -891,8 +889,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "गहरा समुद्र",
     "settings.premiumMember": "प्रीमियम सदस्य",
     "settings.user": "उपयोगकर्ता",
-    "listen.subheadline":
-      "आखिरकार कुरआन को वैसे ही समझें जैसा आप सुनते हैं।",
+    "listen.subheadline": "आखिरकार कुरआन को वैसे ही समझें जैसा आप सुनते हैं।",
     "listen.beginLive": "लाइव समझ शुरू करें",
     "listen.tapHint": "पाठ या खुतबे के दौरान टैप करें",
     "listen.todaysTadabbur": "आज का तदब्बुर",
@@ -1037,8 +1034,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "গভীর সমুদ্র",
     "settings.premiumMember": "প্রিমিয়াম সদস্য",
     "settings.user": "ব্যবহারকারী",
-    "listen.subheadline":
-      "অবশেষে কুরআন বুঝুন যেমন আপনি শুনছেন।",
+    "listen.subheadline": "অবশেষে কুরআন বুঝুন যেমন আপনি শুনছেন।",
     "listen.beginLive": "লাইভ বোঝা শুরু করুন",
     "listen.tapHint": "পঠন বা খুতবার সময় ট্যাপ করুন",
     "listen.todaysTadabbur": "আজকের তাদাব্বুর",
@@ -1183,8 +1179,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Samudra Dalam",
     "settings.premiumMember": "Anggota Premium",
     "settings.user": "Pengguna",
-    "listen.subheadline":
-      "Akhirnya pahami Qur'an saat Anda mendengarnya.",
+    "listen.subheadline": "Akhirnya pahami Qur'an saat Anda mendengarnya.",
     "listen.beginLive": "Mulai Pemahaman Langsung",
     "listen.tapHint": "Ketuk selama pembacaan atau khutbah",
     "listen.todaysTadabbur": "Tadabbur Hari Ini",
@@ -1330,8 +1325,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Lautan Dalam",
     "settings.premiumMember": "Ahli Premium",
     "settings.user": "Pengguna",
-    "listen.subheadline":
-      "Akhirnya fahami Al-Quran semasa anda mendengarnya.",
+    "listen.subheadline": "Akhirnya fahami Al-Quran semasa anda mendengarnya.",
     "listen.beginLive": "Mula Pemahaman Langsung",
     "listen.tapHint": "Ketik semasa bacaan atau khutbah",
     "listen.todaysTadabbur": "Tadabbur Hari Ini",
@@ -1483,8 +1477,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Océan profond",
     "settings.premiumMember": "Membre Premium",
     "settings.user": "Utilisateur",
-    "listen.subheadline":
-      "Enfin comprenez le Coran comme vous l'entendez.",
+    "listen.subheadline": "Enfin comprenez le Coran comme vous l'entendez.",
     "listen.beginLive": "Commencer la compréhension en direct",
     "listen.tapHint": "Appuyez pendant la récitation ou le khutbah",
     "listen.todaysTadabbur": "Tadabbur du jour",
@@ -1778,8 +1771,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Océano profundo",
     "settings.premiumMember": "Miembro Premium",
     "settings.user": "Usuario",
-    "listen.subheadline":
-      "Por fin entiende el Corán mientras lo escuchas.",
+    "listen.subheadline": "Por fin entiende el Corán mientras lo escuchas.",
     "listen.beginLive": "Iniciar comprensión en directo",
     "listen.tapHint": "Toca durante la recitación o jutba",
     "listen.todaysTadabbur": "Tadabbur de hoy",
@@ -1925,8 +1917,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Oceano profundo",
     "settings.premiumMember": "Membro Premium",
     "settings.user": "Usuário",
-    "listen.subheadline":
-      "Finalmente compreenda o Alcorão conforme o ouve.",
+    "listen.subheadline": "Finalmente compreenda o Alcorão conforme o ouve.",
     "listen.beginLive": "Iniciar compreensão ao vivo",
     "listen.tapHint": "Toque durante a recitação ou khutba",
     "listen.todaysTadabbur": "Tadabbur de hoje",
@@ -2070,8 +2061,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Глубокий океан",
     "settings.premiumMember": "Премиум-участник",
     "settings.user": "Пользователь",
-    "listen.subheadline":
-      "Наконец поймите Коран так, как вы его слышите.",
+    "listen.subheadline": "Наконец поймите Коран так, как вы его слышите.",
     "listen.beginLive": "Начать живое понимание",
     "listen.tapHint": "Нажмите во время чтения или хутбы",
     "listen.todaysTadabbur": "Сегодняшний тадаббур",
@@ -2217,8 +2207,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Diepe oceaan",
     "settings.premiumMember": "Premiumlid",
     "settings.user": "Gebruiker",
-    "listen.subheadline":
-      "Begrijp eindelijk de Koran terwijl je luistert.",
+    "listen.subheadline": "Begrijp eindelijk de Koran terwijl je luistert.",
     "listen.beginLive": "Start live begrip",
     "listen.tapHint": "Tik tijdens recitatie of khutbah",
     "listen.todaysTadabbur": "Tadabbur van vandaag",
@@ -2365,8 +2354,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Oceano profondo",
     "settings.premiumMember": "Membro Premium",
     "settings.user": "Utente",
-    "listen.subheadline":
-      "Finalmente comprendi il Corano mentre lo ascolti.",
+    "listen.subheadline": "Finalmente comprendi il Corano mentre lo ascolti.",
     "listen.beginLive": "Inizia comprensione live",
     "listen.tapHint": "Tocca durante la recitazione o khutbah",
     "listen.todaysTadabbur": "Tadabbur di oggi",
@@ -2510,8 +2498,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "深海",
     "settings.premiumMember": "高级会员",
     "settings.user": "用户",
-    "listen.subheadline":
-      "终于能在聆听时理解古兰经。",
+    "listen.subheadline": "终于能在聆听时理解古兰经。",
     "listen.beginLive": "开始实时理解",
     "listen.tapHint": "在诵读或演讲时点击",
     "listen.todaysTadabbur": "今日参悟",
@@ -2654,8 +2641,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "深海",
     "settings.premiumMember": "プレミアム会員",
     "settings.user": "ユーザー",
-    "listen.subheadline":
-      "ついに聴きながらクルアーンを理解しましょう。",
+    "listen.subheadline": "ついに聴きながらクルアーンを理解しましょう。",
     "listen.beginLive": "ライブ理解を開始",
     "listen.tapHint": "朗読やフトバ中にタップ",
     "listen.todaysTadabbur": "今日のタダッブル",
@@ -2679,8 +2665,10 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "listen.goAdFree": "広告なし",
     "listen.thankYouSupportingAqala": "アカラのサポートありがとうございます！",
     "listen.thankYou": "ありがとう",
-    "listen.thankYouForSupportingAqala": "アカラをサポートしていただきありがとうございます",
-    "listen.mayAllahAcceptFromYou": "アッラーがあなたからお受け入れになりますように",
+    "listen.thankYouForSupportingAqala":
+      "アカラをサポートしていただきありがとうございます",
+    "listen.mayAllahAcceptFromYou":
+      "アッラーがあなたからお受け入れになりますように",
     "listen.donateToAqala": "アカラに寄付",
     "listen.footerQuote": "イスラムは決してBGMではありません。",
     "listen.premium": "プレミアム",
@@ -2797,8 +2785,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "깊은 바다",
     "settings.premiumMember": "프리미엄 회원",
     "settings.user": "사용자",
-    "listen.subheadline":
-      "이제 들으면서 꾸란을 이해하세요.",
+    "listen.subheadline": "이제 들으면서 꾸란을 이해하세요.",
     "listen.beginLive": "라이브 이해 시작",
     "listen.tapHint": "낭송 또는 후트바 중에 탭하세요",
     "listen.todaysTadabbur": "오늘의 타답부르",
@@ -2940,8 +2927,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "มหาสมุทรลึก",
     "settings.premiumMember": "สมาชิกพรีเมียม",
     "settings.user": "ผู้ใช้",
-    "listen.subheadline":
-      "ในที่สุดเข้าใจอัลกุรอานขณะที่คุณฟัง",
+    "listen.subheadline": "ในที่สุดเข้าใจอัลกุรอานขณะที่คุณฟัง",
     "listen.beginLive": "เริ่มเข้าใจแบบสด",
     "listen.tapHint": "แตะระหว่างการอ่านหรือคุตบะ",
     "listen.todaysTadabbur": "ตะดับบุรวันนี้",
@@ -3084,8 +3070,7 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     "settings.wallpaper.deepOcean": "Đại dương sâu",
     "settings.premiumMember": "Thành viên Premium",
     "settings.user": "Người dùng",
-    "listen.subheadline":
-      "Cuối cùng hiểu Qur'an khi bạn nghe.",
+    "listen.subheadline": "Cuối cùng hiểu Qur'an khi bạn nghe.",
     "listen.beginLive": "Bắt đầu hiểu trực tiếp",
     "listen.tapHint": "Chạm trong lúc đọc hoặc khutbah",
     "listen.todaysTadabbur": "Tadabbur hôm nay",

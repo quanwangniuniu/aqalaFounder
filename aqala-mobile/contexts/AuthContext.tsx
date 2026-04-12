@@ -12,7 +12,7 @@ import {
   type PrimaryHelpFocus,
   type PrimaryListenContext,
 } from "@/lib/firebase/users";
-import { registerAndSyncExpoPushToken, removeExpoPushTokenForThisDevice } from "@/lib/notifications/pushRegistration";
+
 import { AuthContextType, User, PartnerInfo, mapFirebaseUser } from "@/types/auth";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
@@ -120,12 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, [fetchPartnerInfo]);
 
-  useEffect(() => {
-    if (!user?.uid) return;
-    void registerAndSyncExpoPushToken(user.uid).catch((err) => {
-      console.warn("Push token registration failed:", err);
-    });
-  }, [user?.uid]);
+  // TODO: re-enable push token registration once pushRegistration module is restored
 
   // Store pending username during signup flow
   const pendingUsernameRef = React.useRef<string | null>(null);
@@ -263,12 +258,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleSignOut = async (): Promise<void> => {
     try {
       setError(null);
-      const uid = auth.currentUser?.uid;
-      if (uid) {
-        await removeExpoPushTokenForThisDevice(uid).catch((err) => {
-          console.warn("Could not remove push token on sign-out:", err);
-        });
-      }
       await signOut();
     } catch (err: any) {
       const errorMessage = err.message || "Failed to sign out";

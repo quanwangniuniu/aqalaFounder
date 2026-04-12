@@ -11,7 +11,7 @@ import { useAuth } from "./AuthContext";
 import { useSubscription } from "./SubscriptionContext";
 import { createOrUpdateSubscription } from "@/lib/firebase/subscriptions";
 
-const PREMIUM_PRODUCT_ID = "com.aqala.premium";
+const PREMIUM_PRODUCT_ID = "com.aqala.adfree";
 
 let useIAP: any = null;
 let ErrorCode: any = null;
