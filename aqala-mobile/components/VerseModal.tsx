@@ -50,6 +50,7 @@ export default function VerseModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const hasScrolledRef = useRef(false);
 
   const { getGradientColors, getAccentColor } = usePreferences();
   const gradientColors = getGradientColors() as [string, string, ...string[]];
@@ -82,6 +83,10 @@ export default function VerseModal({
       cancelled = true;
     };
   }, [visible, verseKey, targetLang]);
+
+  useEffect(() => {
+    if (!visible || !data) hasScrolledRef.current = false;
+  }, [visible, data]);
 
   const openQuranCom = useCallback(() => {
     if (!verseKey) return;
@@ -245,24 +250,33 @@ export default function VerseModal({
                 }}
                 showsVerticalScrollIndicator={false}
               >
-                {data.verses
-                  .filter(
-                    (v) =>
-                      v.verseNumber >= data.startVerse &&
-                      v.verseNumber <= data.endVerse,
-                  )
-                  .map((verse) => {
-                    const highlighted = isHighlighted(verse.verseNumber);
-                    return (
-                      <View
-                        key={verse.verseKey}
-                        style={{
-                          marginBottom: 20,
-                          paddingLeft: highlighted ? 12 : 0,
-                          borderLeftWidth: highlighted ? 3 : 0,
-                          borderLeftColor: accent.base,
-                        }}
-                      >
+                {data.verses.map((verse) => {
+                  const highlighted = isHighlighted(verse.verseNumber);
+                  const isFirstHighlighted =
+                    highlighted && verse.verseNumber === data.startVerse;
+                  return (
+                    <View
+                      key={verse.verseKey}
+                      onLayout={
+                        isFirstHighlighted
+                          ? (e) => {
+                              if (hasScrolledRef.current) return;
+                              hasScrolledRef.current = true;
+                              const y = e.nativeEvent.layout.y;
+                              scrollRef.current?.scrollTo({
+                                y: Math.max(0, y - 60),
+                                animated: true,
+                              });
+                            }
+                          : undefined
+                      }
+                      style={{
+                        marginBottom: 20,
+                        paddingLeft: highlighted ? 12 : 0,
+                        borderLeftWidth: highlighted ? 3 : 0,
+                        borderLeftColor: accent.base,
+                      }}
+                    >
                         {/* Verse number */}
                         <Text
                           style={{
@@ -298,6 +312,9 @@ export default function VerseModal({
                             fontSize: 15,
                             lineHeight: 24,
                             color: "rgba(255,255,255,0.8)",
+                            writingDirection:
+                              targetLang === "ar" ? "rtl" : "ltr",
+                            textAlign: targetLang === "ar" ? "right" : "left",
                           }}
                         >
                           {verse.translation}

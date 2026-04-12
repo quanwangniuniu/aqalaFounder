@@ -17,7 +17,9 @@ import { InterstitialAdProvider } from "@/contexts/InterstitialAdContext";
 import { IAPProvider } from "@/contexts/IAPContext";
 import { PrivacyConsentProvider } from "@/contexts/PrivacyConsentContext";
 import ConsentBanner from "@/components/ConsentBanner";
+import { AppNavigationGate } from "@/components/AppNavigationGate";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import * as Location from "expo-location";
 import { getRecordingPermissionsAsync } from "expo-audio";
@@ -25,9 +27,17 @@ import {
   getTrackingPermissionsAsync,
   requestTrackingPermissionsAsync,
 } from "expo-tracking-transparency";
-import { useFonts } from "expo-font";
 import { Platform, View, Text } from "react-native";
 import "../global.css";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://aqala.io";
 const DIRECT_SONIOX_KEY = process.env.EXPO_PUBLIC_SONIOX_API_KEY || "";
@@ -104,6 +114,7 @@ function ThemedStack() {
       }}
     >
       <Stack.Screen name="onboarding" options={{ animation: "none" }} />
+      <Stack.Screen name="post-login-onboarding" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="live-listen" />
       <Stack.Screen name="auth" />
@@ -126,15 +137,6 @@ export default function RootLayout() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const router = useRouter();
-
-  // TODO: Add font files to assets/fonts/ directory
-  // For now, using system fonts to allow app to run
-  const [fontsLoaded] = useFonts({
-    // "Amiri-Regular": require("../assets/fonts/Amiri-Regular.ttf"),
-    // "Amiri-Bold": require("../assets/fonts/Amiri-Bold.ttf"),
-    // "CormorantGaramond-Regular": require("../assets/fonts/CormorantGaramond-Regular.ttf"),
-    // "CormorantGaramond-Bold": require("../assets/fonts/CormorantGaramond-Bold.ttf"),
-  });
 
   // Check if onboarding is complete — also skip if permissions are already granted
   useEffect(() => {
@@ -214,7 +216,9 @@ export default function RootLayout() {
                           <PrayerProvider>
                             <RoomsProvider>
                               <StatusBar style="light" />
-                              <ThemedStack />
+                              <AppNavigationGate>
+                                <ThemedStack />
+                              </AppNavigationGate>
                               <ConsentBanner />
                             </RoomsProvider>
                           </PrayerProvider>

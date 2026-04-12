@@ -9,6 +9,35 @@ import { db } from "./config";
 
 const COLLECTION = "users";
 
+/** Post-login questionnaire (Firestore `users/{uid}`). */
+export type ArabicFluency = "yes" | "no" | "unsure";
+export type PrimaryHelpFocus = "quran" | "khutbah" | "lectures" | "all";
+export type PrimaryListenContext = "masjid" | "youtube" | "home" | "car";
+
+function parseArabicFluency(v: unknown): ArabicFluency | null {
+  if (v === "yes" || v === "no" || v === "unsure") return v;
+  return null;
+}
+
+function parsePrimaryHelpFocus(v: unknown): PrimaryHelpFocus | null {
+  if (v === "quran" || v === "khutbah" || v === "lectures" || v === "all") {
+    return v;
+  }
+  return null;
+}
+
+function parsePrimaryListenContext(v: unknown): PrimaryListenContext | null {
+  if (
+    v === "masjid" ||
+    v === "youtube" ||
+    v === "home" ||
+    v === "car"
+  ) {
+    return v;
+  }
+  return null;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -29,6 +58,11 @@ export interface UserProfile {
   privateHistory: boolean;
   privateFollowers: boolean;
   isPremium: boolean;
+  arabicFluency: ArabicFluency | null;
+  primaryHelpFocus: PrimaryHelpFocus | null;
+  primaryListenContext: PrimaryListenContext | null;
+  postLoginOnboardingComplete: boolean;
+  postLoginOnboardingCompletedAt: Date | null;
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
@@ -59,6 +93,12 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
     privateHistory: data.privateHistory || false,
     privateFollowers: data.privateFollowers || false,
     isPremium: data.isPremium || false,
+    arabicFluency: parseArabicFluency(data.arabicFluency),
+    primaryHelpFocus: parsePrimaryHelpFocus(data.primaryHelpFocus),
+    primaryListenContext: parsePrimaryListenContext(data.primaryListenContext),
+    postLoginOnboardingComplete: data.postLoginOnboardingComplete === true,
+    postLoginOnboardingCompletedAt:
+      data.postLoginOnboardingCompletedAt?.toDate?.() ?? null,
   };
 }
 
@@ -155,6 +195,38 @@ export async function updateUserProfileFields(
     ...fields,
     updatedAt: serverTimestamp(),
   });
+}
+
+/** Idempotent partial updates; sets completion timestamp when marking complete. */
+export async function updatePostLoginOnboardingProfile(
+  uid: string,
+  data: {
+    arabicFluency?: ArabicFluency;
+    primaryHelpFocus?: PrimaryHelpFocus;
+    primaryListenContext?: PrimaryListenContext;
+    postLoginOnboardingComplete?: boolean;
+  }
+): Promise<void> {
+  const userRef = doc(db, COLLECTION, uid);
+  const payload: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  };
+  if (data.arabicFluency !== undefined) {
+    payload.arabicFluency = data.arabicFluency;
+  }
+  if (data.primaryHelpFocus !== undefined) {
+    payload.primaryHelpFocus = data.primaryHelpFocus;
+  }
+  if (data.primaryListenContext !== undefined) {
+    payload.primaryListenContext = data.primaryListenContext;
+  }
+  if (data.postLoginOnboardingComplete !== undefined) {
+    payload.postLoginOnboardingComplete = data.postLoginOnboardingComplete;
+    if (data.postLoginOnboardingComplete) {
+      payload.postLoginOnboardingCompletedAt = serverTimestamp();
+    }
+  }
+  await updateDoc(userRef, payload);
 }
 
 export async function isUsernameAvailable(username: string, excludeUid?: string): Promise<boolean> {

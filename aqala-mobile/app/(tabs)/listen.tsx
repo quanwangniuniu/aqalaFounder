@@ -16,6 +16,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useInterstitialAd } from "@/contexts/InterstitialAdContext";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNetworkState } from "expo-network";
 import { Ionicons } from "@expo/vector-icons";
 import WallpaperBackground from "@/components/WallpaperBackground";
 import TafsirModal from "@/components/TafsirModal";
@@ -60,6 +61,13 @@ export default function ListenHomeScreen() {
   const [pastTranslationsLoading, setPastTranslationsLoading] = useState(false);
   const [pastTranslationsCollapsed, setPastTranslationsCollapsed] =
     useState(true);
+  const [pastTranslationsError, setPastTranslationsError] = useState<
+    string | null
+  >(null);
+  const networkState = useNetworkState();
+  const isNetworkBlocked =
+    networkState.isConnected === false ||
+    networkState.isInternetReachable === false;
   const [tafsirModalVisible, setTafsirModalVisible] = useState(false);
   const [tafsirLoading, setTafsirLoading] = useState(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
@@ -125,20 +133,37 @@ export default function ListenHomeScreen() {
       return;
     }
     setPastTranslationsLoading(true);
+    setPastTranslationsError(null);
     const unsub = subscribePastTranslations(
       user.uid,
       (items) => {
         setPastTranslations(items);
         setPastTranslationsLoading(false);
+        setPastTranslationsError(null);
       },
-      () => setPastTranslationsLoading(false),
+      () => {
+        setPastTranslationsLoading(false);
+        setPastTranslationsError(t("listen.pastTranslationsSyncIssue"));
+      },
       10,
     );
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, t]);
 
   const handleBeginListening = () => {
+    if (isNetworkBlocked) {
+      Alert.alert(t("listen.offlineTitle"), t("listen.needInternetForLive"));
+      return;
+    }
     showAdBeforeNavigation("/live-listen");
+  };
+
+  const handleSurahFinder = () => {
+    if (isNetworkBlocked) {
+      Alert.alert(t("listen.offlineTitle"), t("listen.needInternetForLive"));
+      return;
+    }
+    router.push("/surah-finder");
   };
 
   const handleSaveInsight = async () => {
@@ -305,66 +330,165 @@ export default function ListenHomeScreen() {
                 {t("listen.subheadline")}
               </Text>
 
-              {/* CTA Button */}
-              <Pressable
-                onPress={handleBeginListening}
-                className="mt-6"
+              {/* Featured CTAs — equal width, side by side */}
+              <View
+                className="mt-6 w-full flex-row gap-2.5"
                 style={{
+                  maxWidth: 400,
                   alignSelf: "center",
-                  shadowColor: "#D4AF37",
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 12,
-                  elevation: 8,
+                  alignItems: "stretch",
                 }}
               >
-                <LinearGradient
-                  colors={["#D4AF37", "#b8944d"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                <Pressable
+                  onPress={handleBeginListening}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingHorizontal: 20,
-                    paddingVertical: 14,
-                    borderRadius: 9999,
-                    gap: 12,
+                    flex: 1,
+                    minWidth: 0,
+                    shadowColor: "#D4AF37",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.28,
+                    shadowRadius: 12,
+                    elevation: 8,
                   }}
                 >
-                  <View
+                  <LinearGradient
+                    colors={["#D4AF37", "#b8944d"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor: "rgba(3, 33, 23, 0.4)",
+                      flex: 1,
+                      alignSelf: "stretch",
+                      flexDirection: "column",
                       alignItems: "center",
-                      justifyContent: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 10,
+                      borderRadius: 22,
+                      gap: 8,
                     }}
                   >
-                    <Ionicons name="mic" size={20} color="white" />
-                  </View>
-                  <View>
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: "rgba(3, 33, 23, 0.4)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons name="mic" size={20} color="white" />
+                    </View>
                     <Text
                       style={{
                         color: "#032117",
-                        fontSize: 16,
+                        fontSize: 13,
                         fontWeight: "600",
+                        textAlign: "center",
+                        lineHeight: 17,
                       }}
+                      numberOfLines={2}
                     >
                       {t("listen.beginLive")}
                     </Text>
-                    <Text
+                    <View
                       style={{
-                        color: "rgba(3, 33, 23, 0.6)",
-                        fontSize: 11,
-                        marginTop: 1,
+                        flex: 1,
+                        width: "100%",
+                        minHeight: 0,
+                        justifyContent: "flex-start",
+                        alignItems: "center",
                       }}
                     >
-                      {t("listen.tapHint")}
+                      <Text
+                        style={{
+                          color: "rgba(3, 33, 23, 0.62)",
+                          fontSize: 10,
+                          textAlign: "center",
+                          lineHeight: 13,
+                        }}
+                        numberOfLines={3}
+                      >
+                        {t("listen.tapHint")}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleSurahFinder}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    shadowColor: "#D4AF37",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.28,
+                    shadowRadius: 12,
+                    elevation: 8,
+                  }}
+                >
+                  <LinearGradient
+                    colors={["#D4AF37", "#b8944d"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      flex: 1,
+                      alignSelf: "stretch",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      paddingHorizontal: 10,
+                      borderRadius: 22,
+                      gap: 8,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: "rgba(3, 33, 23, 0.4)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons name="radio-outline" size={21} color="white" />
+                    </View>
+                    <Text
+                      style={{
+                        color: "#032117",
+                        fontSize: 13,
+                        fontWeight: "600",
+                        textAlign: "center",
+                        lineHeight: 17,
+                      }}
+                      numberOfLines={2}
+                    >
+                      {t("listen.surahFinderEntry")}
                     </Text>
-                  </View>
-                </LinearGradient>
-              </Pressable>
+                    <View
+                      style={{
+                        flex: 1,
+                        width: "100%",
+                        minHeight: 0,
+                        justifyContent: "flex-start",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "rgba(3, 33, 23, 0.62)",
+                          fontSize: 10,
+                          textAlign: "center",
+                          lineHeight: 13,
+                        }}
+                        numberOfLines={3}
+                      >
+                        {t("listen.surahFinderSubtitle")}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+                </Pressable>
+              </View>
             </View>
 
             {/* Today's Tadabbur */}
@@ -630,6 +754,14 @@ export default function ListenHomeScreen() {
                     color="rgba(255,255,255,0.6)"
                   />
                 </TouchableOpacity>
+
+                {(pastTranslationsError || isNetworkBlocked) && (
+                  <View className="mt-2 px-2 py-2 rounded-lg bg-amber-900/25 border border-amber-500/20">
+                    <Text className="text-[11px] text-amber-100/95 leading-4">
+                      {pastTranslationsError ?? t("listen.offlineDetail")}
+                    </Text>
+                  </View>
+                )}
 
                 {!pastTranslationsCollapsed &&
                   (pastTranslationsLoading ? (

@@ -16,8 +16,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: accent.base,
-        tabBarInactiveTintColor: "rgba(255,255,255,0.35)",
+        tabBarActiveTintColor: "#ffffff",
+        tabBarInactiveTintColor: "rgba(255,255,255,0.55)",
         tabBarStyle: {
           backgroundColor: tabBarBg,
           borderTopColor: "rgba(255,255,255,0.08)",
@@ -39,6 +39,15 @@ export default function TabsLayout() {
           title: t("nav.listen"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="headset-outline" size={TAB_BAR_ICON_SIZE} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="surah-finder"
+        options={{
+          title: t("nav.surahFinder"),
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="radio-outline" size={TAB_BAR_ICON_SIZE} color={color} />
           ),
         }}
       />
